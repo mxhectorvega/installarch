@@ -491,7 +491,7 @@ arch-chroot /mnt /bin/bash -c "chsh -s /usr/bin/$SH $user"
 arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH $user"
 
 #Xorg
-#arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm"
 
 #Utilidades
 arch-chroot /mnt /bin/bash -c "pacman -S git wget neofetch lsb-release xdg-user-dirs --noconfirm"
