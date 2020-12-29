@@ -274,8 +274,8 @@ clear
 #INSTALACION DEL KERNEL
 arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware linux linux-headers mkinitcpio --noconfirm"
 
-#arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds gnome-tweaks --noconfirm"
-#arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
+arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds gnome-tweaks --noconfirm"
+arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
 
 uefi=$( ls /sys/firmware/efi/ | grep -ic efivars )
 
@@ -354,7 +354,7 @@ arch-chroot /mnt /bin/bash -c "chsh -s /usr/bin/$SH $user"
 arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH $user"
 
 #INSTALACION DE SERVIDOR X
-arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm"
+#arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm"
 
 #UTILIDADES
 arch-chroot /mnt /bin/bash -c "pacman -S git wget neofetch lsb-release xdg-user-dirs --noconfirm"
