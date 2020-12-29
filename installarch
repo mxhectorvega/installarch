@@ -339,12 +339,28 @@ arch-chroot /mnt /bin/bash -c "pacman -S iw wireless_tools wpa_supplicant dialog
 #INSTALACION DE DRIVERS BLUETOOTH
 arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth --noconfirm"
 
-#INSTALACION DE DRIVERS DE VIDEO
-arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-ati mesa mesa-libgl --noconfirm"
+#INSTALACION DE DRIVERS DE VIDEO---------------------------------------
+
+#QEMU
 #arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-fbdev mesa mesa-libgl qemu-guest-agent --noconfirm"
-#NVIDIA > xf86-video-nouveau
-#AMD 	> xf86-video-ati
-#INTEL 	> xf86-video-intel
+
+#INTEL
+#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers  --noconfirm"
+
+#AMD/ATI HD - ATI X
+#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-ati mesa lib32-mesa mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm"
+
+#AMD/RADEON RX - Radeon R9 - Series 200 para arriba
+arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-amdgpu mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm"
+
+#NVIDIA PRIVATIVO 440.xx (para kernel linux-stable)
+#arch-chroot /mnt /bin/bash -c "pacman -S nvidia nvidia-settings nvidia-utils --noconfirm"
+
+#NVIDIA PRIVATIVO 390.xx (para kernel linux-stable)
+#arch-chroot /mnt /bin/bash -c "pacman -S nvidia-390xx nvidia-390xx-settings nvidia-390xx-utils lib32-nvidia-390xx-utils libva-utils vdpauinfo libvdpau lib32-libvdpau opencl-nvidia-390xx lib32-opencl-nvidia-390xx libxnvctrl-390xx clinfo ocl-icd lib32-ocl-icd opencl-headers  --noconfirm"
+
+#NVIDIA Open Source
+#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-nouveau mesa lib32-mesa mesa-vdpau libva-mesa-driver --noconfirm"
 
 #SHELL
 #arch-chroot /mnt /bin/bash -c "pacman -S zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions --noconfirm"
