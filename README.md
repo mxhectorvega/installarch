@@ -1,2 +1,2 @@
 # installarch
-Fork Script install ArchLinux UEFI by CodigoCristo
+Script install ArchLinux UEFI by CodigoCristo Fork MXHECTORVEGA
