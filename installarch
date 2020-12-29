@@ -12,7 +12,7 @@ export LANG=es_ES.UTF-8
 echo ""
 sleep 3
 
-#ACTUALIZACION DDE LLAVE Y MIRRORLIST
+#ACTUALIZACION DE LLAVES Y MIRRORLIST
 clear
 pacman -Sy archlinux-keyring --noconfirm 
 clear
@@ -28,7 +28,7 @@ cat /etc/pacman.d/mirrorlist
 sleep 3
 clear
 
-#DECLARAR USUARIOS Y CONTRASELAS EN MODO CLEAN PARA NO FALLAR
+#DECLARAR USUARIOS Y CONTRASEÑAS EN MODO CLEAN PARA NO FALLAR
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' _
 echo "print devices" | parted | grep /dev/ | awk '{if (NR!=1) {print}}'
 echo ''
@@ -60,7 +60,7 @@ then
 	clear
 	echo "Sistema UEFI"
 	echo ""
-#---Metodo con EFI - SWAP - ROOT-----------------------------------
+#---METODO CON EFI - SWAP - ROOT-----------------------------------
 	sgdisk --zap-all ${disco}
 	parted ${disco} mklabel gpt
 	sgdisk ${disco} -n=1:0:+100M -t=1:ef00
@@ -122,7 +122,7 @@ else
 	echo "Sistema BIOS"
 	echo ""
 
-#---Metodo con BIOS - SWAP - ROOT----------------------------
+#---METODO CON BIOS - SWAP - ROOT----------------------------
 	clear
 	echo ""
 	echo "Sistema BIOS"
@@ -347,17 +347,17 @@ arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-ati mesa mesa-libgl --noconf
 #INTEL 	> xf86-video-intel
 
 #SHELL
-arch-chroot /mnt /bin/bash -c "pacman -S zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions --noconfirm"
-SH=zsh
-arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH"
-arch-chroot /mnt /bin/bash -c "chsh -s /usr/bin/$SH $user"
-arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH $user"
+#arch-chroot /mnt /bin/bash -c "pacman -S zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions --noconfirm"
+#SH=zsh
+#arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH"
+#arch-chroot /mnt /bin/bash -c "chsh -s /usr/bin/$SH $user"
+#arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH $user"
 
 #INSTALACION DE SERVIDOR X
 #arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm"
 
 #UTILIDADES
-arch-chroot /mnt /bin/bash -c "pacman -S git wget neofetch lsb-release xdg-user-dirs --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S git wget neofetch lsb-release xdg-user-dirs devmon --noconfirm"
 arch-chroot /mnt /bin/bash -c "xdg-user-dirs-update"
 clear
 echo ""
@@ -368,10 +368,10 @@ sleep 5
 arch-chroot /mnt /bin/bash -c "pacman -S pulseaudio pavucontrol --noconfirm"
 
 #FONTS (TIPOGRAFIAS)
-arch-chroot /mnt /bin/bash -c "pacman -S gnu-free-fonts ttf-hack ttf-inconsolata gnome-font-viewer --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S gnu-free-fonts ttf-hack ttf-inconsolata --noconfirm"
 
 #NAVEGADOR WEB
-arch-chroot /mnt /bin/bash -c "pacman -S chromium --noconfirm"
+#arch-chroot /mnt /bin/bash -c "pacman -S chromium --noconfirm"
 #chromium
 #opera
 #vivaldi
