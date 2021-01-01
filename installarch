@@ -274,8 +274,8 @@ clear
 #INSTALACION DEL KERNEL
 arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware linux linux-headers mkinitcpio --noconfirm"
 
-arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds gnome-tweaks --noconfirm"
-arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
+#arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds gnome-tweaks --noconfirm"
+#arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
 
 uefi=$( ls /sys/firmware/efi/ | grep -ic efivars )
 
@@ -370,7 +370,7 @@ arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-amdgpu mesa lib32-mesa vulka
 #arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH $user"
 
 #INSTALACION DE SERVIDOR X
-#arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm"
 
 #UTILIDADES
 arch-chroot /mnt /bin/bash -c "pacman -S git wget neofetch lsb-release xdg-user-dirs devmon --noconfirm"
@@ -394,7 +394,7 @@ arch-chroot /mnt /bin/bash -c "pacman -S gnu-free-fonts ttf-hack ttf-inconsolata
 
 #ESTABLECER FORMATO DE TECLADO
 	  clear
-            keymap="latam"
+            keymap="es"
 
       arch-chroot /mnt /bin/bash -c "localectl --no-convert set-x11-keymap $keymap"
       arch-chroot /mnt /bin/bash -c "setxkbmap -layout $keymap"
@@ -402,7 +402,7 @@ arch-chroot /mnt /bin/bash -c "pacman -S gnu-free-fonts ttf-hack ttf-inconsolata
       echo -e 'Section "InputClass"' > /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
       echo -e 'Identifier "system-keyboard"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
       echo -e 'MatchIsKeyboard "on"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
-      echo -e 'Option "XkbLayout" "latam"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
+      echo -e 'Option "XkbLayout" "es"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
       echo -e 'EndSection' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
       echo ""
       cat /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
