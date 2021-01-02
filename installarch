@@ -381,7 +381,7 @@ arch-chroot /mnt /bin/bash -c "ls -l /home/$user"
 sleep 5
 
 #AUDIO
-arch-chroot /mnt /bin/bash -c "pacman -S pulseaudio pavucontrol --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S pamixer pulseaudio pavucontrol --noconfirm"
 
 #FONTS (TIPOGRAFIAS)
 arch-chroot /mnt /bin/bash -c "pacman -S gnu-free-fonts ttf-hack ttf-inconsolata --noconfirm"
