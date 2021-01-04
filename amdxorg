@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#CAMBIAR EL LIVEUB A ESPAÑOL
+#CAMBIAR EL LIVEUSB A ESPAÑOL
 clear
 echo ""
 echo "Sistema en español"
@@ -272,9 +272,9 @@ sleep 3
 clear
 
 #INSTALACION DEL KERNEL
-arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware linux linux-headers mkinitcpio --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware linux linux-headers mkinitcpio --noconfirm --need"
 
-#arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds gnome-tweaks --noconfirm"
+#arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds gnome-tweaks --noconfirm --need"
 #arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
 
 uefi=$( ls /sys/firmware/efi/ | grep -ic efivars )
@@ -282,7 +282,7 @@ uefi=$( ls /sys/firmware/efi/ | grep -ic efivars )
 if [ $uefi == 1 ]
 then
 clear
-arch-chroot /mnt /bin/bash -c "pacman -S grub efibootmgr os-prober dosfstools --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S grub efibootmgr os-prober dosfstools ntfs-3g --noconfirm --need"
 echo '' 
 echo 'Instalando EFI System >> bootx64.efi' 
 arch-chroot /mnt /bin/bash -c 'grub-install --target=x86_64-efi --efi-directory=/efi --removable' 
@@ -306,7 +306,7 @@ sleep 4
 
 else
 clear
-arch-chroot /mnt /bin/bash -c "pacman -S grub os-prober --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S grub os-prober --noconfirm --need"
 echo '' 
 arch-chroot /mnt /bin/bash -c "grub-install --target=i386-pc $disco"
 
@@ -326,7 +326,7 @@ echo
 fi
 
 #INSTALACION DE SOFTWARE PERSONAL
-arch-chroot /mnt /bin/bash -c "pacman -S dhcpcd networkmanager iwd net-tools ifplugd --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S dhcpcd networkmanager iwd net-tools ifplugd --noconfirm --need"
 #ACTIVAR SERVICIOS
 arch-chroot /mnt /bin/bash -c "systemctl enable dhcpcd NetworkManager"
 
@@ -334,37 +334,46 @@ echo "noipv6rs" >> /mnt/etc/dhcpcd.conf
 echo "noipv6" >> /mnt/etc/dhcpcd.conf
 
 #INSTALACION DE DRIVERS WIFI
-arch-chroot /mnt /bin/bash -c "pacman -S iw wireless_tools wpa_supplicant dialog wireless-regdb --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S iw wireless_tools wpa_supplicant dialog wireless-regdb --noconfirm --need"
 
 #INSTALACION DE DRIVERS BLUETOOTH
-arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth --noconfirm --need"
 
-#INSTALACION DE DRIVERS DE VIDEO
+#INSTALACION DE DRIVERS DE VIDEO---------------------------------------
 
 #QEMU
 #arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-fbdev mesa mesa-libgl qemu-guest-agent --noconfirm"
 
-#NVIDIA > xf86-video-nouveau
-#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-nouveau mesa mesa-libgl --noconfirm"
+#INTEL
+#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"
 
-#AMD 	> xf86-video-ati
-#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-ati mesa mesa-libgl --noconfirm"
+#AMD/ATI HD - ATI X
+#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-ati mesa lib32-mesa mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"
 
-#INTEL 	> xf86-video-intel
-arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-intel mesa mesa-libgl --noconfirm"
+#AMD/RADEON RX - Radeon R9 - Series 200 para arriba
+arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-amdgpu mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"
+
+#NVIDIA PRIVATIVO 440.xx (para kernel linux-stable)
+#arch-chroot /mnt /bin/bash -c "pacman -S nvidia nvidia-settings nvidia-utils --noconfirm --need"
+
+#NVIDIA PRIVATIVO 390.xx (para kernel linux-stable)
+#arch-chroot /mnt /bin/bash -c "pacman -S nvidia-390xx nvidia-390xx-settings nvidia-390xx-utils lib32-nvidia-390xx-utils libva-utils vdpauinfo libvdpau lib32-libvdpau opencl-nvidia-390xx lib32-opencl-nvidia-390xx libxnvctrl-390xx clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"
+
+#NVIDIA Open Source
+#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-nouveau mesa lib32-mesa mesa-vdpau libva-mesa-driver --noconfirm --need"
 
 #SHELL
-#arch-chroot /mnt /bin/bash -c "pacman -S zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions --noconfirm"
+#arch-chroot /mnt /bin/bash -c "pacman -S zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions --noconfirm --need"
 #SH=zsh
 #arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH"
 #arch-chroot /mnt /bin/bash -c "chsh -s /usr/bin/$SH $user"
 #arch-chroot /mnt /bin/bash -c "chsh -s /bin/$SH $user"
 
 #INSTALACION DE SERVIDOR X
-arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S xorg xorg-apps xorg-xinit xorg-twm xterm xorg-xclock --noconfirm --need"
 
 #UTILIDADES
-arch-chroot /mnt /bin/bash -c "pacman -S git wget neofetch lsb-release xdg-user-dirs devmon --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S git wget neofetch lsb-release xdg-user-dirs devmon --noconfirm --need"
 arch-chroot /mnt /bin/bash -c "xdg-user-dirs-update"
 clear
 echo ""
@@ -372,20 +381,20 @@ arch-chroot /mnt /bin/bash -c "ls -l /home/$user"
 sleep 5
 
 #AUDIO
-arch-chroot /mnt /bin/bash -c "pacman -S pulseaudio pavucontrol --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S pamixer pulseaudio pavucontrol --noconfirm --need"
 
 #FONTS (TIPOGRAFIAS)
-arch-chroot /mnt /bin/bash -c "pacman -S gnu-free-fonts ttf-hack ttf-inconsolata --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S gnu-free-fonts ttf-hack ttf-inconsolata --noconfirm --need"
 
 #NAVEGADOR WEB
-#arch-chroot /mnt /bin/bash -c "pacman -S chromium --noconfirm"
+#arch-chroot /mnt /bin/bash -c "pacman -S chromium --noconfirm --need"
 #chromium
 #opera
 #vivaldi
 
 #ESTABLECER FORMATO DE TECLADO
 	  clear
-            keymap="latam"
+            keymap="es"
 
       arch-chroot /mnt /bin/bash -c "localectl --no-convert set-x11-keymap $keymap"
       arch-chroot /mnt /bin/bash -c "setxkbmap -layout $keymap"
@@ -393,7 +402,7 @@ arch-chroot /mnt /bin/bash -c "pacman -S gnu-free-fonts ttf-hack ttf-inconsolata
       echo -e 'Section "InputClass"' > /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
       echo -e 'Identifier "system-keyboard"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
       echo -e 'MatchIsKeyboard "on"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
-      echo -e 'Option "XkbLayout" "latam"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
+      echo -e 'Option "XkbLayout" "es"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
       echo -e 'EndSection' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
       echo ""
       cat /mnt/etc/X11/xorg.conf.d/00-keyboard.conf
