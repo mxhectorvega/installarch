@@ -326,7 +326,7 @@ echo
 fi
 
 #INSTALACION DE SOFTWARE PERSONAL
-arch-chroot /mnt /bin/bash -c "pacman -S dhcpcd networkmanager iwd net-tools ifplugd --noconfirm --need"
+arch-chroot /mnt /bin/bash -c "pacman -S python-pip dhcpcd networkmanager iwd net-tools ifplugd --noconfirm --need"
 #ACTIVAR SERVICIOS
 arch-chroot /mnt /bin/bash -c "systemctl enable dhcpcd NetworkManager"
 
@@ -342,7 +342,7 @@ arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth 
 #INSTALACION DE DRIVERS DE VIDEO---------------------------------------
 
 #QEMU
-arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-fbdev mesa mesa-libgl qemu-guest-agent --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent --noconfirm"
 
 #INTEL
 #arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"
