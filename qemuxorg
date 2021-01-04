@@ -326,7 +326,7 @@ echo
 fi
 
 #INSTALACION DE SOFTWARE PERSONAL
-arch-chroot /mnt /bin/bash -c "pacman -S python-pip dhcpcd networkmanager iwd net-tools ifplugd --noconfirm --need"
+arch-chroot /mnt /bin/bash -c "pacman -S python3 python-pip dhcpcd networkmanager iwd net-tools ifplugd --noconfirm --need"
 #ACTIVAR SERVICIOS
 arch-chroot /mnt /bin/bash -c "systemctl enable dhcpcd NetworkManager"
 
