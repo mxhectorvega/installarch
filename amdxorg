@@ -40,6 +40,11 @@ read -p "Introduce Nombre usuario Nuevo: " user
 echo ""
 read -p "Introduce la clave de $user: " userpasswd
 echo ""
+
+read -p "Introduce un nombre para el computador (host): " host
+echo ""
+echo ''
+
 read -p "Introduce tu ubicación (Eg.es_PE.UTF-8 / es_MX.UTF-8 / es_CO.UTF-8): " userpais
 echo ""
 echo ''
@@ -50,6 +55,10 @@ echo ''
 echo "CLAVE DE USUARIO: $userpasswd"
 echo ''
 echo "CLAVE DE ADMINISTRADOR: $rootpasswd"
+
+echo "NOMBRE DEL COMPUTADOR: $host"
+echo ''
+
 sleep 4
 echo ''
 
@@ -207,7 +216,7 @@ clear
 #HOST
 clear
 #NOMBRE DEL COMPUTADOR
-hostname=ArchLinux
+hostname=$host
 echo "$hostname" > /mnt/etc/hostname
 echo "127.0.1.1 $hostname.localdomain $hostname" > /mnt/etc/hosts
 clear
@@ -342,7 +351,7 @@ arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth 
 #INSTALACION DE DRIVERS DE VIDEO---------------------------------------
 
 #QEMU
-#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-fbdev mesa mesa-libgl qemu-guest-agent --noconfirm"
+#arch-chroot /mnt /bin/bash -c "pacman -S spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent --noconfirm"
 
 #INTEL
 #arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"

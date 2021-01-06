@@ -351,10 +351,10 @@ arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth 
 #INSTALACION DE DRIVERS DE VIDEO---------------------------------------
 
 #QEMU
-arch-chroot /mnt /bin/bash -c "pacman -S spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent --noconfirm"
+#arch-chroot /mnt /bin/bash -c "pacman -S spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent --noconfirm"
 
 #INTEL
-#arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"
+arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"
 
 #AMD/ATI HD - ATI X
 #arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-ati mesa lib32-mesa mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers --noconfirm --need"
