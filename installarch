@@ -329,7 +329,7 @@ echo
 fi
 
 #INSTALACION DE SOFTWARE PERSONAL
-arch-chroot /mnt /bin/bash -c "pacman -S python3 python-pip imagemagic dhcpcd networkmanager iwd net-tools ifplugd --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S dhcpcd networkmanager iwd net-tools ifplugd --noconfirm"
 #ACTIVAR SERVICIOS
 arch-chroot /mnt /bin/bash -c "systemctl enable dhcpcd NetworkManager"
 
@@ -341,62 +341,6 @@ arch-chroot /mnt /bin/bash -c "pacman -S iw wireless_tools wpa_supplicant dialog
 
 #INSTALACION DE DRIVERS BLUETOOTH
 arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth --noconfirm"
-
-
-
-
-
-
-
-
-case $(systemd-detect-virt) in
-        oracle)
-            grafica="virtualbox-guest-utils xf86-video-vmware virtualbox-host-modules-arch mesa mesa-libglx"
-        ;;
-        vmware)
-            grafica="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
-        ;;
-        qemu)
-            grafica="spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
-        ;;
-        kvm)
-            grafica=" "
-        ;;
-        microsoft)
-            grafica="xf86-video-fbdev mesa-libgl"
-        ;;
-        xen)
-            grafica=" "
-        ;;
-        *)
-            if (lspci | grep VGA | grep "NVIDIA\|nVidia" &>/dev/null); then
-                grafica="xf86-video-nouveau mesa lib32-mesa mesa-vdpau libva-mesa-driver"
-                
-            elif (lspci | grep VGA | grep "Radeon R\|R2/R3/R4/R5" &>/dev/null); then
-                grafica="xf86-video-amdgpu mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
-
-            elif (lspci | grep VGA | grep "ATI\|AMD/ATI" &>/dev/null); then
-                grafica="xf86-video-ati mesa lib32-mesa mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
-
-             elif (lspci | grep VGA | grep "Intel" &>/dev/null); then
-                grafica="xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers"
-                
-             else
-                grafica="xf86-video-vesa"
-            
-        fi
-        ;;
-    esac
-
-arch-chroot /mnt /bin/bash -c "pacman -S $grafica --noconfirm --needed"
-
-
-
-
-
-
-
-
 
 #SHELL
 #arch-chroot /mnt /bin/bash -c "pacman -S zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions --noconfirm"
@@ -448,6 +392,49 @@ arch-chroot /mnt /bin/bash -c "pacman -S ttf-dejavu ttf-liberation xorg-fonts-ty
 # INSTALAR YAY
 echo "cd && git clone https://aur.archlinux.org/yay-bin.git && cd yay-bin && makepkg -si --noconfirm && cd && rm -rf yay-bin" | arch-chroot /mnt /bin/bash -c "su $user"
 sed -i "82c %wheel ALL=(ALL) ALL"  /mnt/etc/sudoers
+
+case $(systemd-detect-virt) in
+        oracle)
+            grafica="virtualbox-guest-utils xf86-video-vmware virtualbox-host-modules-arch mesa mesa-libglx"
+        ;;
+        vmware)
+            grafica="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
+        ;;
+        qemu)
+            grafica="spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
+        ;;
+        kvm)
+            grafica="spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
+        ;;
+        microsoft)
+            grafica="xf86-video-fbdev mesa-libgl"
+        ;;
+        xen)
+            grafica="xf86-video-fbdev mesa-libgl"
+        ;;
+        *)
+            if (lspci | grep VGA | grep "NVIDIA\|nVidia" &>/dev/null); then
+                grafica="xf86-video-nouveau mesa lib32-mesa mesa-vdpau libva-mesa-driver"
+                
+            elif (lspci | grep VGA | grep "Radeon R\|R2/R3/R4/R5" &>/dev/null); then
+                grafica="xf86-video-amdgpu mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
+
+            elif (lspci | grep VGA | grep "ATI\|AMD/ATI" &>/dev/null); then
+                grafica="xf86-video-ati mesa lib32-mesa mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
+
+             elif (lspci | grep VGA | grep "Intel" &>/dev/null); then
+                grafica="xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers"
+                
+             else
+                grafica="xf86-video-vesa"
+            
+        fi
+        ;;
+    esac
+
+arch-chroot /mnt /bin/bash -c "pacman -S $grafica --noconfirm --needed"
+
+
 
 #DESMONTAR Y REINICIAR
 umount -R /mnt
