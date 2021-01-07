@@ -10,8 +10,8 @@ Drivers wifi, bluetooth, gpu (editar lineas 324-367) y Servidor X (xorg).
 
 
 **Instrucciones:**
-1. Iniciar en modo uefi o bios el LiveUBS de ArchLinux
-2. ``loakdeys es`` (o segun la distribucion del teclado que corresponda a su pais ``la-latin1`` o ``es``)
+1. Iniciar en modo uefi o bios el LiveUSB de ArchLinux
+2. ``loadkeys es`` (o segun la distribucion del teclado ``la-latin1`` o ``es``)
 3. ``pacman -Sy git --noconfirm``
 4. ``git clone https://github.com/mxhectorvega/installarch``
 5. ``cd installarch ; sh qemu`` (segun coresponda si es maquina virtual o hardware real `radeon`)
