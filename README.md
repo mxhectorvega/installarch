@@ -14,7 +14,7 @@ Drivers wifi, bluetooth, gpu (editar lineas 324-367) y Servidor X (xorg).
 2. ``loadkeys es`` (o segun la distribucion del teclado ``la-latin1, es, en``)
 3. ``pacman -Sy git --noconfirm``
 4. ``git clone https://github.com/mxhectorvega/installarch``
-5. ``cd installarch ; sh tipo_de_gpu`` (qemu, radeon, intel, nvidia):
+5. ``cd installarch ; sh installarch``
 6. Seleccionar la unidad conectada donde se instalara ejemplo: ``/dev/sdx``:
 7. Ingrese una contraseña root:
 8. Ingrese un nombre de usuario estándar:
