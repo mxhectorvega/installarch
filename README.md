@@ -5,7 +5,7 @@
 
 
 **La instalacion contiene:**
-Drivers wifi, bluetooth, video y servidor X (xorg).
+Drivers wifi, bluetooth, video, audio y servidor X (xorg).
 
 
 
