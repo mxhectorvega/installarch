@@ -20,7 +20,7 @@ Drivers wifi, bluetooth, gpu (editar lineas 324-367) y Servidor X (xorg).
 8. Ingrese un nombre de usuario estándar:
 9. Ingrese una contraseńa para el usuario estándar :
 10. Ingrese un nombre para el equipo:
-11. Ingrese bicación ejemplo ``es_MX.UTF-8`` o ``es_AR.UTF-8``
+11. Ingrese ubicación ejemplo ``es_MX.UTF-8`` o ``es_AR.UTF-8``
 
 
 
