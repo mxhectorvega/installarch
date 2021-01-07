@@ -29,4 +29,4 @@ https://youtube.com/mxhectorvega
 https://t.me/mxhectorvega
 
 **Creditos:**
-@mxhectorvega @darch7 @cristoalv
+@mxhectorvega @darch7 @cristoalv @bourne_again
