@@ -20,7 +20,7 @@ Drivers wifi, bluetooth, gpu (editar lineas 324-367) y Servidor X (xorg).
 8. Ingresa nombre de un nuevo usuario ejemplo: ``loco``
 9. Ingresa una contraseña para tu nuevo usuario: ``abc12345``
 10. Ingresa un nombre para el computador ejemplo: ``pc`` , ``ArchLinux`` o ``maquinadeldiablo``
-11. Ingresa tu ubicación ejemplo ``es_MX.UTF-8`` ``es_AR.UTF-8``
+11. Ingresa tu ubicación ejemplo ``es_MX.UTF-8`` o ``es_AR.UTF-8``
 
 
 
@@ -29,5 +29,6 @@ Drivers wifi, bluetooth, gpu (editar lineas 324-367) y Servidor X (xorg).
 https://youtube.com/mxhectorvega
 **Canal telegran:**
 https://t.me/mxhectorvega
+
 **Creditos:**
 @mxhectorvega @darch7 @cristoalv
