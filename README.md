@@ -24,16 +24,12 @@ Drivers wifi, bluetooth, gpu (editar lineas 324-367) y Servidor X (xorg).
 11. Ingresa tu ubicación ejemplo ``es_MX.UTF-8`` ``es_AR.UTF-8``
 
 
-**Canal youtube:**
 
+**Canal youtube:**
 https://youtube.com/mxhectorvega
 
-
 **Canal telegran:**
-
 https://t.me/mxhectorvega
 
-
 **Creditos:**
-
 @mxhectorvega @darch7 @cristoalv
