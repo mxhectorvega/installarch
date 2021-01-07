@@ -229,7 +229,7 @@ clear
 
 #USUARIO Y ADMIN
 arch-chroot /mnt /bin/bash -c "(echo $rootpasswd ; echo $rootpasswd) | passwd root"
-arch-chroot /mnt /bin/bash -c "groupadd wheel"
+#arch-chroot /mnt /bin/bash -c "groupadd wheel"
 arch-chroot /mnt /bin/bash -c "useradd -m -g users -G wheel -s /bin/bash $user"
 arch-chroot /mnt /bin/bash -c "(echo $userpasswd ; echo $userpasswd) | passwd $user"
 
@@ -433,12 +433,14 @@ case $(systemd-detect-virt) in
     esac
 
 arch-chroot /mnt /bin/bash -c "pacman -S $grafica --noconfirm --needed"
-
+sleep 3
 
 
 #DESMONTAR Y REINICIAR
 umount -R /mnt
 swapoff -a
-      clear          
+      clear
+      echo ""
+      echo "                                   S u s c r i b e t e :  y o u t u b e . c o m / m x h e c t o r v e g a"
       sleep 7
 reboot
