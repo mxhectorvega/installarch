@@ -275,7 +275,7 @@ sleep 3
 clear
 
 #INSTALACION DEL KERNEL
-arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware linux-lts linux-lts-headers mkinitcpio --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware linux linux-headers mkinitcpio --noconfirm"
 
 #arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds gnome-tweaks --noconfirm"
 #arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
