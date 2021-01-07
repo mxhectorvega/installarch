@@ -3,16 +3,12 @@
 **Instalacion expres de ArchLinux sin entorno grafico**
 
 
-**La instalacion contiene:*
+
+**La instalacion contiene:**
 
 
-Drivers wifi
+Drivers wifi, bluetooth, gpu (editar lineas 324-367) y Servidor X (xorg).
 
-Drivers bluetooth
-
-Drivers gpu (editar lineas 324-367)
-
-Servidor X (xorg).
 
 
 **Instrucciones:**
@@ -35,9 +31,10 @@ Servidor X (xorg).
 
 9. Ingresa una contraseña para tu nuevo usuario:
 
-10: Ingresa un nombre para el computador ejemplo: ``pc`` , ``ArchLinux`` o ``maquinadeldiablo``
+10. Ingresa un nombre para el computador ejemplo: ``pc`` , ``ArchLinux`` o ``maquinadeldiablo``
 
 11. Ingresa tu ubicación ejemplo ``es_MX.UTF-8`` ``es_AR.UTF-8``
+
 
 
 **Canal youtube:**
