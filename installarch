@@ -342,6 +342,62 @@ arch-chroot /mnt /bin/bash -c "pacman -S iw wireless_tools wpa_supplicant dialog
 #INSTALACION DE DRIVERS BLUETOOTH
 arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth --noconfirm"
 
+
+
+
+
+
+
+
+case $(systemd-detect-virt) in
+        oracle)
+            grafica="virtualbox-guest-utils xf86-video-vmware virtualbox-host-modules-arch mesa mesa-libglx"
+        ;;
+        vmware)
+            grafica="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
+        ;;
+        qemu)
+            grafica="spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
+        ;;
+        kvm)
+            grafica=" "
+        ;;
+        microsoft)
+            grafica="xf86-video-fbdev mesa-libgl"
+        ;;
+        xen)
+            grafica=" "
+        ;;
+        *)
+            if (lspci | grep VGA | grep "NVIDIA\|nVidia" &>/dev/null); then
+                grafica="xf86-video-nouveau mesa lib32-mesa mesa-vdpau libva-mesa-driver"
+                
+            elif (lspci | grep VGA | grep "Radeon R\|R2/R3/R4/R5" &>/dev/null); then
+                grafica="xf86-video-amdgpu mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
+
+            elif (lspci | grep VGA | grep "ATI\|AMD/ATI" &>/dev/null); then
+                grafica="xf86-video-ati mesa lib32-mesa mesa-vdpau libva-mesa-driver lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
+
+             elif (lspci | grep VGA | grep "Intel" &>/dev/null); then
+                grafica="xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers"
+                
+             else
+                grafica="xf86-video-vesa"
+            
+        fi
+        ;;
+    esac
+
+arch-chroot /mnt /bin/bash -c "pacman -S $grafica --noconfirm --needed"
+
+
+
+
+
+
+
+
+
 #SHELL
 #arch-chroot /mnt /bin/bash -c "pacman -S zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions --noconfirm"
 #SH=zsh
@@ -392,266 +448,6 @@ arch-chroot /mnt /bin/bash -c "pacman -S ttf-dejavu ttf-liberation xorg-fonts-ty
 # INSTALAR YAY
 echo "cd && git clone https://aur.archlinux.org/yay-bin.git && cd yay-bin && makepkg -si --noconfirm && cd && rm -rf yay-bin" | arch-chroot /mnt /bin/bash -c "su $user"
 sed -i "82c %wheel ALL=(ALL) ALL"  /mnt/etc/sudoers
-
-#Inicio de Video
-VM=false
-VMbox=false
-VMqemu=false
-    
-    case $(systemd-detect-virt) in
-        oracle)
-            virt="vbox"
-            VM=true
-        ;;
-        vmware)
-            virt="vmware"
-            VM=true
-        ;;
-        qemu)
-            virt="qemu"
-            VM=true
-        ;;
-        kvm)
-            virt="kvm"mi 
-            VM=true
-        ;;
-        microsoft)
-            virt="hyper-v"
-            VM=true
-        ;;
-        xen)
-            virt="xen"
-            VM=true
-        ;;
-    esac
-    
-    ####################################################################
-kernel=$(uname -a | tail -c -6)
-
-if [ "$VM" == "true" ]; then
-    
-            inxi -Gx | dialog --no-collapse --cr-wrap --backtitle "Instalación de ArchLinux - https://t.me/ArchLinuxCristo" --progressbox "-| Driver de Vídeo, Espere... |-" 15 100; sleep 5
-            case "$virt" in
-                
-                vbox)   if [ "$kernel" == "Linux" ]; then
-                            GPU="virtualbox-guest-utils xf86-video-vmware virtualbox-host-modules-arch mesa mesa-libgl"
-                            GPUvirt="vboxservice"
-                            echo $GPUvirt | awk -F " " '{print $1}' > GPUvirt                            
-                            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Instalar>"  --msgbox "\nVídeo Detectado VirtualBox\nInstalar: VirtualBox Guest utils" 8 80
-                            VMbox=true
-                        else
-                            GPU="virtualbox-guest-dkms virtualbox-host-dkms mesa mesa-libgl"
-                            GPUvirt="systemd-modules-load"
-                            echo $GPUvirt | awk -F " " '{print $1}' > GPUvirt
-                            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Instalar>"  --msgbox "\nVídeo Detectado VirtualBox\nInstalar: VirtualBox Guest-dkms" 8 80
-                            VMbox=true
-                        fi
-                ;;
-                
-                vmware) GPU="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
-                        dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Instalar>"  --msgbox "\nVídeo Detectado VMware\nInstalar: xf86-video-vmware" 8 80
-                ;;
-                
-                
-                hyper-v) GPU="xf86-video-fbdev mesa-libgl"                         
-                ;;
-                
-                
-                qemu) GPU="xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
-                      GPUvirt="qemu-ga"
-                      VMqemu=true
-                      dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Instalar>"  --msgbox "\nVídeo Detectado VirtualBox\nInstalar: qemu-guest-agent" 8 80                   
-                ;;
-                
-                
-                *)      GPU="xf86-video-fbdev mesa-libgl"
-                ;;
-                
-            esac
-
-            
-else
-
-dialog --title "-| Driver de Vídeo |-" --yesno "\n¿ Desea instalar de manera automatica su driver de vídeo ? \nPresione Si - Automatico \nPresione No - Manera Manual" 9 62
-case $? in
-   0) inxi -Gx | dialog --no-collapse --cr-wrap --backtitle "Instalación de ArchLinux - https://t.me/ArchLinuxCristo" \
---progressbox "-| Driver de Vídeo, lea su información, espere... |-" 15 100; sleep 7
-
-if (lspci | grep VGA | grep "NVIDIA\|nVidia" &>/dev/null); then
-    
-GPU="xf86-video-nouveau mesa lib32-mesa mesa-vdpau libva-mesa-driver \
-lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl \
-libva-utils vdpauinfo libvdpau lib32-libvdpau opencl-mesa clinfo ocl-icd \
-lib32-ocl-icd opencl-headers"
-
-dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\n$GPU" 10 80
-            
-
-        elif (lspci | grep VGA | grep "Radeon R\|R2/R3/R4/R5" &>/dev/null); then
-            
-GPU="xf86-video-amdgpu mesa lib32-mesa vulkan-radeon \
-lib32-vulkan-radeon mesa-vdpau libva-mesa-driver lib32-mesa-vdpau \
-lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo \
-opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
-dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\n$GPU" 10 80
-
-        elif (lspci | grep VGA | grep "ATI\|AMD/ATI" &>/dev/null); then
-                    
-GPU="xf86-video-ati mesa lib32-mesa mesa-vdpau libva-mesa-driver \
-lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl \
-libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
-dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\n$GPU" 10 80
-
-        elif (lspci | grep VGA | grep "Intel" &>/dev/null); then
-            
-GPU="xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver \
-libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo \
-intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers"
-dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\n$GPU" 10 80
-                
-        else
-            
-GPU="xf86-video-vesa mesa lib32-mesa"
-dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\n$GPU" 10 80
-            
-        fi
-;;
-   1) inxi -Gx | dialog --no-collapse --cr-wrap --backtitle "Instalación de ArchLinux - https://t.me/ArchLinuxCristo" \
-    --progressbox "-| Driver de Vídeo, lea su información, espere... |-" 15 100; sleep 7
-
-GPUHYBR=false
-
-cmd=(dialog --keep-tite --no-collapse --cr-wrap --backtitle "$titulo" --title "-| Driver de Vídeo |-"  --column-separator "|" --no-tags --ok-label "< Seleccionar >" \
-    --nocancel --menu "Seleciona el driver correcto:" 20 76 16)
-
-options=(1 "Nvidia 440xx|(Linux Stable)"
-         2 "Nvidia 390xx|(Linux Stable)"
-         3 "Nvidia 340xx|(Linux Stable)"
-         4 "Nvidia 440xx|(Linux Stable + Intel)"
-         5 "Nvidia 390xx|(Linux Stable + Intel) No hybrid"
-         6 "Nvidia 440xx|(Linux LTS)"
-         7 "Nvidia 390xx|(Linux LTS)"
-         8 "Nvidia 440xx|(Linux Hardened - Zen)"
-         9 "Nvidia 390xx|(Linux Hardened - Zen)"
-         10 "Nvidia|(Open Source)"
-         11 "AMD - Radeon|(Open Source)"
-         12 "AMD - ATI|(Open Source)"
-         13 "Intel|(Open Source)")
-
-choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
-
-for choice in $choices
-do
-    case $choice in
-        1)
-            GPU="nvidia nvidia-settings nvidia-utils lib32-nvidia-utils libva-utils \
-            vdpauinfo libvdpau lib32-libvdpau opencl-nvidia \
-            lib32-opencl-nvidia ffnvcodec-headers libxnvctrl clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;
-            
-        2)
-            GPU="nvidia-390xx nvidia-390xx-utils \
-            lib32-nvidia-390xx-utils libva-utils vdpauinfo libvdpau lib32-libvdpau \
-            opencl-nvidia-390xx lib32-opencl-nvidia-390xx clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            #libxnvctrl-390xx
-            #nvidia-390xx-settings
-            ;;
-        
-        3)
-            GPU="nvidia-340xx nvidia-340xx-utils \
-            lib32-nvidia-340xx-utils libva-utils vdpauinfo libvdpau lib32-libvdpau \
-            opencl-nvidia-340xx lib32-opencl-nvidia-340xx clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            #libxnvctrl-340xx
-            #nvidia-340xx-settings
-            ;;
-        
-        4)
-            GPU="nvidia nvidia-settings nvidia-utils lib32-nvidia-utils libva-utils xf86-video-intel optimus-manager bbswitch optimus-manager-qt \
-            vdpauinfo libvdpau lib32-libvdpau opencl-nvidia \
-            lib32-opencl-nvidia ffnvcodec-headers libxnvctrl clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            GPUHYBR=true
-            ;;
-            
-        5)
-            GPU="nvidia-390xx nvidia-390xx-utils xf86-video-intel optimus-manager bbswitch optimus-manager-qt \
-            lib32-nvidia-390xx-utils libva-utils vdpauinfo libvdpau lib32-libvdpau \
-            opencl-nvidia-390xx lib32-opencl-nvidia-390xx clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            GPUHYBR=true
-            ;;
-        
-        6)
-            GPU="nvidia-lts nvidia-settings nvidia-utils lib32-nvidia-utils libva-utils \
-            vdpauinfo libvdpau lib32-libvdpau opencl-nvidia \
-            lib32-opencl-nvidia ffnvcodec-headers libxnvctrl clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;
-        
-        7)
-            GPU="nvidia-390xx-lts nvidia-390xx-utils \
-            lib32-nvidia-390xx-utils libva-utils vdpauinfo libvdpau lib32-libvdpau \
-            opencl-nvidia-390xx lib32-opencl-nvidia-390xx clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;
-        
-        
-        8)
-            GPU="nvidia-dkms nvidia-utils lib32-nvidia-utils libva-utils \
-            vdpauinfo libvdpau lib32-libvdpau opencl-nvidia \
-            lib32-opencl-nvidia ffnvcodec-headers libxnvctrl clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;
-        
-        9)
-            GPU="nvidia-390xx-dkms nvidia-390xx-utils \
-            lib32-nvidia-390xx-utils libva-utils vdpauinfo libvdpau lib32-libvdpau \
-            opencl-nvidia-390xx lib32-opencl-nvidia-390xx clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;        
-            
-        10)
-            GPU="xf86-video-nouveau mesa lib32-mesa mesa-vdpau libva-mesa-driver \
-            lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl \
-            libva-utils vdpauinfo libvdpau lib32-libvdpau opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;
-        11)
-            GPU="xf86-video-amdgpu mesa lib32-mesa vulkan-radeon \
-            lib32-vulkan-radeon mesa-vdpau libva-mesa-driver lib32-mesa-vdpau \
-            lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo \
-            opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;
-        12)
-            GPU="xf86-video-ati mesa lib32-mesa mesa-vdpau libva-mesa-driver \
-            lib32-mesa-vdpau lib32-libva-mesa-driver libva-vdpau-driver libvdpau-va-gl \
-            libva-utils vdpauinfo opencl-mesa clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;
-            
-        13)
-            GPU="xf86-video-intel vulkan-intel mesa lib32-mesa intel-media-driver \
-            libva-intel-driver libva-vdpau-driver libvdpau-va-gl libva-utils vdpauinfo \
-            intel-compute-runtime beignet clinfo ocl-icd lib32-ocl-icd opencl-headers"
-            dialog --title "-| Driver de Vídeo |-" --stdout --ok-label "<Aceptar>"  --msgbox "\nyay -Sy $GPU" 10 80
-            ;;
-    esac
-done
-;;
-
-
-
-   255) echo "Presiono la tecla [ESC]"
-;;
-esac
-
-#Final de VIDEO      
-fi
-
 
 #DESMONTAR Y REINICIAR
 umount -R /mnt
