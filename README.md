@@ -1,16 +1,12 @@
 # INSTALLARCH
 
-
 <img src="https://raw.githubusercontent.com/mxhectorvega/installarch/master/installer.png" />
-
 
 **SCRIPT DE INSTALACIÓN EXPRESS ARCHLINUX SIN ENTORNO GRÁFICO**
 
 
-
 **La instalacion contiene:**
 Drivers wifi, bluetooth, video, audio y servidor X (xorg).
-
 
 
 **Instrucciones:**
@@ -25,12 +21,11 @@ Drivers wifi, bluetooth, video, audio y servidor X (xorg).
 9. Ingrese localizacion del idioma ejemplo ``es_MX.UTF-8`` o ``es_AR.UTF-8``
 
 
-
-
 **Canal youtube:**
 https://youtube.com/mxhectorvega
 **Canal telegran:**
 https://t.me/mxhectorvega
+
 
 **Creditos:**
 @mxhectorvega @darch7 @cristoalv @bourne_again
