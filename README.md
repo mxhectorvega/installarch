@@ -1,7 +1,5 @@
 # INSTALLARCH
-
 <img src="https://raw.githubusercontent.com/mxhectorvega/installarch/master/installer1.png" />
-
 **SCRIPT DE INSTALACIÓN EXPRESS ARCHLINUX SIN ENTORNO GRÁFICO**
 
 
