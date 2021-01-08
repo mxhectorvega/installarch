@@ -179,7 +179,7 @@ fi
 echo ""
 echo "Instalando Sistema base"
 echo ""
-pacstrap /mnt base base-devel nano reflector python rsync
+pacstrap /mnt base base-devel reflector python rsync
 clear
 
 echo ""
