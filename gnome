@@ -395,12 +395,12 @@ echo "cd ; git clone https://aur.archlinux.org/yay-bin.git ; cd yay-bin ; makepk
 sed -i "82c %wheel ALL=(ALL) ALL"  /mnt/etc/sudoers
 
 #Crear acceso directo a la terminal 
-arch-chroot /mnt /bin/bash -c "touch /usr/share/applications/st.desktop"
-arch-chroot /mnt /bin/bash -c "echo "[Desktop Entry]" >> /usr/share/applications/st.desktop"
-arch-chroot /mnt /bin/bash -c "echo "Type=Application" >> /usr/share/applications/st.desktop"
-arch-chroot /mnt /bin/bash -c "echo "Icon=Terminal" >> /usr/share/applications/st.desktop"
-arch-chroot /mnt /bin/bash -c "echo "Name=STerminal" >> /usr/share/applications/st.desktop"
-arch-chroot /mnt /bin/bash -c "echo "Exec=st -e" >> /usr/share/applications/st.desktop"
+arch-chroot /mnt /bin/bash -c 'touch /usr/share/applications/st.desktop'
+arch-chroot /mnt /bin/bash -c 'echo "[Desktop Entry]" >> /usr/share/applications/st.desktop'
+arch-chroot /mnt /bin/bash -c 'echo "Type=Application" >> /usr/share/applications/st.desktop'
+arch-chroot /mnt /bin/bash -c 'echo "Icon=Terminal" >> /usr/share/applications/st.desktop'
+arch-chroot /mnt /bin/bash -c 'echo "Name=STerminal" >> /usr/share/applications/st.desktop'
+arch-chroot /mnt /bin/bash -c 'echo "Exec=st -e" >> /a ya lausr/share/applications/st.desktop'
 
 
 # INSTALACION AUTOMATICA DRIVERS DE TARJETA GRAFICA
