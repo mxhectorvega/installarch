@@ -1,0 +1,9 @@
+#!/bin/sh
+
+#Instalar las dependencias al toque para flojos.
+git clone https://github.com/mxhectorvega/st ~/st/ ; sudo make install ; cd ; sudo pacman -S python3 python-pip materia-gtk-theme materia-kde papirus-icon-theme bc tmux imagemagick ueberzug ffmpegthumbnailer feh mpd mpc ncmpcpp slock telegram-desktop htop xarchiver neofetch leafpad ranger pcmanfm lxappearance dunst maim xclip sxiv xdotool calcurse zathura zathura-pdf-mupdf neovim mpv screenkey --noconfirm --needed ; yay -S google-chrome-dev picom-ibhagwan-git --noconfirm --needed ; pip install pywal ; yay -S picom-ibhagwan-git polybar-git --noeditmenu --noconfirm --needed
+clear
+
+echo "Depenencicias instaladas."
+sleep 5
+clear
