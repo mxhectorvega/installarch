@@ -261,6 +261,7 @@ arch-chroot /mnt /bin/bash -c "pacman -Sy curl --noconfirm"
 arch-chroot /mnt /bin/bash -c "ln -sf /usr/share/zoneinfo/$(curl https://ipapi.co/timezone) /etc/localtime"
 
 #OPCIONAL
+keymap="$teclado"
 echo "KEYMAP=es" > /mnt/etc/vconsole.conf 
 cat /mnt/etc/vconsole.conf 
 clear
