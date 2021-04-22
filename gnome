@@ -278,7 +278,7 @@ clear
 #INSTALACION DEL KERNEL
 arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware linux linux-headers mkinitcpio --noconfirm"
 
-arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds gnome-tweaks --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds --noconfirm"
 arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
 
 uefi=$( ls /sys/firmware/efi/ | grep -ic efivars )
@@ -341,7 +341,7 @@ echo "noipv6" >> /mnt/etc/dhcpcd.conf
 arch-chroot /mnt /bin/bash -c "pacman -S iw wireless_tools wpa_supplicant dialog wireless-regdb --noconfirm"
 
 #INSTALACION DE DRIVERS BLUETOOTH
-arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-utils pulseaudio-bluetooth --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S bluez bluez-libs bluez-utils pulseaudio-bluetooth --noconfirm"
 
 #SHELL
 #arch-chroot /mnt /bin/bash -c "pacman -S zsh zsh-completions zsh-syntax-highlighting zsh-autosuggestions --noconfirm"
@@ -362,7 +362,7 @@ arch-chroot /mnt /bin/bash -c "ls -l /home/$user"
 sleep 5
 
 #AUDIO
-arch-chroot /mnt /bin/bash -c "pacman -S pulseaudio pulseaudio-alsa pavucontrol alsa-plugins alsa-utils --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S pulseaudio pulseaudio-alsa alsa-plugins alsa-utils --noconfirm"
 
 #FONTS (TIPOGRAFIAS)
 arch-chroot /mnt /bin/bash -c "pacman -S ttf-dejavu ttf-liberation xorg-fonts-type1 ttf-bitstream-vera gnu-free-fonts ttf-hack ttf-inconsolata --noconfirm"
