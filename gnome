@@ -405,10 +405,10 @@ case $(systemd-detect-virt) in
             grafica="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
         ;;
         qemu)
-            grafica="spice-vdagent xf86-video-qxl mesa mesa-libgl qemu-guest-agent"
+            grafica="spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
         ;;
         kvm)
-            grafica="spice-vdagent xf86-video-qxl mesa mesa-libgl qemu-guest-agent"
+            grafica="spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
         ;;
         microsoft)
             grafica="xf86-video-fbdev mesa-libgl"
