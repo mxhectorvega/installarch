@@ -30,7 +30,9 @@ clear
 
 #DECLARAR USUARIOS Y CONTRASEÑAS EN MODO CLEAN PARA NO FALLAR
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' _
-echo "print devices" | parted | grep /dev/ | awk '{if (NR!=1) {print}}'
+echo "Discos Disponibles :"
+echo ""
+echo "print devices" | parted | grep /dev/ | awk '{if (NR!=1) {print}}' | sed '/sr/d'
 echo ''
 read -p "Introduce tu disco a instalar Arch: " disco
 echo ""
@@ -278,7 +280,7 @@ clear
 #INSTALACION DEL KERNEL
 arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware linux linux-headers mkinitcpio --noconfirm"
 
-arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center gnome-backgrounds --noconfirm"
+arch-chroot /mnt /bin/bash -c "pacman -S gnome-shell gdm gnome-control-center --noconfirm"
 arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
 
 uefi=$( ls /sys/firmware/efi/ | grep -ic efivars )
@@ -403,10 +405,10 @@ case $(systemd-detect-virt) in
             grafica="xf86-video-vmware xf86-input-vmmouse open-vm-tools net-tools gtkmm mesa mesa-libgl"
         ;;
         qemu)
-            grafica="spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
+            grafica="spice-vdagent xf86-video-qxl mesa mesa-libgl qemu-guest-agent"
         ;;
         kvm)
-            grafica="spice-vdagent xf86-video-fbdev mesa mesa-libgl qemu-guest-agent"
+            grafica="spice-vdagent xf86-video-qxl mesa mesa-libgl qemu-guest-agent"
         ;;
         microsoft)
             grafica="xf86-video-fbdev mesa-libgl"
@@ -443,6 +445,6 @@ umount -R /mnt
 swapoff -a
       clear
       echo ""
-      echo "                                   S u s c r i b e t e :  y o u t u b e . c o m / m x h e c t o r v e g a"
+      echo "                                                     y o u t u b e . c o m / m x h e c t o r v e g a"
       sleep 7
 reboot
