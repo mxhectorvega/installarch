@@ -100,11 +100,11 @@ then
 	echo ""
 	echo "Formateando Particiones"
 	echo ""
-	mkfs.ext4 $(cat root-efi) 
+	mkfs.btrfs -f -L "root" -n 32k $(cat root-efi) 
 	mount $(cat root-efi) /mnt 
 
 	mkdir -p /mnt/home
-	mkfs.ext4 $(cat home-efi) 
+	mkfs.btrfs -f -L "root" -n 32k $(cat home-efi) 
 	mount $(cat home-efi) /mnt/home
 
 	mkdir -p /mnt/efi 
@@ -159,11 +159,11 @@ else
 	echo ""
 	echo "Formateando Particiones"
 	echo ""
-	mkfs.ext4 $(cat root-bios) 
+	mkfs.btrfs -f -L "root" -n 32k $(cat root-bios) 
 	mount $(cat root-bios) /mnt 
 
 	mkdir -p /mnt/boot
-	mkfs.ext4 $(cat boot-bios) 
+	mkfs.btrfs -f -L "root" -n 32k $(cat boot-bios) 
 	mount $(cat boot-bios) /mnt/boot
 
 	mkswap $(cat swap-bios) 
