@@ -1,7 +1,0 @@
-#!/bin/sh
-
-
-#Es lo mismo que instalarlo a mano pero sin escibirlo todo xD.
-git clone https://aur.archlinux.org/yay.git ; cd yay ; makepkg -si ; cd ~ ; rm -rf yay
-
-clear
