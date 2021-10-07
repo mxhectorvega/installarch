@@ -1,0 +1,34 @@
+#!/bin/bash 
+
+clear
+echo -e "Clonando dotfiles..."
+sleep 1
+rm -rf ~/.zshrc
+rm -rf ~/.p10k.zsh
+mkdir ~/.local/bin
+mkdir ~/.local/share/fonts
+git clone https://github.com/mxhectorvega/dotfilesarchlinux /tmp/dots
+git clone https://github.com/mxhectorvega/tipografias /tmp/fonts
+cp -R /tmp/dots/.config/* ~/.config
+cp -R /tmp/fonts/* ~/.local/share/fonts/
+cp /tmp/dots/.zshrc ~/.zshrc
+cp /tmp/dots/.p10k.zsh ~/.p10k.zsh
+git clone https://github.com/ekistece/GetExtensions.git
+
+clear
+echo -e "Ahora escribe contraseña para cambiar de Shell a ZSH"
+chsh -s /bin/zsh
+
+clear
+echo -e "Ahora escribe contraseña para instalar el Gestor de extenciones Gnome"
+sudo pacman -S python-pip --noconfirm --needed
+pip install ./GetExtensions --user
+rm -rf ~/GetExtensions
+
+clear
+echo -e "Configs ZSH, Ranger, Kitty y Neovim cargadas!"
+sleep 1
+echo ""
+echo -e "Contribuye en paypal.me/hivz"
+sleep 3
+pkill -9 kitty
