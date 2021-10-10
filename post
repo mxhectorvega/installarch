@@ -5,13 +5,13 @@ echo ""
 echo "" 
 echo "Configurando gestor de paquetes Pacman..." 
 sleep 2 
-sed -i "s/#Color/Color/" /etc/pacman.conf 
-sed -i "s/#TotalDownload/TotalDownload/" /etc/pacman.conf 
-sed -i "s/#VerbosePkgLists/VerbosePkgLists/" /etc/pacman.conf 
-sed -i "37i ILoveCandy" /etc/pacman.conf 
-sed -i "s/#[multilib]/[multilib]/" /etc/pacman.conf 
-sed -i "s/#ParallelDownloads/ParallelDownloads = 5/" /etc/pacman.conf
-sed -i "s/#Include = /etc/pacman.d/mirrorlist/Include = /etc/pacman.d/mirrorlist/" /etc/pacman.conf
+#sed -i "s/#Color/Color/" /etc/pacman.conf 
+#sed -i "s/#TotalDownload/TotalDownload/" /etc/pacman.conf 
+#sed -i "s/#VerbosePkgLists/VerbosePkgLists/" /etc/pacman.conf 
+#sed -i "37i ILoveCandy" /etc/pacman.conf 
+#sed -i "s/#[multilib]/[multilib]/" /etc/pacman.conf 
+sed -i "s/#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
+#sed -i "s/#Include = /etc/pacman.d/mirrorlist/Include = /etc/pacman.d/mirrorlist/" /etc/pacman.conf
   
 clear 
 echo "" 
@@ -24,23 +24,12 @@ cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -s
 clear
 echo "" 
 echo "" 
-echo -e "Aplicando configuraciones personales..."
+echo -e "Copiando prompt, fuentes, scripts y configuraciones..."
 sleep 2 
-rm -rf ~/.bashrc
+sudo rm -rf ~/.bashrc
 mkdir ~/.local/bin
 mkdir ~/.local/share/fonts
 git clone https://github.com/mxhectorvega/dotfilesarchlinux /tmp/dots
 cp -R /tmp/dots/.config/* ~/.config
 cp -R /tmp/dots/.local/bin/* ~/.local/bin
 cp -R /tmp/dots/.local/share/fonts/* ~/.local/share/fonts
-cp /tmp/dots/temas.zip ~/
-
-clear
-echo "" 
-echo "" 
-echo -e "Escribe contraseña para instalar el Gestor de extenciones Gnome"
-sleep 2 
-sudo pacman -S python-pip --noconfirm --needed
-git clone https://github.com/ekistece/GetExtensions.git
-pip install ./GetExtensions --user
-rm -rf ~/GetExtensions
