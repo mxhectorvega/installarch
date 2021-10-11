@@ -9,14 +9,13 @@ echo "\
 
 Configurando gestor de paquetes Pacman..." 
 sleep 1
-sudo tee -a /etc/pacman.conf <<EOF
-[multilib]
-Include = /etc/pacman.d/mirrorlist
-ILoveCandy
-Color
-VerbosePkgLists
-ParallelDownloads = 5
-EOF
+sudo sed -i "s/#Color/Color/g" /etc/pacman.conf 
+sudo sed -i "s/#TotalDownload/TotalDownload/g" /etc/pacman.conf 
+sudo sed -i "s/#VerbosePkgLists/VerbosePkgLists/g" /etc/pacman.conf 
+sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
+sudo sed -i "38i ILoveCandy" /etc/pacman.conf 
+sudo sed -i "s/#[multilib]/[multilib]/g" /etc/pacman.conf 
+sudo sed -i "s/#Include = /etc/pacman.d/mirrorlist /Include = /etc/pacman.d/mirrorlist/g" /etc/pacman.conf
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Paquetes adicionales
@@ -27,7 +26,7 @@ echo "\
 
 Instalando paquetes adicionales..."
 sleep 1
-sudo pacman -S git neofetch firefox telegram-desktop geany htop bbpytop ranger neovim cowsay lolcat figlet gcc make xdg-user-dirs gvfs thunar-volman network-manager-applet --noconfirm --needed
+sudo pacman -S file-roller git vlc neofetch firefox telegram-desktop geany htop bpytop ranger neovim cowsay lolcat figlet gcc make xdg-user-dirs gvfs thunar-volman network-manager-applet --noconfirm --needed
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Paru AUR helper
@@ -56,6 +55,7 @@ mkdir ~/.local/share/fonts
 cp -R /tmp/dots/.config/* ~/.config
 cp -R /tmp/dots/.local/bin/* ~/.local/bin
 cp -R /tmp/dots/.local/share/fonts/* ~/.local/share/fonts
+cp /tmp/dots/.bashrc ~/.bashrc
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
@@ -83,8 +83,11 @@ LC_MEASUREMENT="es_MX.UTF-8"
 LC_IDENTIFICATION="es_MX.UTF-8"
 LC_ALL=
 EOF
+sudo tee /etc/locale.gen <<EOF
+es_MX.UTF-8 UTF-8
+EOF
 sudo localectl set-locale LANG=es_MX.UTF-8
-locale-gen
+sudo locale-gen
 xdg-user-dirs-update --force
 sudo timedatectl set-timezone America/Mexico_City
 sudo timedatectl set-ntp yes
