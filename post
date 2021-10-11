@@ -86,6 +86,8 @@ EOF
 sudo localectl set-locale LANG=es_MX.UTF-8
 locale-gen
 xdg-user-dirs-update --force
+sudo timedatectl set-timezone America/Mexico_City
+sudo timedatectl set-ntp yes
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Creando Zram
