@@ -1,35 +1,145 @@
 #!/bin/bash 
 
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Pacman configuraciones
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
-echo "" 
-echo "" 
-echo "Configurando gestor de paquetes Pacman..." 
-sleep 2 
-#sed -i "s/#Color/Color/" /etc/pacman.conf 
-#sed -i "s/#TotalDownload/TotalDownload/" /etc/pacman.conf 
-#sed -i "s/#VerbosePkgLists/VerbosePkgLists/" /etc/pacman.conf 
-#sed -i "37i ILoveCandy" /etc/pacman.conf 
-#sed -i "s/#[multilib]/[multilib]/" /etc/pacman.conf 
-sed -i "s/#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
-#sed -i "s/#Include = /etc/pacman.d/mirrorlist/Include = /etc/pacman.d/mirrorlist/" /etc/pacman.conf
-  
-clear 
-echo "" 
-echo "" 
-echo "Instalando el gestor de paquetes Paru..." 
-sleep 2 
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-# sed -i "82c %wheel ALL=(ALL) ALL"  /mnt/etc/sudoers
+echo "\
 
+
+Configurando gestor de paquetes Pacman..." 
+sleep 1
+sudo tee -a /etc/pacman.conf <<EOF
+[multilib]
+Include = /etc/pacman.d/mirrorlist
+ILoveCandy
+Color
+VerbosePkgLists
+ParallelDownloads = 5
+EOF
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Paquetes adicionales
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear
-echo "" 
-echo "" 
-echo -e "Copiando prompt, fuentes, scripts y configuraciones..."
-sleep 2 
+echo "\
+ 
+
+Instalando paquetes adicionales..."
+sleep 1
+sudo pacman -S git neofetch firefox telegram-desktop geany htop bbpytop ranger neovim cowsay lolcat figlet gcc make xdg-user-dirs gvfs thunar-volman network-manager-applet --noconfirm --needed
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Paru AUR helper
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+clear 
+echo "\
+
+
+Instalando el gestor de paquetes Paru..." 
+sleep 1
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Dotfiles
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+clear
+echo "\
+ 
+
+Copiando prompt, fuentes, scripts y configuraciones..."
+sleep 1
+git clone https://github.com/mxhectorvega/dotfilesarchlinux /tmp/dots
 sudo rm -rf ~/.bashrc
 mkdir ~/.local/bin
 mkdir ~/.local/share/fonts
-git clone https://github.com/mxhectorvega/dotfilesarchlinux /tmp/dots
 cp -R /tmp/dots/.config/* ~/.config
 cp -R /tmp/dots/.local/bin/* ~/.local/bin
 cp -R /tmp/dots/.local/share/fonts/* ~/.local/share/fonts
+sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Todo el SO en español
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+clear 
+echo "\
+
+
+Estableciendo español como idioma predeterminado..." 
+sleep 1
+sudo tee /etc/locale.conf <<EOF
+LANG="es_MX.UTF-8"
+LC_CTYPE="es_MX.UTF-8"
+LC_NUMERIC="es_MX.UTF-8"
+LC_TIME="es_MX.UTF-8"
+LC_COLLATE="es_MX.UTF-8"
+LC_MONETARY="es_MX.UTF-8"
+LC_MESSAGES="es_MX.UTF-8"
+LC_PAPER="es_MX.UTF-8"
+LC_NAME="es_MX.UTF-8"
+LC_ADDRESS="es_MX.UTF-8"
+LC_TELEPHONE="es_MX.UTF-8"
+LC_MEASUREMENT="es_MX.UTF-8"
+LC_IDENTIFICATION="es_MX.UTF-8"
+LC_ALL=
+EOF
+sudo localectl set-locale LANG=es_MX.UTF-8
+locale-gen
+xdg-user-dirs-update --force
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Creando Zram
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+clear 
+echo "\
+
+
+Creando y configurando Zram..." 
+sleep 1
+sudo tee /etc/modules-load.d/zram.conf <<EOF
+zram
+EOF
+sudo tee /etc/udev/rules.d/99-zram.rules <<'EOF'
+KERNEL=="zram0", ATTR{initstate}=="0", ATTR{comp_algorithm}="lz4", ATTR{disksize}="3G", RUN="/sbin/mkswap $env{DEVNAME}", TAG+="systemd"
+EOF
+sudo tee -a /etc/fstab <<EOF
+
+# ZRAM device
+/dev/zram0 none swap defaults 0 0
+EOF
+sudo tee -a /etc/sysctl.d/99-sysctl.conf <<EOF
+# 128 MB of data before starting asynchronous writes
+vm.dirty_background_bytes = 134217728
+# use a maximum of 50% of RAM for caching before starting synchronous writes
+vm.dirty_ratio = 50
+# expire after 15 seconds
+vm.dirty_expire_centisecs = 1500
+# check expiration every 15 seconds
+vm.dirty_writeback_centisecs = 1500
+# disable nmi wactchdog (not really fs related)
+kernel.nmi_watchdog = 0
+EOF
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Creando archivo SWAP
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+clear 
+echo "\
+
+
+Creando archivo SWAP..." 
+sleep 1
+sudo btrfs su cr /swap
+sudo chmod 700 /swap
+sudo truncate -s 0 /swap/swapfile
+sudo chattr +C /swap/swapfile
+sudo btrfs property set /swap/swapfile compression none
+sudo fallocate -l 3G /swap/swapfile
+sudo chmod 600 /swap/swapfile
+sudo mkswap /swap/swapfile
+sudo swapon /swap/swapfile
+sudo tee -a /etc/fstab <<EOF
+
+# SWAP device
+/swap/swapfile none swap defaults 0 0
+EOF
