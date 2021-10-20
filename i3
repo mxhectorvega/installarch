@@ -161,4 +161,4 @@ clear
 echo "" 
 echo "Instalando pipewire audio..." 
 sleep 1 
-pacman -S pipewire gst-plugin-pipewire pipewire-alsa pipewire-jack pipewire-media-session pipewire-zeroconf --noconfirm
+sudo pacman -S pipewire gst-plugin-pipewire pipewire-alsa pipewire-jack pipewire-media-session pipewire-zeroconf --noconfirm
