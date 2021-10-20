@@ -26,7 +26,7 @@ echo "\
 
 Instalando paquetes adicionales..."
 sleep 1
-sudo pacman -S sxiv mupdf zathura feh dmenu lightdm i3 i3blocks kitty file-roller git vlc neofetch firefox telegram-desktop geany htop bpytop ranger neovim cowsay lolcat figlet gcc make xdg-user-dirs gvfs thunar-volman network-manager-applet --noconfirm --needed
+sudo pacman -S python-pillow sxiv mupdf zathura feh dmenu lightdm i3 i3blocks kitty file-roller git vlc neofetch firefox telegram-desktop geany htop bpytop ranger neovim cowsay lolcat figlet gcc make xdg-user-dirs gvfs thunar-volman network-manager-applet --noconfirm --needed
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
 # sudo systemctl enable lightdm
 
@@ -153,3 +153,12 @@ sudo tee -a /etc/fstab <<EOF
 # SWAP device
 /swap/swapfile none swap defaults 0 0
 EOF
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Instalación de pipewire 
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+clear 
+echo "" 
+echo "Instalando pipewire audio..." 
+sleep 1 
+pacman -S pipewire gst-plugin-pipewire pipewire-alsa pipewire-jack pipewire-media-session pipewire-zeroconf --noconfirm
