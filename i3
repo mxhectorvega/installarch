@@ -28,7 +28,7 @@ Instalando paquetes adicionales..."
 sleep 1
 sudo pacman -S sxiv mupdf zathura feh dmenu lightdm i3 i3blocks kitty file-roller git vlc neofetch firefox telegram-desktop geany htop bpytop ranger neovim cowsay lolcat figlet gcc make xdg-user-dirs gvfs thunar-volman network-manager-applet --noconfirm --needed
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
-sudo systemctl enable lightdm
+# sudo systemctl enable lightdm
 
 sudo pacman -S xsetroot --noconfirm --needed
 sudo pacman -S xrdb --noconfirm --needed
