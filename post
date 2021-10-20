@@ -27,6 +27,7 @@ echo "\
 Instalando paquetes adicionales..."
 sleep 1
 sudo pacman -S sxiv mupdf zathura feh dmenu lightdm i3 i3blocks kitty file-roller git vlc neofetch firefox telegram-desktop geany htop bpytop ranger neovim cowsay lolcat figlet gcc make xdg-user-dirs gvfs thunar-volman network-manager-applet --noconfirm --needed
+sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
 sudo systemctl enable lightdm
 
 sudo pacman -S xsetroot --noconfirm --needed
@@ -61,7 +62,6 @@ cp -R /tmp/dots/.config/* ~/.config
 cp -R /tmp/dots/.local/bin/* ~/.local/bin
 cp -R /tmp/dots/.local/share/fonts/* ~/.local/share/fonts
 cp /tmp/dots/.bashrc ~/.bashrc
-sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Todo el SO en español
