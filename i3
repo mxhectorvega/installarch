@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Pacman configuraciones
@@ -20,7 +20,7 @@ sudo sed -i "s/#Include = /etc/pacman.d/mirrorlist /Include = /etc/pacman.d/mirr
 clear
 printf '\n \nInstalando paquetes adicionales...\n'
 sleep 1
-sudo pacman -S sxiv mupdf zathura feh i3blocks file-roller git mpv neofetch firefox telegram-desktop mousepad htop bpytop ranger nano gcc make xdg-user-dirs gvfs thunar thunar-volman  lxappearance nmtui --noconfirm --needed
+sudo pacman -S sxiv mupdf zathura feh i3blocks file-roller git mpv neofetch firefox telegram-desktop mousepad htop bpytop ranger nano gcc make xdg-user-dirs gvfs thunar thunar-volman lxappearance nmtui tumbler ffmpegthumbnailer --noconfirm --needed
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
