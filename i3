@@ -4,10 +4,7 @@
 # Pacman configuraciones
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
-echo "\
-
-
-Configurando gestor de paquetes Pacman..." 
+printf '\n \nConfigurando gestor de paquetes Pacman...\n'
 sleep 1
 sudo sed -i "s/#Color/Color/g" /etc/pacman.conf 
 sudo sed -i "s/#TotalDownload/TotalDownload/g" /etc/pacman.conf 
@@ -21,32 +18,21 @@ sudo sed -i "s/#Include = /etc/pacman.d/mirrorlist /Include = /etc/pacman.d/mirr
 # Paquetes adicionales
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear
-echo "\
- 
-
-Instalando paquetes adicionales..."
+printf '\n \nInstalando paquetes adicionales...\n'
 sleep 1
-sudo pacman -S python-pillow sxiv mupdf zathura feh dmenu lightdm i3 i3blocks kitty file-roller git vlc neofetch firefox telegram-desktop geany htop bpytop ranger neovim cowsay lolcat figlet gcc make xdg-user-dirs gvfs thunar-volman network-manager-applet --noconfirm --needed
+sudo pacman -S sxiv mupdf zathura feh i3blocks file-roller git mpv neofetch firefox telegram-desktop mousepad htop bpytop ranger nano gcc make xdg-user-dirs gvfs thunar thunar-volman  lxappearance nmtui --noconfirm --needed
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
-# sudo systemctl enable lightdm
-
-sudo pacman -S xsetroot --noconfirm --needed
-sudo pacman -S xrdb --noconfirm --needed
-sudo pacman -S xprop --noconfirm --needed
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Paru AUR helper
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
-echo "\
-
-
-Instalando el gestor de paquetes Paru..." 
+printf '\n \nnstalando el gestor de paquetes Paru...\n'
 sleep 1
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Dotfiles
+# Dotfiles Fedora en Arch
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear
 printf '\n \nEscribe la contraseña para reemplazar archivo .bashrc...\n'
@@ -67,10 +53,7 @@ cp -rp /tmp/tipografias/.* "$HOME"/.local/share/fonts
 # Todo el SO en español
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
-echo "\
-
-
-Estableciendo español como idioma predeterminado..." 
+printf '\n \nEstableciendo español como idioma predeterminado...\n'
 sleep 1
 sudo tee /etc/locale.conf <<EOF
 LANG="es_MX.UTF-8"
@@ -98,46 +81,10 @@ sudo timedatectl set-timezone America/Mexico_City
 sudo timedatectl set-ntp yes
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Creando Zram
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "\
-
-
-Creando y configurando Zram..." 
-sleep 1
-sudo tee /etc/modules-load.d/zram.conf <<EOF
-zram
-EOF
-sudo tee /etc/udev/rules.d/99-zram.rules <<'EOF'
-KERNEL=="zram0", ATTR{initstate}=="0", ATTR{comp_algorithm}="lz4", ATTR{disksize}="3G", RUN="/sbin/mkswap $env{DEVNAME}", TAG+="systemd"
-EOF
-sudo tee -a /etc/fstab <<EOF
-
-# ZRAM device
-#/dev/zram0 none swap defaults 0 0
-OF
-sudo tee -a /etc/sysctl.d/99-sysctl.conf <<EOF
-# 128 MB of data before starting asynchronous writes
-vm.dirty_background_bytes = 134217728
-# use a maximum of 50% of RAM for caching before starting synchronous writes
-vm.dirty_ratio = 50
-# expire after 15 seconds
-vm.dirty_expire_centisecs = 1500
-# check expiration every 15 seconds
-vm.dirty_writeback_centisecs = 1500
-# disable nmi wactchdog (not really fs related)
-kernel.nmi_watchdog = 0
-EOF
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Creando archivo SWAP
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
-echo "\
-
-
-Creando archivo SWAP..." 
+printf '\n \nreando archivo SWAP...\n'
 sleep 1
 sudo btrfs su cr /swap
 sudo chmod 700 /swap
@@ -153,12 +100,3 @@ sudo tee -a /etc/fstab <<EOF
 # SWAP device
 /swap/swapfile none swap defaults 0 0
 EOF
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de pipewire 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando pipewire audio..." 
-sleep 1 
-sudo pacman -S pipewire gst-plugin-pipewire pipewire-alsa pipewire-jack pipewire-media-session pipewire-zeroconf --noconfirm
