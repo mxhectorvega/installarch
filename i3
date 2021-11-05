@@ -1,8 +1,14 @@
 #!/bin/bash
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+# Postinstall i3wm en ArchLinux
+# Autor:
+# Hector Ivan Vega Zamudio
+# mxhectorvega@gmail.com
+# https://github.com/mxhectorvega
+# Version:
+# v1.5: 21/09/2021 - Configuracion para una instalacion limpia con archinstall ejecutado desde el LiveUSB.
+
 # Pacman configuraciones
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
 printf '\n \nConfigurando gestor de paquetes Pacman...\n'
 sleep 1
@@ -14,26 +20,20 @@ sudo sed -i "38i ILoveCandy" /etc/pacman.conf
 sudo sed -i "s/#[multilib]/[multilib]/g" /etc/pacman.conf 
 sudo sed -i "s/#Include = /etc/pacman.d/mirrorlist /Include = /etc/pacman.d/mirrorlist/g" /etc/pacman.conf
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Paquetes adicionales
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear
 printf '\n \nInstalando paquetes adicionales...\n'
 sleep 1
-sudo pacman -S sxiv mupdf zathura feh i3blocks file-roller git mpv neofetch firefox telegram-desktop mousepad htop bpytop ranger nano gcc make xdg-user-dirs gvfs thunar thunar-volman lxappearance nmtui tumbler ffmpegthumbnailer --noconfirm --needed
-sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database noto-fonts-emoji --noconfirm
+sudo pacman -S sxiv mupdf zathura feh i3blocks file-roller git mpv neofetch firefox telegram-desktop mousepad htop bpytop ranger nano gcc make xdg-user-dirs gvfs thunar thunar-volman lxappearance tumbler ffmpegthumbnailer --noconfirm --needed
+sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database --noconfirm
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Paru AUR helper
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
 printf '\n \nnstalando el gestor de paquetes Paru...\n'
 sleep 1
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Dotfiles Fedora en Arch
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear
 printf '\n \nEscribe la contraseña para reemplazar archivo .bashrc...\n'
 mkdir "$HOME"/.local/bin
@@ -49,9 +49,7 @@ git clone https://github.com/mxhectorvega/tipografias  /tmp/tipografias
 cp -rp /tmp/i3-fedora/.* "$HOME"
 cp -rp /tmp/tipografias/.* "$HOME"/.local/share/fonts
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Todo el SO en español
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
 printf '\n \nEstableciendo español como idioma predeterminado...\n'
 sleep 1
@@ -80,9 +78,7 @@ xdg-user-dirs-update --force
 sudo timedatectl set-timezone America/Mexico_City
 sudo timedatectl set-ntp yes
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Creando archivo SWAP
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
 printf '\n \nreando archivo SWAP...\n'
 sleep 1
