@@ -24,7 +24,7 @@ sudo sed -i "s/#Include = /etc/pacman.d/mirrorlist /Include = /etc/pacman.d/mirr
 clear
 printf '\n \nInstalando paquetes adicionales...\n'
 sleep 1
-sudo pacman -S sxiv mupdf zathura feh i3blocks file-roller git mpv neofetch firefox telegram-desktop mousepad htop bpytop ranger nano gcc make xdg-user-dirs gvfs thunar thunar-volman lxappearance tumbler ffmpegthumbnailer --noconfirm --needed
+sudo pacman -S sxiv mupdf zathura feh file-roller git mpv picom neofetch firefox telegram-desktop mousepad htop bpytop ranger nano gcc make xdg-user-dirs gvfs thunar thunar-volman lxappearance tumbler ffmpegthumbnailer --noconfirm --needed
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} wqy-microhei bdf-unifont unicode-character-database --noconfirm
 
 # Paru AUR helper
@@ -79,20 +79,20 @@ sudo timedatectl set-timezone America/Mexico_City
 sudo timedatectl set-ntp yes
 
 # Creando archivo SWAP
-clear 
-printf '\n \nreando archivo SWAP...\n'
-sleep 1
-sudo btrfs su cr /swap
-sudo chmod 700 /swap
-sudo truncate -s 0 /swap/swapfile
-sudo chattr +C /swap/swapfile
-sudo btrfs property set /swap/swapfile compression none
-sudo fallocate -l 3G /swap/swapfile
-sudo chmod 600 /swap/swapfile
-sudo mkswap /swap/swapfile
-sudo swapon /swap/swapfile
-sudo tee -a /etc/fstab <<EOF
+#clear 
+#printf '\n \nreando archivo SWAP...\n'
+#sleep 1
+#sudo btrfs su cr /swap
+#sudo chmod 700 /swap
+#sudo truncate -s 0 /swap/swapfile
+#sudo chattr +C /swap/swapfile
+#sudo btrfs property set /swap/swapfile compression none
+#sudo fallocate -l 4G /swap/swapfile
+#sudo chmod 600 /swap/swapfile
+#sudo mkswap /swap/swapfile
+#sudo swapon /swap/swapfile
+#sudo tee -a /etc/fstab <<EOF
 
 # SWAP device
-/swap/swapfile none swap defaults 0 0
-EOF
+#/swap/swapfile none swap defaults 0 0
+#EOF
