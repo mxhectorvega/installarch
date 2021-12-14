@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+
+# Post-install para Sway en Archlinux
+# Autor:
+# Hector Ivan Vega Zamudio
+# mxhectorvega@gmail.com
+# https://github.com/mxhectorvega
+# Version:
+# v2.0: 20/11/2021 - Configuracion para una instalacion limpia con archinstall ejecutado desde el LiveUSB.
+
+# Pacman configuraciones
+clear 
+printf '\n \nConfigurando gestor de paquetes Pacman...\n'
+sleep 1
+sudo sed -i "s/#Color/Color/g" /etc/pacman.conf 
+sudo sed -i "s/#TotalDownload/TotalDownload/g" /etc/pacman.conf 
+sudo sed -i "s/#VerbosePkgLists/VerbosePkgLists/g" /etc/pacman.conf 
+sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
+sudo sed -i "38i ILoveCandy" /etc/pacman.conf 
+sudo sed -i "s/#[multilib]/[multilib]/g" /etc/pacman.conf 
+sudo sed -i "s/#Include = /etc/pacman.d/mirrorlist /Include = /etc/pacman.d/mirrorlist/g" /etc/pacman.conf
+
+# Paquetes adicionales
+clear
+printf '\n \nInstalando paquetes adicionales...\n'
+sleep 1
+
+# Actualizacion del SO
+sudo pacman -Syu --noconfirm
+
+# Software adicional
+sudo pacman -S blueberry network-manager-applet pacman-contrib gnome-disk-utility blueberry kitty transmission-gtk vim python-pillowfight imagemagick man bc polkit-gnome lxappearance telegram-desktop firefox cmus playerctl git imv mpv zathura-pdf-mupdf neofetch geany htop bpytop ranger gcc make xdg-user-dirs gvfs --noconfirm --needed
+
+# SwayWM
+#sudo pacman -S xorg-xwayland sway kanshi swaylock swayidle wofi mako waybar alacritty grim slurp wl-clipboard wf-recorder #gammastep swappy light v4l2loopback-dkms --noconfirm --needed
+sudo pacman -S gnome-control-center gnome-tweaks gnome-shell --noconfirm
+
+# Pipewire utilities
+sudo pacman -S alsa-utils pipewire-alsa pipewire-pulse bluez bluez-utils pavucontrol --noconfirm --needed
+
+# Thunar extras
+sudo pacman -S thunar thunar-archive-plugin thunar-volman thunar-archive-plugin tumbler ffmpegthumbnailer xarchiver zip unzip unrar unarj p7zip lzop lzip lrzip lha cpio arj --noconfirm --needed
+
+# Fuentes basicas
+sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei bdf-unifont unicode-character-database --noconfirm --needed
+
+# Display manager (pantalla de inicio de sesion)
+sudo pacman -S lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings --noconfirm
+
+# Desinstalar terminal y menu obsoletos
+sudo pacman -Rs alacritty dmenu --noconfirm
+
+# Paru AUR helper
+clear 
+printf '\n \nInstalando el gestor de paquetes Paru...\n'
+sleep 1
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+
+# Dotfiles Fedora en Arch
+clear
+printf '\n \nEscribe la contraseña para reemplazar archivo .bashrc...\n'
+mkdir "$HOME"/.config
+mkdir "$HOME"/.local
+mkdir "$HOME"/.local/bin
+mkdir "$HOME"/.local/share
+mkdir "$HOME"/.local/share/fonts
+sudo rm -rf "$HOME"/.bashrc
+
+clear
+printf '\n \nClonando repositorios mxhectorvega...\n'
+sleep 1
+git clone https://github.com/mxhectorvega/sway-arch /tmp/sway-arch
+git clone https://github.com/mxhectorvega/tipografias  /tmp/tipografias
+git clone https://github.com/mxhectorvega/zram-arch /tmp/zram-arch
+git clone https://github.com/mxhectorvega/temas /tmp/temas
+cp -rp /tmp/temas/.* "$HOME"
+cp -rp /tmp/sway-arch/.* "$HOME"
+cp -rp /tmp/tipografias/.* "$HOME"/.local/share/fonts
+sudo cp /tmp/zram-arch/zram-config-on /usr/local/bin/
+sudo cp /tmp/zram-arch/zram-config-off /usr/local/bin/
+sudo cp /tmp/zram-arch/zram-config.service /etc/systemd/system/
+sudo chmod +x /usr/local/bin/zram-config-on
+sudo chmod +x /usr/local/bin/zram-config-off
+sudo systemctl enable --now zram-config
+sudo systemctl enable lightdm
+sudo systemctl enable bluetooth.service                                                     
+sudo systemctl start bluetooth.service
+
+# Todo el SO en español
+clear 
+printf '\n \nEstableciendo español como idioma predeterminado...\n'
+sleep 1
+sudo tee /etc/locale.conf <<EOF
+LANG="es_MX.UTF-8"
+LC_CTYPE="es_MX.UTF-8"
+LC_NUMERIC="es_MX.UTF-8"
+LC_TIME="es_MX.UTF-8"
+LC_COLLATE="es_MX.UTF-8"
+LC_MONETARY="es_MX.UTF-8"
+LC_MESSAGES="es_MX.UTF-8"
+LC_PAPER="es_MX.UTF-8"
+LC_NAME="es_MX.UTF-8"
+LC_ADDRESS="es_MX.UTF-8"
+LC_TELEPHONE="es_MX.UTF-8"
+LC_MEASUREMENT="es_MX.UTF-8"
+LC_IDENTIFICATION="es_MX.UTF-8"
+LC_ALL=
+EOF
+sudo tee /etc/locale.gen <<EOF
+es_MX.UTF-8 UTF-8
+EOF
+sudo localectl set-locale LANG=es_MX.UTF-8
+sudo locale-gen
+sudo timedatectl set-timezone America/Mexico_City
+sudo timedatectl set-ntp yes
+
+# Otorgando permisos para cambiar brillo de pantalla
+clear
+printf '\n \nOtorgando permisos al gestor de brillo'
+sleep 1
+sudo chmod +s /usr/bin/light
+
+# Gestor de portapapeles (paquete unicamente disponible en AUR)
+clear
+printf '\n \nInstalando gestor de portapapeles para Wayland desde AUR'
+sleep 1
+paru -S cliphist --noconfirm
+
+# Creando directorios de usuario
+clear
+printf '\n \nCreando directorios de usuario...\n'
+xdg-user-dirs-update --force
+sleep 2
+
+# Cambiando de fuente y wallpaper ligthDM
+sudo cp $HOME/.config/wall.* /usr/share/backgrounds/wall.jpg
+sudo tee /etc/lightdm/lightdm-gtk-greeter.conf <<EOF
+[greeter]
+background=/usr/share/backgrounds/wall.jpg
+theme-name=Orchis-dark-compact
+icon-theme-name=Papirus-Dark
+font-name=Terminus 9
+xft-antialias=true
+xft-dpi=96
+xft-hintstyle=hintslight
+xft-rgba=rgb
+indicators=~spacer;~clock;~spacer;separator;~session;~a11y;~power;
+clock-format=%a, %b %d, %H:%M
+EOF
+
+clear
+printf '\n \nConfiguraciones aplicadas!'
+sleep 1
+printf '\n \nConsulte los atajos del teclado en el archivo ~/.config/sway/config'
+sleep 1
+printf '\n \nCambie el tema desde Xlappearance y en la config de Sway.'
+sleep 1
+printf '\n \nReemplace el fondo de escritorio en .config/wall.*'
+sleep 1
+printf '\n \nContribuye paypal.me/hivz'
+sleep 1
+printf '\n \n'
+
+# En caso de que usted use maquina virtual o tenga un computador que genere problemas, 
+# debe instalar estos 2 paquetes:
+#paru -S sway-git wlroots
