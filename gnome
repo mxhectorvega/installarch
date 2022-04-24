@@ -1,841 +1,183 @@
-#!/bin/bash 
+#!/usr/bin/env bash
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Establecer tipografía para la instalación  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-setfont Lat2-Terminus16 
-clear 
-sleep 1 
-echo "" 
-echo "Cambiando tipografía a Lat2-Terminus16" 
-sleep 2 
+## Post-install para GNOME en Archlinux
+## Autor:
+## Hector Ivan Vega Zamudio
+## mxhectorvega@gmail.com
+## https://github.com/mxhectorvega
+## Version:
+## v0.1.2: 24/04/2022
+## Configuracion para una instalacion limpia de archinstall ejecutado desde el LiveUSB usando perfil XORG
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Texto inicial 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear
-echo "" 
-echo "" 
-echo -e " ________________            "
-echo -e "< paypal.me/hivz >           "
-echo -e " ----------------            "
-echo -e "        \   ^__^             "
-echo -e "         \  (xx)\_______     "
-echo -e "            (__)\       )\/\ "
-echo -e "             U  ||----w |    "
-echo -e "                ||     ||    "
-sleep 3 
-echo -e "" 
-echo -e "" 
-echo -e "" 
-echo -e ""  
-echo -e "Bienvenido al instalador de ArchLinux"  
-sleep 1  
-echo -e ""  
-echo -e "A continuación escribirá un par de datos para generar usuario, contraseñas, idioma de SO y distribución de teclado."  
-sleep 1  
-echo -e ""  
-echo -e "Antes de comenzar la instalación asegúrate de que la batería del computador este al 100% o conectada al tomacorriente."  
-sleep 1  
-echo -e ""  
-echo -e "Los datos que proporcionara no serán almacenados en ningún lugar."  
-sleep 1  
-echo -e ""  
-echo -e "Este script es un fork de CrisParch by @codigocristo"  
-sleep 1  
-echo -e ""  
-echo -e "Puedes contribuir en paypal.me/hivz"  
-sleep 10
-echo -e ""  
-echo -e "Ejecutando..."  
-sleep 2  
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Cambiar el idioma del sistema 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+## Pacman configuraciones
 clear 
-echo "" 
-echo "Cambiado lenguaje a español..." 
-sleep 1 
-echo "es_ES.UTF-8 UTF-8" > /etc/locale.gen 
-locale-gen 
-echo "LANG=es_ES.UTF-8" > /etc/locale.conf 
-export LANG=es_ES.UTF-8 
-echo "" 
-sleep 1 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Declarar usuarios y contraseñas  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' _ 
-echo "" 
-echo "" 
-echo "print devices" | parted | grep /dev/ | awk '{if (NR!=1) {print}}' | sed '/sr/d'
-echo "" 
-printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' _ 
-echo "" 
-echo "" 
-read -p "$(echo -e "1.- Introduce tu unidad de almacenamiento para instalar Arch - /dev/sdX : ")" disco 
-echo "" 
-echo "" 
-read -p "$(echo -e "4.- Introduce el nombre de tu nuevo usuario: ")" user 
-echo "" 
-echo "" 
-read -p "$(echo -e "5.- Introduce la contraseña para $user: ")" userpasswd 
-echo "" 
-echo "" 
-read -p "$(echo -e "2.- Introduce el nombre del equipo y/o computador (host): ")" hostname 
-echo "" 
-echo "" 
-read -p "$(echo -e "3.- Introduce la clave root: ")" rootpasswd 
-echo "" 
-echo "" 
-echo "" 
-read -p "$(echo -e "7.- Introduce la distribución de tu teclado, ejemplo es, latam, us: ")" teclado 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Muestra los datos proporcionados 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "" 
-echo "1.- Unidad de almacenamiento seleccionada: $disco" 
-echo '' 
-echo '' 
-echo "2.- Usuario establecido: $user" 
-echo '' 
-echo '' 
-echo "3.- Clave de usuario establecido: $userpasswd" 
-echo '' 
-echo '' 
-echo "4.- Clave de administrador establecida: $rootpasswd" 
-sleep 4 
-echo '' 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Deteccion de firmware de la placa base 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-uefi=$( ls /sys/firmware/efi/ | grep -ic efivars ) 
-if [ $uefi == 1 ] 
-then 
-	clear 
-	echo "" 
-	echo "Sistema UEFI detectado." 
-	echo "" 
-	sleep 2 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación del SO en modo UEFI  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-	sgdisk --zap-all ${disco} 
-	parted ${disco} mklabel gpt 
-	sgdisk ${disco} -n=1:0:+100M -t=1:ef00 
-	sgdisk ${disco} -n=2:0:+4G -t=2:8200 
-	sgdisk ${disco} -n=3:0:0 
-	fdisk -l ${disco} > /tmp/partition 
-	echo "" 
-	cat /tmp/partition 
-	sleep 2 
-	partition="$(cat /tmp/partition | grep /dev/ | awk '{if (NR!=1) {print}}' | sed 's/*//g' | awk -F ' ' '{print $1}')" 
-	echo $partition | awk -F ' ' '{print $1}' >  boot-efi 
-	echo $partition | awk -F ' ' '{print $2}' >  swap-efi 
-	echo $partition | awk -F ' ' '{print $3}' >  root-efi 
-	echo "" 
-	echo "Partición EFI es:"  
-	cat boot-efi 
-	echo "" 
-	echo "Partición SWAP es:" 
-	cat swap-efi 
-	echo "" 
-	echo "Partición ROOT es:" 
-	cat root-efi 
-	echo "" 
-	sleep 2 
-	clear 
-	echo "" 
-	echo "Formateando Particiones..." 
-	sleep 1 
-	echo "" 
-	mkfs.btrfs -f -L "root" -n 32k $(cat root-efi)  
-	mount $(cat root-efi) /mnt  
-	btrfs subvolume create /mnt/@ 
-	btrfs subvolume create /mnt/@home 
-	btrfs subvolume create /mnt/@var_log 
-	btrfs subvolume create /mnt/@var_tmp 
-	btrfs subvolume create /mnt/@snapshots 
-	btrfs subvolume list -p /mnt 
-	mount -o noatime,compress=lzo,space_cache,subvol=@ $(cat root-efi) 
-	mkdir -p /mnt/{boot,home,var/{log,tmp},.snapshots}  
-	mount -o noatime,compress=lzo,space_cache,subvol=@home $(cat root-efi) /mnt/home 
-	mount -o noatime,compress=lzo,space_cache,subvol=@var_log $(cat root-efi) /mnt/var/log 
-	mount -o noatime,compress=lzo,space_cache,subvol=@var_tmp $(cat root-efi) /mnt/var/tmp 
-	mount -o noatime,compress=lzo,space_cache,subvol=@snapshots $(cat root-efi) /mnt/.snapshots 
-	mkdir -p /mnt/efi  
-	mkfs.fat -F 32 $(cat boot-efi)  
-	mount $(cat boot-efi) /mnt/efi  
-	mkswap $(cat swap-efi)  
-	swapon $(cat swap-efi) 
-	clear 
-	echo "" 
-	echo "Revisando el punto de montaje en MOUNTPOINT..." 
-	echo "" 
-	lsblk -l 
-	sleep 2 
-else 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Detección de firmware de la placa base 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-	clear 
-	echo "" 
-	echo "Sistema BIOS detectado." 
-	echo "" 
-	sleep 2 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación del SO en modo BIOS 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-	sgdisk --zap-all ${disco} 
-	(echo o; echo n; echo p; echo 1; echo ""; echo +200M; echo n; echo p; echo 2; echo ""; echo +2G; echo n; echo p; echo 3; echo ""; echo ""; echo t; echo 2; echo 82; echo a; echo 1; echo w; echo q) | fdisk ${disco} 
-	fdisk -l ${disco} > /tmp/partition  
-	cat /tmp/partition 
-	sleep 2 
-	partition="$(cat /tmp/partition | grep /dev/ | awk '{if (NR!=1) {print}}' | sed 's/*//g' | awk -F ' ' '{print $1}')" 
-	echo $partition | awk -F ' ' '{print $1}' >  boot-bios 
-	echo $partition | awk -F ' ' '{print $2}' >  swap-bios 
-	echo $partition | awk -F ' ' '{print $3}' >  root-bios 
-	echo "" 
-	echo "Partición BOOT es:"  
-	cat boot-bios 
-	echo "" 
-	echo "Partición SWAP es:" 
-	cat swap-bios 
-	echo "" 
-	echo "Partición ROOT es:" 
-	cat root-bios 
-	sleep 2 
-	clear 
-	echo "" 
-	echo "Formateando Particiones..." 
-	sleep 1 
-	echo "" 
-	mkfs.btrfs -f -L "root" -n 32k $(cat root-bios)  
-	mount $(cat root-bios)  /mnt  
-	btrfs subvolume create /mnt/@ 
-	btrfs subvolume create /mnt/@home 
-	btrfs subvolume create /mnt/@var_log 
-	btrfs subvolume create /mnt/@var_tmp 
-	btrfs subvolume create /mnt/@snapshots 
-	btrfs subvolume list -p /mnt 
-	mount -o noatime,compress=lzo,space_cache,subvol=@ $(cat root-bios)  
-	mkdir -p /mnt/{boot,home,var/{log,tmp},.snapshots}  
-	mount -o noatime,compress=lzo,space_cache,subvol=@home $(cat root-bios)  /mnt/home 
-	mount -o noatime,compress=lzo,space_cache,subvol=@var_log $(cat root-bios)  /mnt/var/log 
-	mount -o noatime,compress=lzo,space_cache,subvol=@var_tmp $(cat root-bios)  /mnt/var/tmp 
-	mount -o noatime,compress=lzo,space_cache,subvol=@snapshots $(cat root-bios)  /mnt/.snapshots  
-	mkdir -p /mnt/boot 
-	mkfs.ext4 $(cat boot-bios)  
-	mount $(cat boot-bios) /mnt/boot 
-	mkswap $(cat swap-bios)  
-	swapon $(cat swap-bios) 
-	clear 
-	echo "" 
-	echo "Revisando el punto de montaje en MOUNTPOINT..." 
-	echo "" 
-	lsblk -l 
-	sleep 2 
-fi 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación del SO base 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Actualización de llaves y mirroslist..." 
-echo "" 
-sleep 2 
-pacman -Syy 
-pacman -Sy archlinux-keyring --noconfirm  
-clear 
-pacman -Sy reflector python rsync --noconfirm  
-sleep 3 
-clear 
-echo "" 
-echo "Actualizando lista de mirrorList..." 
-echo "" 
-reflector --verbose --latest 5 --protocol http --protocol https --sort rate --save /etc/pacman.d/mirrorlist 
-clear 
-cat /etc/pacman.d/mirrorlist 
-sleep 3 
-clear 
-echo "" 
-echo "Instalando paquetes básicos..." 
-echo "" 
-pacstrap /mnt base base-devel nano reflector python rsync zsh
-clear 
-echo "" 
-echo "Leyendo archivo FSTAB" 
-echo "" 
-echo "genfstab -p /mnt >> /mnt/etc/fstab" 
-echo "" 
-genfstab -p /mnt >> /mnt/etc/fstab 
-cat /mnt/etc/fstab 
-sleep 4 
-clear 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Configuración del gestor de paquetes Pacman 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Configurando gestor de paquetes Pacman..." 
-sleep 2 
-sed -i 's/#Color/Color/g' /mnt/etc/pacman.conf 
-sed -i 's/#TotalDownload/TotalDownload/g' /mnt/etc/pacman.conf 
-sed -i 's/#VerbosePkgLists/VerbosePkgLists/g' /mnt/etc/pacman.conf 
-sed -i "37i ILoveCandy" /mnt/etc/pacman.conf 
-sed -i 's/#[multilib]/[multilib]/g' /mnt/etc/pacman.conf 
-sed -i "s/#ParallelDownloads/ParallelDownloads = 5/" /etc/pacman.conf
-sed -i "s/#Include = /etc/pacman.d/mirrorlist/Include = /etc/pacman.d/mirrorlist/g" /mnt/etc/pacman.conf
-
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Establecer nombre del computador 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Estableciendo nombre del computador..." 
-sleep 2 
-echo "" 
-echo "$hostname" > /mnt/etc/hostname 
-echo "127.0.1.1 $hostname.localdomain $hostname" > /mnt/etc/hosts 
-clear 
-echo "Hostname: $(cat /mnt/etc/hostname)" 
-echo "" 
-echo "Hosts: $(cat /mnt/etc/hosts)" 
-echo "" 
-sleep 2 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Configuración de usuario y administrador 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Estableciendo usuario y administrador..." 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "(echo $rootpasswd ; echo $rootpasswd) | passwd root" 
-arch-chroot /mnt /bin/bash -c "useradd -m -g users -G wheel -s /bin/zsh $user" 
-arch-chroot /mnt /bin/bash -c "(echo $userpasswd ; echo $userpasswd) | passwd $user" 
-sed -i "82c %wheel ALL=(ALL) NOPASSWD: ALL"  /mnt/etc/sudoers 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Configuración de idioma 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-
-userpais=$(echo $(curl https://ipapi.co/languages | awk -F "," '{print $1}' | sed  "s/-/_/g").UTF-8)
-
-clear 
-echo -e "" 
-echo -e "\t\t\t| Actualizando idioma del SO |" 
-printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' _ 
-echo -e "" 
-echo "$userpais UTF-8" > /mnt/etc/locale.gen 
-arch-chroot /mnt /bin/bash -c "locale-gen"  
-echo "LANG=$userpais" > /mnt/etc/locale.conf 
-echo "" 
-cat /mnt/etc/locale.conf  
-cat /mnt/etc/locale.gen 
-sleep 3 
-echo "" 
-arch-chroot /mnt /bin/bash -c "export $(cat /mnt/etc/locale.conf)"  
-export $(cat /mnt/etc/locale.conf) 
-arch-chroot /mnt /bin/bash -c "sudo -u $user export $(cat /etc/locale.conf)" 
-export $(cat /mnt/etc/locale.conf) 
-
-userzone=$(curl https://ipapi.co/timezone)
-clear
-arch-chroot /mnt /bin/bash -c "ln -sf /usr/share/zoneinfo/${userzone} /etc/localtime" 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Configuración de reloj 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Ajustando horario..." 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "timedatectl set-timezone ${userzone}" 
-arch-chroot /mnt /bin/bash -c "pacman -S ntp --noconfirm" 
-arch-chroot /mnt /bin/bash -c "ntpd -qg" 
-arch-chroot /mnt /bin/bash -c "hwclock --systohc" 
-sleep 2 
-  
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación del kernel 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando Kernel..." 
-sleep 2 
-arch-chroot /mnt /bin/bash -c "pacman -S linux-firmware --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S linux --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S linux-headers --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S mkinitcpio --noconfirm"
-sed -i 's/MODULES=()/MODULES=(btrfs)/' /mnt/etc/mkinitcpio.conf
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación del Grub-EFI/UEFI 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-uefi=$( ls /sys/firmware/efi/ | grep -ic efivars ) 
-if [ $uefi == 1 ] 
-then 
-clear 
-arch-chroot /mnt /bin/bash -c "pacman -S grub efibootmgr os-prober dosfstools ntfs-3g --noconfirm" 
-clear 
-echo "" 
-echo 'Instalando EFI System >> bootx64.efi' 
-sleep 1 
-arch-chroot /mnt /bin/bash -c 'grub-install --target=x86_64-efi --efi-directory=/efi --removable'  
-clear 
-echo "" 
-echo 'Instalando UEFI System >> grubx64.efi'  
-sleep 1 
-arch-chroot /mnt /bin/bash -c 'grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=Arch' 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Enviar parámetros al Grub 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-sed -i "6iGRUB_sleep 5CMDLINE_LINUX_DEFAULT="loglevel=3"" /mnt/etc/default/grub 
-sed -i "2i GRUB_DISABLE_OS_PROBER=false" /mnt/etc/default/grub 
-sed -i '7d' /mnt/etc/default/grub 
-clear 
-echo '' 
-arch-chroot /mnt /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" 
-echo ''  
-echo 'ls -l /mnt/efi'  
-ls -l /mnt/efi  
-sleep 3 
-else 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación del Grub-BIOS 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-arch-chroot /mnt /bin/bash -c "pacman -S grub os-prober ntfs-3g --noconfirm" 
-echo ''  
-arch-chroot /mnt /bin/bash -c "grub-install --target=i386-pc ${disco}" 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Enviar parámetros al Grub 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-sed -i "6iGRUB_CMDLINE_LINUX_DEFAULT="loglevel=3"" /mnt/etc/default/grub 
-sed -i "2i GRUB_DISABLE_OS_PROBER=false" /mnt/etc/default/grub 
-sed -i '7d' /mnt/etc/default/grub 
-echo '' 
-arch-chroot /mnt /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" 
-echo ''  
-echo 'ls -l /mnt/boot'  
-ls -l /mnt/boot  
-echo '' 
-sleep 3  
-fi 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de drivers de red 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando drivers de red..." 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "pacman -S dhcpcd --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S networkmanager --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S iwd --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S net-tools --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S ifplugd --noconfirm" 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de drivers wifi 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando drivers de wifi" 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "pacman -S iw --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S wireless_--noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S wpa_supplicant --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S dialog --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S wireless-regdb --noconfirm" 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de drivers bluetooth 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando drivers bluetooth" 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "pacman -S bluez --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S bluez-utils --noconfirm" 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Configuración de red 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-echo "" 
-echo "Ajustando parametros de red..." 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "systemctl enable dhcpcd.service" 
-arch-chroot /mnt /bin/bash -c "systemctl enable NetworkManager.service" 
-arch-chroot /mnt /bin/bash -c "systemctl enable bluetooth.service" 
-echo "noipv6rs" >> /mnt/etc/dhcpcd.conf 
-echo "noipv6" >> /mnt/etc/dhcpcd.conf 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de shell ZSH y sus extras 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando shell ZSH y sus paquetes adicionales..."
-sleep 1 
-arch-chroot /mnt /bin/bash -c "pacman -S zsh-theme-powerlevel10k --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S zsh-autosuggestions --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S zsh-history-substring-search --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S zsh-completions --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S zsh-syntax-highlighting --noconfirm" 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de servidor X 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-#clear 
-#echo "" 
-#echo "Instalando servidor X" 
-#sleep 1 
-#arch-chroot /mnt /bin/bash -c "pacman -S xorg-server xorg-apps xorg-xinit --noconfirm" 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de software, tipografias y temas para el usuario.
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando utilidades del sistema..." 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "pacman -S python-pillow --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S file-roller --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S kitty --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S mpv --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S firefox --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S telegram-desktop --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S pcmanfm --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S imv --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S zathura --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S mupdf --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S neofetch --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S ranger --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S neovim --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S htop --noconfirm"
-
-arch-chroot /mnt /bin/bash -c "pacman -S git  --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S python-pip --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S wget --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S lsb-release --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S xdg-user-dirs --noconfirm"
-
-
-arch-chroot /mnt /bin/bash -c "pacman -S papirus-icon-theme --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S materia-gtk-theme --noconfirm"
-echo "Temas instalados"
-sleep 3
-arch-chroot /mnt /bin/bash -c "sudo pacman -S grub-btrfs --noconfirm"
-arch-chroot /mnt /bin/bash -c "sudo pacman -S snapper --noconfirm"
-echo "snapper instalado"
-sleep 3
-arch-chroot /mnt /bin/bash -c "xdg-user-dirs-update" 
-arch-chroot /mnt /bin/bash -c "ls -l /home/$user"
-sleep 5
-clear
-arch-chroot /mnt /bin/bash -c "pacman -S msmtp --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S libmtp --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S libcddb --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gvfs --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gvfs-afc --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gvfs-smb --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gvfs-gphoto2 --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gvfs-mtp --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gvfs-goa --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gvfs-nfs --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gvfs-google --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S dosfstools --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S f2fs-tools --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S btrfs-progs --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S exfat-utils --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S ntfs-3g --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S reiserfsprogs --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S udftools --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S xfsprogs --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S nilfs-utils --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S polkit --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S gpart --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S mtools --noconfirm"
-
-arch-chroot /mnt /bin/bash -c "pacman -S ttf-{dejavu,hack,roboto,liberation} --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S wqy-microhei --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S bdf-unifont --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S unicode-character-database --noconfirm"
-arch-chroot /mnt /bin/bash -c "pacman -S noto-fonts-emoji --noconfirm"
-
-sleep 2 
-echo "Se termino de instalar el software del usuario!"
-sleep 5
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de gnome 40.4 paquetes escánciales 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando Gnome 40 minimal" 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "pacman -S gdm gnome-control-center gnome-tweaks gnome-shell --noconfirm" 
-arch-chroot /mnt /bin/bash -c "systemctl enable gdm"
+printf '\n \nConfigurando gestor de paquetes Pacman...\n'
 sleep 1
-echo "Se termino de instalar entorno de escritorio Gnome 40"
-sleep 3
+sudo sed -i "s/#Color/Color/g" /etc/pacman.conf 
+sudo sed -i "s/#TotalDownload/TotalDownload/g" /etc/pacman.conf 
+sudo sed -i "s/#VerbosePkgLists/VerbosePkgLists/g" /etc/pacman.conf 
+sudo sed -i "s/#ParallelDownloads = 5/ParallelDownloads = 50/g" /etc/pacman.conf
+sudo sed -i "38i ILoveCandy" /etc/pacman.conf 
 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Configurando sistema de instantaneas
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "" 
-echo "Configurando snapper..." 
-sleep 3
-umount /mnt/.snapshots
-rm -r /mnt/.snapshots
-arch-chroot /mnt /bin/bash -c "snapper -c root create-config /"
-arch-chroot /mnt /bin/bash -c "btrfs suvolume delete /mnt/.snapshots"
-arch-chroot /mnt /bin/bash -c "mkdir /mnt/.snapshots"
-mount /mnt/.snapshots
-arch-chroot /mnt /bin/bash -c "chmod 750 /mnt/.snapshots"
-echo ""
-echo ""
-sleep 5
-sed -i 's/ALLOW_USERS=""/s/ALLOW_USERS="$user"/' /mnt/etc/snapper/configs/root
-sed -i 's/TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/' /mnt/etc/snapper/configs/root
-sed -i 's/TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="7"/' /mnt/etc/snapper/configs/root
-sed -i 's/TIMELINE_LIMIT_WEEKLY="0"/TIMELINE_LIMIT_WEEKLY="0"/' /mnt/etc/snapper/configs/root
-sed -i 's/TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="0"/' /mnt/etc/snapper/configs/root
-sed -i 's/TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="0"/' /mnt/etc/snapper/configs/root
+## Actualizacion del SO
 clear
-echo ""
-echo ""
-arch-chroot /mnt /bin/bash -c "systemctl enable --now snapper-timeline.timer"
-arch-chroot /mnt /bin/bash -c "systemctl enable --now snapper-cleanup.timer"
-arch-chroot /mnt /bin/bash -c "systemctl enable --now grub-btrfs.path"
-sleep 5
-mkdir /mnt/etc/pacman.d/hooks
-cat > /mnt/etc/pacman.d/hooks/50-bootbackup.hook <<EOF
-[Trigger]
-Operation = Upgrade
-Operation = Install
-Operation = Remove
-Type = Path
-Target = boot/*
+printf '\n \nActualizando sistema...\n'
+sleep 1
+sudo pacman -Syu --noconfirm
+sudo pacman -S git --noconfirm
 
-[Action]
-Depends = rsync
-Description = Backing up /boot...
-When = PreTransaction
-Exec = /ustr/bin/rsync -a --delete /boot /.bootbackup
+## clonando repositorios mxhectorvega
+clear
+printf '\n \nClonando repositorios mxhectorvega...\n'
+sleep 1
+git clone https://github.com/mxhectorvega/sway-arch
+git clone https://github.com/mxhectorvega/tipografias
+git clone https://github.com/mxhectorvega/temas
+
+## copiando archivos y directorios
+clear
+printf '\n \nCopiando archivos y directorios...\n'
+sleep 1
+cp -rf $HOME/sway-arch/.gtkrc-2.0 "$HOME"
+cp -rf $HOME/sway-arch/.bashrc "$HOME"
+cp -rf $HOME/sway-arch/.vimrc "$HOME"
+
+cp -rf $HOME/sway-arch/.config/gtk-3.0 "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/kitty/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/neofetch/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/ranger/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/Thunar/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/TWP.9.4.1.Chromium/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/neofetch.png "$HOME"/.config/
+
+cp -rf $HOME/sway-arch/.local/ "$HOME"
+
+mkdir -p $HOME/.local/share/fonts/
+cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
+
+cp -rf $HOME/temas/.{icons,themes}/ "$HOME"
+rm -rf "$HOME"/{sway-arch,tipografias,temas}/
+
+# Software adicional necesario
+clear
+printf '\n \nInstalando paquetes adicionales...\n'
+sleep 1
+sudo pacman -S git kitty make gcc htop vim mousepad pacman-contrib man bc telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
+
+# Paquetes minimos para que Gnome funcione
+clear
+printf '\n \nInstalando paquetes minimos para que Gnome funcione...\n'
+sleep 1
+sudo pacman -S gdm gnome-shell gnome-tweaks gnome-control-center polkit-gnome --noconfirm --needed
+sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
+sudo pacman -S wireplumber --noconfirm --needed
+
+# Thunar extras
+clear
+printf '\n \nInstalando extras para el gestor de archivos...\n'
+sleep 1
+sudo pacman -S gvfs thunar thunar-archive-plugin thunar-volman thunar-archive-plugin tumbler ffmpegthumbnailer xarchiver zip unzip unrar unarj p7zip lzop lzip lrzip lha cpio arj --noconfirm --needed
+
+# Fuentes basicas
+clear
+printf '\n \nInstalando fuentes basicas...\n'
+sleep 1
+sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
+
+# Paru AUR helper
+clear 
+printf '\n \nInstalando el gestor de paquetes Paru...\n'
+sleep 1
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf 
+
+## Todo el SO en español
+clear 
+printf '\n \nEstableciendo español como idioma predeterminado...\n'
+sleep 1
+sudo tee /etc/locale.conf <<EOF
+LANG="es_MX.UTF-8"
+LC_CTYPE="es_MX.UTF-8"
+LC_NUMERIC="es_MX.UTF-8"
+LC_TIME="es_MX.UTF-8"
+LC_COLLATE="es_MX.UTF-8"
+LC_MONETARY="es_MX.UTF-8"
+LC_MESSAGES="es_MX.UTF-8"
+LC_PAPER="es_MX.UTF-8"
+LC_NAME="es_MX.UTF-8"
+LC_ADDRESS="es_MX.UTF-8"
+LC_TELEPHONE="es_MX.UTF-8"
+LC_MEASUREMENT="es_MX.UTF-8"
+LC_IDENTIFICATION="es_MX.UTF-8"
+LC_ALL=
 EOF
+sudo tee /etc/locale.gen <<EOF
+es_MX.UTF-8 UTF-8
+EOF
+sudo localectl set-locale LANG=es_MX.UTF-8
+sudo locale-gen
+sudo timedatectl set-timezone America/Mexico_City
+sudo timedatectl set-ntp yes
+
+## Instala gestor de extenciones gnome 42
+clear 
+printf '\n \nInstalando gestor de extensiones Gnome 42...\n'
+sleep 1
+git clone https://github.com/ekistece/GetExtensions.git
+pip install ./GetExtensions --user
+sleep 1
+rm -rf "$HOME"/GetExtensions/
+
+## borrando directorios no necesarios
+clear 
+printf '\n \nBorrando directorio GO...\n'
+sleep 1
+rm -rf "$HOME"/go/
+
+## instalando repositorio CHAOTIC
 clear
+printf '\n \nInstalando repositorio Chaotic (paquetes precompilados)'
+sleep 1
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+sudo pacman -Sy --noconfirm
+sudo pacman -S clipman --noconfirm
+
+## Ajustando VIM para que funcione correctamente con kitty
+clear 
+printf '\n \nConfigurando vim...\n'
+sleep 1
+sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/vim.desktop
+sudo sed -i "s/Exec= vim %F/Exec=kitty -e vim %F/g" /usr/share/applications/vim.desktop
+
+## Ajustando HTOP para que funcione correctamente con kitty
+clear 
+printf '\n \nConfigurando htop...\n'
+sleep 1
+sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/htop.desktop
+sudo sed -i "s/Exec= htop/Exec=kitty -e htop/g" /usr/share/applications/htop.desktop
+
+## habilitando bluetooth
+clear 
+printf '\n \nHabilitando bluetooth...\n'
+sleep 1
+sudo systemctl enable --now bluetooth.service
+
+## Mensaje final
+clear
+sleep 1
+printf '\n \nConfiguraciones aplicadas!'
+sleep 1
+printf '\n \nContribuye paypal.me/hivz'
 sleep 3
-arch-chroot /mnt /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" 
-arch-chroot /mnt /bin/bash -c "chmod a+rx /mnt/.snapshots"
-arch-chroot /mnt /bin/bash -c "chown :$user /mnt/.snapshots"
-sleep 3
 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de pipewire 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando pipewire audio..." 
-sleep 1 
-arch-chroot /mnt /bin/bash -c "pacman -S pipewire --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S gst-plugin-pipewire --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S pipewire-alsa --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S pipewire-jack --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S pipewire-media-session --noconfirm" 
-arch-chroot /mnt /bin/bash -c "pacman -S pipewire-zeroconf --noconfirm" 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Configuración de teclado 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Configurando el teclado..." 
-case $teclado in 
-	latam) teclado_tty="la-latin1" 
-	;;   
-	*) teclado_tty=$teclado 
-	;; 
-esac 
-echo "KEYMAP=$teclado_tty" > /mnt/etc/vconsole.conf 
-cat /mnt/etc/vconsole.conf  
-clear 
-	arch-chroot /mnt /bin/bash -c "localectl --no-convert set-x11-keymap ${teclado}"
-	clear
-	echo -e 'Section "InputClass"' > /mnt/etc/X11/xorg.conf.d/00-keyboard.conf 
-	echo -e 'Identifier "system-keyboard"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf 
-	echo -e 'MatchIsKeyboard "on"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf 
-	echo -e 'Option "XkbLayout" "'$teclado'"' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf 
-	echo -e 'EndSection' >> /mnt/etc/X11/xorg.conf.d/00-keyboard.conf            
-	echo "" 
-	cat /mnt/etc/X11/xorg.conf.d/00-keyboard.conf 
-	sleep 2 
-	clear 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de drivers de video 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Se estan instalando los drivers de video..." 
-sleep 3 
-case $(systemd-detect-virt) in 
-	oracle)
-		arch-chroot /mnt /bin/bash -c "pacman -S virtualbox-guest-utils --noconfirm" 
-		arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-vmware virtualbox-host-modules-arch mesa --noconfirm" 
-		arch-chroot /mnt /bin/bash -c "pacman -S virtualbox-host-modules-arch mesa --noconfirm" 
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm" 
-	;; 
-	vmware) 
-		arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-vmware --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S xf86-input-vmmouse --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S open-vm-tools --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S net-tools --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S gtkmm --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-	;; 
-	qemu) 
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa-libgl --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-fbdev --noconfirm"
-	;; 
-	kvm) 
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa-libgl --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-fbdev --noconfirm"
-	;; 
-	microsoft) 
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa-libgl --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-fbdev --noconfirm"
-	;; 
-	xen) 
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S mesa-libgl --noconfirm"
-		arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-fbdev --noconfirm" 
-	;; 
-	*) 
-		if (lspci | grep VGA | grep "NVIDIA\|nVidia" &>/dev/null); then 
-
-			arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-nouveau --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S mesa-vdpau --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-mesa-driver --noconfirm"
-
-		elif (lspci | grep VGA | grep "Radeon R\|R2/R3/R4/R5" &>/dev/null); then 
-
-			arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-amdgpu --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S vulkan-radeon --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-vulkan-radeon --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S mesa-vdpau --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-mesa-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-mesa-vdpau --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-libva-mesa-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-vdpau-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libvdpau-va-gl --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-utils --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S vdpauinfo --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S opencl-mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S clinfo --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S ocl-icd --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-ocl-icd --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S opencl-headers --noconfirm"
-
-		elif (lspci | grep VGA | grep "ATI\|AMD/ATI" &>/dev/null); then 
-
-			arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-ati --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S mesa-vdpau --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-mesa-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-mesa-vdpau --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-libva-mesa-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-vdpau-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libvdpau-va-gl --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-utils --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S vdpauinfo --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S opencl-mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S clinfo --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S ocl-icd --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-ocl-icd --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S opencl-headers --noconfirm"
-
-		elif (lspci | grep VGA | grep "Intel" &>/dev/null); then 
-
-			arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-intel --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S vulkan-intel --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-mesa --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S intel-media-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-intel-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-vdpau-driver --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libvdpau-va-gl --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S libva-utils --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S vdpauinfo --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S intel-compute-runtime --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S clinfo --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S ocl-icd --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S lib32-ocl-icd --noconfirm"
-			arch-chroot /mnt /bin/bash -c "pacman -S opencl-headers --noconfirm"
-
-		else
-
-			arch-chroot /mnt /bin/bash -c "pacman -S xf86-video-vesa --noconfirm"
-
-	fi 
-	;; 
-esac 
-sleep 2 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Instalación de gestor de paquetes de AUR "Paru" 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "Instalando el gestor de paquetes Paru..." 
-sleep 2 
-echo "cd && git clone https://aur.archlinux.org/paru-bin.git && cd paru-bin && makepkg -si --noconfirm && cd && rm -rf paru-bin" | arch-chroot /mnt /bin/bash -c "su $user" 
-sed -i "82c %wheel ALL=(ALL) ALL"  /mnt/etc/sudoers
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-# Mensaje, detención de procesos y reincio del computador 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
-clear 
-echo "" 
-echo "¡En hora buena, has instalado ArchLinux... suscríbete a youtube.com/mxhectorvega" 
-echo ""
-echo ""
-arch-chroot /mnt /bin/bash -c "neofetch"
-sleep 5
-clear 
-echo "Reiniciando..." 
-sleep 1 
-umount -R /mnt 
-swapoff -a 
-reboot
+## Habilitando servicio de pantalla de inicio de sesion
+clear
+printf '\n \nIniciando pantalla de inicio de session....'
+sleep 1
+sudo systemctl enable --now gdm
