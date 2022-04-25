@@ -153,14 +153,14 @@ clear
 printf '\n \nConfigurando vim...\n'
 sleep 1
 sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/vim.desktop
-sudo sed -i "s/Exec= vim %F/Exec=kitty -e vim %F/g" /usr/share/applications/vim.desktop
+sudo sed -i "s/Exec=vim %F/Exec=kitty -e vim %F/g" /usr/share/applications/vim.desktop
 
 ## Ajustando HTOP para que funcione correctamente con kitty
 clear 
 printf '\n \nConfigurando htop...\n'
 sleep 1
 sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/htop.desktop
-sudo sed -i "s/Exec= htop/Exec=kitty -e htop/g" /usr/share/applications/htop.desktop
+sudo sed -i "s/Exec=htop/Exec=kitty -e htop/g" /usr/share/applications/htop.desktop
 
 ## habilitando bluetooth
 clear 
