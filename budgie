@@ -50,15 +50,14 @@ rm -rf "$HOME"/{sway-arch,tipografias,temas}/
 clear
 printf '\n \nInstalando paquetes adicionales...\n'
 sleep 1
-sudo pacman -S git kitty make gcc htop vim mousepad pacman-contrib man bc network-manager-applet telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
+sudo pacman -S git kitty make gcc htop vim ranger mousepad pacman-contrib man bc network-manager-applet telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk --noconfirm --needed
 
 # Instalando paquetes para escritorio BUDGIE
-sudo pacman -S budgie-desktop budgie-extras --noconfirm
+sudo pacman -S budgie-desktop budgie-extras gnome-screenshot --noconfirm
 
 # Display manager (pantalla de inicio de sesion)
 sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm
-# lightdm-gtk-greeter-settings
 
 # Thunar extras
 clear
@@ -140,7 +139,14 @@ sleep 1
 sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/htop.desktop
 sudo sed -i "s/Exec=htop/Exec=kitty -e htop/g" /usr/share/applications/htop.desktop
 
-# Cambiando de fuente y wallpaper ligthDM
+## Ajustando RANGER para que funcione correctamente con kitty
+clear
+printf '\n \nConfigurando ranger...\n'
+sleep 1
+sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/ranger.desktop
+sudo sed -i "s/Exec=ranger/Exec=kitty -e ranger/g" /usr/share/applications/ranger.desktop
+
+# Cambiando de fuente ligthDM
 sudo tee /etc/lightdm/lightdm-gtk-greeter.conf <<EOF
 [greeter]
 font-name=SF Compact Display 10
@@ -152,6 +158,7 @@ indicators=~session;~spacer;separator;~clock;~spacer;separator;~power;
 clock-format=%a, %b %d, %H:%M
 EOF
 
+## Instalando paquetes adicionales para el usuario
 sudo pacman -S brave freeoffice clipit --noconfirm
 
 ## habilitando bluetooth
