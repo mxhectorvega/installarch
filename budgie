@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+
+## Pacman configuraciones
+clear 
+printf '\n \nConfigurando gestor de paquetes Pacman...\n'
+sleep 1
+sudo sed -i "s/#Color/Color/g" /etc/pacman.conf 
+sudo sed -i "s/#TotalDownload/TotalDownload/g" /etc/pacman.conf 
+sudo sed -i "s/#VerbosePkgLists/VerbosePkgLists/g" /etc/pacman.conf 
+sudo sed -i "s/#ParallelDownloads = 5/ParallelDownloads = 50/g" /etc/pacman.conf
+sudo sed -i "38i ILoveCandy" /etc/pacman.conf 
+
+## Actualizacion del SO
+clear
+printf '\n \nActualizando sistema...\n'
+sleep 1
+sudo pacman -Syu --noconfirm
+sudo pacman -S git --noconfirm
+
+## clonando repositorios mxhectorvega
+clear
+printf '\n \nClonando repositorios mxhectorvega...\n'
+sleep 1
+git clone https://github.com/mxhectorvega/sway-arch
+git clone https://github.com/mxhectorvega/tipografias
+git clone https://github.com/mxhectorvega/temas
+
+## copiando archivos y directorios
+clear
+printf '\n \nCopiando archivos y directorios...\n'
+sleep 1
+cp -rf $HOME/sway-arch/.bashrc "$HOME"
+cp -rf $HOME/sway-arch/.vimrc "$HOME"
+
+cp -rf $HOME/sway-arch/.config/kitty/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/neofetch/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/Thunar/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/TWP.9.4.1.Chromium/ "$HOME"/.config/
+cp -rf $HOME/sway-arch/.config/neofetch.png "$HOME"/.config/
+
+cp -rf $HOME/sway-arch/.local/ "$HOME"
+
+mkdir -p $HOME/.local/share/fonts/
+cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
+
+cp -rf $HOME/temas/.{icons,themes}/ "$HOME"
+rm -rf "$HOME"/{sway-arch,tipografias,temas}/
+
+# Software adicional necesario
+clear
+printf '\n \nInstalando paquetes adicionales...\n'
+sleep 1
+sudo pacman -S git kitty make gcc htop vim mousepad pacman-contrib man bc network-manager-applet telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
+sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk --noconfirm --needed
+
+# Instalando paquetes para escritorio BUDGIE
+sudo pacman -S budgie-desktop budgie-extras --noconfirm
+
+# Display manager (pantalla de inicio de sesion)
+sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm
+# lightdm-gtk-greeter-settings
+
+# Thunar extras
+clear
+printf '\n \nInstalando extras para el gestor de archivos...\n'
+sleep 1
+sudo pacman -S gvfs thunar thunar-archive-plugin thunar-volman thunar-archive-plugin tumbler ffmpegthumbnailer xarchiver zip unzip unrar unarj p7zip lzop lzip lrzip lha cpio arj --noconfirm --needed
+
+# Fuentes basicas
+clear
+printf '\n \nInstalando fuentes basicas...\n'
+sleep 1
+sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
+
+# Paru AUR helper
+clear 
+printf '\n \nInstalando el gestor de paquetes Paru...\n'
+sleep 1
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf 
+
+## Todo el SO en español
+clear 
+printf '\n \nEstableciendo español como idioma predeterminado...\n'
+sleep 1
+sudo tee /etc/locale.conf <<EOF
+LANG="es_MX.UTF-8"
+LC_CTYPE="es_MX.UTF-8"
+LC_NUMERIC="es_MX.UTF-8"
+LC_TIME="es_MX.UTF-8"
+LC_COLLATE="es_MX.UTF-8"
+LC_MONETARY="es_MX.UTF-8"
+LC_MESSAGES="es_MX.UTF-8"
+LC_PAPER="es_MX.UTF-8"
+LC_NAME="es_MX.UTF-8"
+LC_ADDRESS="es_MX.UTF-8"
+LC_TELEPHONE="es_MX.UTF-8"
+LC_MEASUREMENT="es_MX.UTF-8"
+LC_IDENTIFICATION="es_MX.UTF-8"
+LC_ALL=
+EOF
+sudo tee /etc/locale.gen <<EOF
+es_MX.UTF-8 UTF-8
+EOF
+sudo localectl set-locale LANG=es_MX.UTF-8
+sudo locale-gen
+sudo timedatectl set-timezone America/Mexico_City
+sudo timedatectl set-ntp yes
+
+## borrando directorios no necesarios
+clear 
+printf '\n \nBorrando directorio GO...\n'
+sleep 1
+rm -rf "$HOME"/go/
+
+## instalando repositorio CHAOTIC
+clear
+printf '\n \nInstalando repositorio Chaotic (paquetes precompilados)'
+sleep 1
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+sudo pacman -Sy --noconfirm
+
+## Ajustando VIM para que funcione correctamente con kitty
+clear 
+printf '\n \nConfigurando vim...\n'
+sleep 1
+sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/vim.desktop
+sudo sed -i "s/Exec=vim %F/Exec=kitty -e vim %F/g" /usr/share/applications/vim.desktop
+
+## Ajustando HTOP para que funcione correctamente con kitty
+clear 
+printf '\n \nConfigurando htop...\n'
+sleep 1
+sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/htop.desktop
+sudo sed -i "s/Exec=htop/Exec=kitty -e htop/g" /usr/share/applications/htop.desktop
+
+# Cambiando de fuente y wallpaper ligthDM
+sudo tee /etc/lightdm/lightdm-gtk-greeter.conf <<EOF
+[greeter]
+font-name=SF Compact Display 10
+xft-antialias=true
+xft-dpi=96
+xft-hintstyle=hintslight
+xft-rgba=rgb
+indicators=~session;~spacer;separator;~clock;~spacer;separator;~power;
+clock-format=%a, %b %d, %H:%M
+EOF
+
+sudo pacman -S brave freeoffice clipit --noconfirm
+
+## habilitando bluetooth
+clear 
+printf '\n \nHabilitando bluetooth...\n'
+sleep 1
+sudo systemctl enable --now bluetooth.service
+
+## Habilitando servicio de pantalla de inicio de sesion
+sudo systemctl enable --now lightdm
+
+## Mensaje final
+clear
+sleep 1
+printf '\n \nConfiguraciones aplicadas!'
+sleep 1
+printf '\n \nContribuye paypal.me/hivz'
+sleep 3
