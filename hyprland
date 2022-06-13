@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# Titulo: Post-install para Sway en Archlinux
+# Titulo: Instalación del gestor de ventanas Hyprland para wayland
 # Autor: Hector Iván Vega Zamudio
 # Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega
-# Versión:v9.0
+# Versión: v1.0
 # Fecha de actualización 12/06/2022
 # Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
-# Seleccionando el perfil Sway con todos los controladores de código abierto.
+# Seleccionando el perfil Xorg con todos los controladores de código abierto.
 
 # Pacman configuraciones
 clear 
@@ -16,6 +16,19 @@ sleep 1
 sudo sed -i "s/#Color/Color/g" /etc/pacman.conf 
 sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
 sudo sed -i "38i ILoveCandy" /etc/pacman.conf
+
+## Instalando repositorio Chaotic para no depender de YAY o PARU.
+sleep 1
+printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
+clear
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+sudo pacman -Sy --noconfirm
 
 # Paquetes adicionales
 clear
@@ -52,7 +65,7 @@ rm -rf "$HOME"/{sway-arch,tipografias,temas}/
 # Software adicional
 sudo pacman -S git kitty make gcc htop vim blueberry network-manager-applet pacman-contrib man bc polkit-gnome telegram-desktop imv mpv zathura-pdf-mupdf mousepad xdg-user-dirs python-pillow imagemagick --noconfirm --needed
 
-# SwayWM
+# SwayWM 
 sudo pacman -S sway --noconfirm --needed
 sudo pacman -S rtkit qt5-wayland xorg-xwayland swayidle wofi mako waybar grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-wlr --noconfirm --needed
@@ -80,18 +93,6 @@ sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 ## borrando directorios no necesarios
 rm -rf "$HOME"/go/
 
-## Instalando repositorio Chaotic para no depender de YAY o PARU.
-sleep 1
-printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
-clear
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-sudo pacman -Sy --noconfirm
 sudo pacman -S clipman --noconfirm
 
 # Cambiando de fuente y wallpaper ligthDM
@@ -106,12 +107,6 @@ indicators=~session;~spacer;separator;~clock;~spacer;separator;~power;
 clock-format=%a, %b %d, %H:%M
 EOF
 
-# Desinstalar terminal y menu obsoletos
-clear
-sudo pacman -Rs dmenu --noconfirm
-sudo pacman -Rs alacritty --noconfirm
-sudo pacman -Rs nano --noconfirm
-sudo pacman -Rs foot --noconfirm
 
 clear
 sleep 1

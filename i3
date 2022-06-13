@@ -46,6 +46,19 @@ git clone https://github.com/mxhectorvega/tipografias  /tmp/tipografias
 cp -rp /tmp/i3-fedora/.* "$HOME"
 cp -rp /tmp/tipografias/.* "$HOME"/.local/share/fonts
 
+## Instalando repositorio Chaotic para no depender de YAY o PARU.
+sleep 1
+printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
+clear
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+sudo pacman -Sy --noconfirm
+
 # Creando directorios de usuario
 xdg-user-dirs-update --force
 

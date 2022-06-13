@@ -34,6 +34,19 @@ sudo pacman -S python-pip --noconfirm --needed
 pip install ./GetExtensions --user
 rm -rf ~/GetExtensions
 
+## Instalando repositorio Chaotic para no depender de YAY o PARU.
+sleep 1
+printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
+clear
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+sudo pacman -Sy --noconfirm
+
 clear
 echo -e "Configs ZSH, Ranger, Kitty y Neovim cargadas!"
 sleep 1

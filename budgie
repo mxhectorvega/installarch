@@ -91,10 +91,10 @@ printf '\n \nBorrando directorio GO...\n'
 sleep 1
 rm -rf "$HOME"/go/
 
-## instalando repositorio CHAOTIC
-clear
-printf '\n \nInstalando repositorio Chaotic (paquetes precompilados)'
+## Instalando repositorio Chaotic para no depender de YAY o PARU.
 sleep 1
+printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
+clear
 sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
 sudo pacman-key --lsign-key FBA220DFC880C036
 sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
