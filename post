@@ -5,13 +5,11 @@
 # Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega
 # Versión:v1.0
-# fecha de actualización 12/06/2022
+# Fecha de actualización 12/06/2022
 # Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
 # Seleccionando el perfil Xorg con todos los controladores de código abierto.
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+ 
 # Pacman configuraciones
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
 echo "\
 
@@ -21,10 +19,7 @@ sudo sed -i "s/#Color/Color/g" /etc/pacman.conf
 sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
 sudo sed -i "38i ILoveCandy" /etc/pacman.conf
 
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Paquetes adicionales
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear
 echo "\
 
@@ -38,23 +33,15 @@ sudo pacman -S xsetroot --noconfirm --needed
 sudo pacman -S xrdb --noconfirm --needed
 sudo pacman -S xprop --noconfirm --needed
 
-
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 # Paru AUR helper
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear 
 echo "\
 
 Instalando el gestor de paquetes Paru..." 
 sleep 1
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-
-
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
+ 
 # Dotfiles
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-* 
 clear
 echo "\
  
@@ -68,5 +55,3 @@ cp -R /tmp/dots/.config/* ~/.config
 cp -R /tmp/dots/.local/bin/* ~/.local/bin
 cp -R /tmp/dots/.local/share/fonts/* ~/.local/share/fonts
 cp /tmp/dots/.bashrc ~/.bashrc
-
-

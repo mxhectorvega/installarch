@@ -5,7 +5,7 @@
 # Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega
 # Version:v3.0
-# fecha de actualización 12/06/2022
+# Fecha de actualización 12/06/2022
 # Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
 # Seleccionando el perfil i3 con todos los controladores de código abierto.
 

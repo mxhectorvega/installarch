@@ -1,7 +1,7 @@
 # INSTALLARCH
 
 **Descripcion:**
-Este reposotorios contiene un script en bash con bashismos que instala la distrubicion Arch Linux, asi como un pequeño escript que instala mis configs de ranger, kitty, neovim, zshrc, bashrc, xinitrc, asi como un gestor de extenciones ligero para gnome.
+Este repositorio contiene scripts en bash adoptando un poco de los estándares POSIX pero con un poco de bashismos que instala mis configuraciones personales así como entornos de escritorio completo enfocado a la mejora de rendimiento si sacrificar un buen diseño o compatibilidad con software o cosas del usuario domestico.
 
 **Creditos:**
-@mxhectorvega @darch7 @cristoalv @bourne_again @tenashito
+@mxhectorvega @darch7 @cristoalv @bourne_again @tenashito y muchos otros de la comunidad Linux.
