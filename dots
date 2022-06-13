@@ -1,4 +1,13 @@
-#!/bin/bash 
+#!/usr/bin/env bash
+
+# Titulo: Script automatizado que copia mis configuraciones personales frescas.
+# Autor: Hector Iván Vega Zamudio
+# Correo: mxhectorvega@gmail.com
+# Link: https://github.com/mxhectorvega
+# Versión:v1.0
+# fecha de actualización 12/06/2022
+# Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
+# Seleccionando el perfil Xorg con todos los controladores de código abierto.
 
 clear
 echo -e "Clonando dotfiles..."
