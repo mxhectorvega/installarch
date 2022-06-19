@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# Titulo: Instalación mínima del entorno de escritorio Gnome 4x.x consumiendo 400mb al inicio.
-# Autor: Hector Iván Vega Zamudio
-# Correo: mxhectorvega@gmail.com
-# Link: https://github.com/mxhectorvega
-# Versión:v2.0
-# Fecha de actualización 12/06/2022
-# Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
-# Seleccionando el perfil Xorg con todos los controladores de código abierto.
+## Titulo: Instalación mínima del entorno de escritorio Gnome 4x.x consumiendo 400mb al inicio.
+## Autor: Hector Iván Vega Zamudio
+## Correo: mxhectorvega@gmail.com
+## Link: https://github.com/mxhectorvega
+## Versión:v2.0
+## Fecha de actualización 12/06/2022
+## Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
+## Seleccionando el perfil Xorg con todos los controladores de código abierto.
 
 ## Pacman configuraciones
 clear 
@@ -17,12 +17,34 @@ sudo sed -i "s/#Color/Color/g" /etc/pacman.conf
 sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
 sudo sed -i "38i ILoveCandy" /etc/pacman.conf
 
-## Actualizacion del SO
-clear
-printf '\n \nActualizando sistema...\n'
+## Instalando repositorio Chaotic para no depender de YAY o PARU.
 sleep 1
-sudo pacman -Syu --noconfirm
-sudo pacman -S git --noconfirm
+printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
+clear
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+sudo pacman -Syyu --noconfirm
+
+## Software adicional necesario
+clear
+printf '\n \nInstalando paquetes adicionales...\n'
+sleep 1
+sudo pacman -S git make gcc htop vim ranger neofetch pacman-contrib man imv mpv zathura-pdf-mupdf xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
+
+# Paru AUR helper
+clear 
+printf '\n \nInstalando el gestor de paquetes Paru...\n'
+sleep 1
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf 
+
+## Instalando paquetes de Chaotic repo
+sudo pacman -S visual-studio-code-bin brave-bin telegram-desktop --noconfirm
 
 ## clonando repositorios mxhectorvega
 clear
@@ -41,12 +63,8 @@ cp -rf $HOME/sway-arch/.bashrc "$HOME"
 cp -rf $HOME/sway-arch/.vimrc "$HOME"
 
 cp -rf $HOME/sway-arch/.config/gtk-3.0 "$HOME"/.config/
-cp -rf $HOME/sway-arch/.config/kitty/ "$HOME"/.config/
-cp -rf $HOME/sway-arch/.config/neofetch/ "$HOME"/.config/
 cp -rf $HOME/sway-arch/.config/ranger/ "$HOME"/.config/
-cp -rf $HOME/sway-arch/.config/Thunar/ "$HOME"/.config/
 cp -rf $HOME/sway-arch/.config/TWP.9.4.1.Chromium/ "$HOME"/.config/
-cp -rf $HOME/sway-arch/.config/neofetch.png "$HOME"/.config/
 
 cp -rf $HOME/sway-arch/.local/ "$HOME"
 
@@ -56,38 +74,19 @@ cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
 cp -rf $HOME/temas/.{icons,themes}/ "$HOME"
 rm -rf "$HOME"/{sway-arch,tipografias,temas}/
 
-# Software adicional necesario
-clear
-printf '\n \nInstalando paquetes adicionales...\n'
-sleep 1
-sudo pacman -S git kitty make gcc htop vim mousepad pacman-contrib man bc telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
-
-# Paquetes minimos para que Gnome funcione
+## Paquetes minimos para que Gnome funcione
 clear
 printf '\n \nInstalando paquetes minimos para que Gnome funcione...\n'
 sleep 1
-sudo pacman -S gdm gnome-shell gnome-tweaks gnome-control-center polkit-gnome --noconfirm --needed
+sudo pacman -S gdm gnome-shell gnome-terminal nautilus gnome-tweaks gnome-control-center polkit-gnome --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
 
-# Thunar extras
-clear
-printf '\n \nInstalando extras para el gestor de archivos...\n'
-sleep 1
-sudo pacman -S gvfs thunar thunar-archive-plugin thunar-volman thunar-archive-plugin tumbler ffmpegthumbnailer xarchiver zip unzip unrar unarj p7zip lzop lzip lrzip lha cpio arj --noconfirm --needed
-
-# Fuentes basicas
+## Fuentes basicas
 clear
 printf '\n \nInstalando fuentes basicas...\n'
 sleep 1
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
-
-# Paru AUR helper
-clear 
-printf '\n \nInstalando el gestor de paquetes Paru...\n'
-sleep 1
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf 
 
 ## Instala gestor de extenciones gnome 42
 clear 
@@ -103,33 +102,6 @@ clear
 printf '\n \nBorrando directorio GO...\n'
 sleep 1
 rm -rf "$HOME"/go/
-
-## Instalando repositorio Chaotic para no depender de YAY o PARU.
-sleep 1
-printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
-clear
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-sudo pacman -Sy --noconfirm
-
-## Ajustando VIM para que funcione correctamente con kitty
-clear 
-printf '\n \nConfigurando vim...\n'
-sleep 1
-sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/vim.desktop
-sudo sed -i "s/Exec=vim %F/Exec=kitty -e vim %F/g" /usr/share/applications/vim.desktop
-
-## Ajustando HTOP para que funcione correctamente con kitty
-clear 
-printf '\n \nConfigurando htop...\n'
-sleep 1
-sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/htop.desktop
-sudo sed -i "s/Exec=htop/Exec=kitty -e htop/g" /usr/share/applications/htop.desktop
 
 ## habilitando bluetooth
 clear 
