@@ -44,7 +44,8 @@ cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -s
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf 
 
 ## Instalando paquetes de Chaotic repo
-sudo pacman -S visual-studio-code-bin brave-bin telegram-desktop --noconfirm
+sudo pacman -S visual-studio-code-bin brave-bin freeoffice telegram-desktop --noconfirm
+sudo pacman -S pamac --noconfirm
 
 ## clonando repositorios mxhectorvega
 clear
@@ -58,11 +59,9 @@ git clone https://github.com/mxhectorvega/temas
 clear
 printf '\n \nCopiando archivos y directorios...\n'
 sleep 1
-cp -rf $HOME/sway-arch/.gtkrc-2.0 "$HOME"
 cp -rf $HOME/sway-arch/.bashrc "$HOME"
 cp -rf $HOME/sway-arch/.vimrc "$HOME"
 
-cp -rf $HOME/sway-arch/.config/gtk-3.0 "$HOME"/.config/
 cp -rf $HOME/sway-arch/.config/ranger/ "$HOME"/.config/
 cp -rf $HOME/sway-arch/.config/TWP.9.4.1.Chromium/ "$HOME"/.config/
 
@@ -78,7 +77,7 @@ rm -rf "$HOME"/{sway-arch,tipografias,temas}/
 clear
 printf '\n \nInstalando paquetes minimos para que Gnome funcione...\n'
 sleep 1
-sudo pacman -S gdm gnome-shell gnome-terminal nautilus gnome-tweaks gnome-control-center polkit-gnome --noconfirm --needed
+sudo pacman -S gdm gnome-shell gnome-terminal nautilus gnome-tweaks gnome-calculator gnome-control-center polkit-gnome --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
 
