@@ -53,6 +53,7 @@ sleep 1
 git clone https://github.com/mxhectorvega/sway-arch
 git clone https://github.com/mxhectorvega/tipografias
 git clone https://github.com/mxhectorvega/temas
+git clone https://github.com/vinceliuice/Colloid-kde
 
 ## copiando archivos y directorios
 clear
@@ -71,6 +72,9 @@ cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
 
 cp -rf $HOME/temas/.{icons,themes}/ "$HOME"
 rm -rf "$HOME"/{sway-arch,tipografias,temas}/
+
+cd $HOME/Colloid-kde
+sh install.sh
 
 ## Paquetes minimos para que Gnome funcione
 clear
@@ -126,7 +130,6 @@ clear
 printf '\n \nHabilitando bluetooth...\n'
 sleep 1
 sudo systemctl enable --now bluetooth.service
-
 
 ## crear direciorios de usuario
 clear 
