@@ -100,7 +100,7 @@ clear
 printf '\n \nInstalando paquetes personalizados para el usuario...\n'
 sleep 1
 sudo pacman -S visual-studio-code-bin microsoft-edge-stable-bin freeoffice telegram-desktop --noconfirm
-sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
+sudo pacman -S gimp audacity kdenlive inkscape obs-studio --noconfirm
 sudo pacman -S teamviewer anydesk-bin --noconfirm
 sudo pacman -S steam --noconfirm
 
