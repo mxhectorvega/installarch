@@ -102,12 +102,24 @@ sleep 1
 sudo pacman -S visual-studio-code-bin microsoft-edge-stable-bin freeoffice telegram-desktop --noconfirm
 sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
 sudo pacman -S teamviewer anydesk-bin --noconfirm
+sudo pacman -S steam --noconfirm
 
 ## borrando directorios no necesarios
 clear 
 printf '\n \nBorrando directorio GO...\n'
 sleep 1
 rm -rf "$HOME"/go/
+
+# Cambiando de fuente y wallpaper ligthDM
+clear 
+printf '\n \nOptimizando ZRAM con compresion ZSTD...\n'
+sleep 1
+sudo tee /etc/systemd/zram-generator.conf <<EOF
+[zram0]
+zram-size= ram
+swap-priority = 32767
+compression-algorithm = zstd
+EOF
 
 ## habilitando bluetooth
 clear 
