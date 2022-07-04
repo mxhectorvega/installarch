@@ -4,8 +4,8 @@
 ## Autor: Hector Iván Vega Zamudio
 ## Correo: mxhectorvega@gmail.com
 ## Link: https://github.com/mxhectorvega
-## Versión:v2.0
-## Fecha de actualización 19/06/2022
+## Versión:v3.0
+## Fecha de actualización 03/07/2022
 ## Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
 ## Seleccionando el perfil MINIMO con todos los controladores de código abierto.
 
@@ -30,9 +30,9 @@ Include = /etc/pacman.d/chaotic-mirrorlist
 EOF
 sudo pacman -Syyu --noconfirm
 
-## Software adicional necesario
+## Software basico para el usuario
 clear
-printf '\n \nInstalando paquetes adicionales...\n'
+printf '\n \nInstalando paquetes basicos para el usuario...\n'
 sleep 1
 sudo pacman -S git make gcc htop vim ranger neofetch pacman-contrib man imv mpv zathura-pdf-mupdf xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
 
@@ -43,8 +43,7 @@ sleep 1
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf 
 
-## Instalando paquetes de Chaotic repo
-sudo pacman -S visual-studio-code-bin brave-bin freeoffice telegram-desktop --noconfirm
+## Instalando gestor de paquetes GUI
 sudo pacman -S pamac --noconfirm
 
 ## clonando repositorios mxhectorvega
@@ -78,7 +77,7 @@ clear
 printf '\n \nInstalando paquetes minimos para que Gnome funcione...\n'
 sleep 1
 sudo pacman -S gdm gnome-shell gnome-terminal nautilus gnome-tweaks gnome-calculator gnome-control-center polkit-gnome --noconfirm --needed
-sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
+sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
 
 ## Fuentes basicas
@@ -96,6 +95,14 @@ pip install ./GetExtensions --user
 sleep 1
 rm -rf "$HOME"/GetExtensions/
 
+## instalando paquetes personalizados para el usuario
+clear 
+printf '\n \nInstalando paquetes personalizados para el usuario...\n'
+sleep 1
+sudo pacman -S visual-studio-code-bin microsoft-edge-stable-bin freeoffice telegram-desktop --noconfirm
+sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
+sudo pacman -S teamviewer anydesk-bin --noconfirm
+
 ## borrando directorios no necesarios
 clear 
 printf '\n \nBorrando directorio GO...\n'
@@ -107,6 +114,13 @@ clear
 printf '\n \nHabilitando bluetooth...\n'
 sleep 1
 sudo systemctl enable --now bluetooth.service
+
+
+## crear direciorios de usuario
+clear 
+printf '\n \nCreando direciorios de usuario...\n'
+sleep 1
+xdg-user-dirs-update
 
 ## Mensaje final
 clear
