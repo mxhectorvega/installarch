@@ -34,7 +34,7 @@ sudo pacman -Syyu --noconfirm
 clear
 printf '\n \nInstalando paquetes basicos para el usuario...\n'
 sleep 1
-sudo pacman -S git make gcc htop vim ranger neofetch pacman-contrib man imv mpv zathura-pdf-mupdf xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
+sudo pacman -S git make gcc htop vim ranger neofetch pacman-contrib man xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
 
 # Paru AUR helper
 clear 
@@ -75,13 +75,17 @@ rm -rf "$HOME"/{sway-arch,tipografias,temas}/
 
 cd $HOME/Colloid-kde
 sh install.sh
+sleep 1
+rm -rf $HOME/Colloid-kde
 
 ## Paquetes minimos para que Gnome funcione
 clear
 printf '\n \nInstalando paquetes minimos para que Gnome funcione...\n'
 sleep 1
 sudo pacman -S gdm gnome-shell gnome-terminal nautilus gnome-tweaks gnome-calculator gnome-control-center polkit-gnome --noconfirm --needed
+sudo pacman -S totem evince eog --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome --noconfirm --needed
+sudo pacman -S a52dec gst-plugins-ugly gstreamer-vaapi libmpeg2 libsidplay rtkit --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
 
 ## Fuentes basicas
@@ -105,6 +109,7 @@ printf '\n \nInstalando paquetes personalizados para el usuario...\n'
 sleep 1
 sudo pacman -S visual-studio-code-bin microsoft-edge-stable-bin freeoffice telegram-desktop --noconfirm
 sudo pacman -S gimp audacity kdenlive inkscape obs-studio --noconfirm
+sudo pacman -S webapp-manager --noconfirm
 sudo pacman -S teamviewer anydesk-bin --noconfirm
 sudo pacman -S steam --noconfirm
 
