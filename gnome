@@ -17,7 +17,7 @@ sudo sed -i "s/#Color/Color/g" /etc/pacman.conf
 sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
 sudo sed -i "38i ILoveCandy" /etc/pacman.conf
 
-## Instalando repositorio Chaotic para no depender de YAY o PARU.
+## Instalando repositorio Chaotic con software precompilado de AUR.
 sleep 1
 printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
 clear
@@ -62,7 +62,8 @@ sleep 1
 cp -rf $HOME/sway-arch/.bashrc "$HOME"
 cp -rf $HOME/sway-arch/.vimrc "$HOME"
 
-cp -rf $HOME/sway-arch/.config/ranger/ "$HOME"/.config/
+mkdir -p $HOME/.config/ranger
+cp -rf $HOME/sway-arch/.config/ranger/ "$HOME"/.config/ranger/
 cp -rf $HOME/sway-arch/.config/TWP.9.4.1.Chromium/ "$HOME"/.config/
 
 cp -rf $HOME/sway-arch/.local/ "$HOME"
@@ -94,9 +95,9 @@ printf '\n \nInstalando fuentes basicas...\n'
 sleep 1
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
 
-## Instala gestor de extenciones gnome 42
+## Instala gestor de extenciones gnome 42.x
 clear 
-printf '\n \nInstalando gestor de extensiones Gnome 42...\n'
+printf '\n \nInstalando gestor de extensiones Gnome 42.x...\n'
 sleep 1
 git clone https://github.com/ekistece/GetExtensions.git
 pip install ./GetExtensions --user
@@ -107,10 +108,23 @@ rm -rf "$HOME"/GetExtensions/
 clear 
 printf '\n \nInstalando paquetes personalizados para el usuario...\n'
 sleep 1
-sudo pacman -S visual-studio-code-bin microsoft-edge-stable-bin freeoffice telegram-desktop --noconfirm
-sudo pacman -S gimp audacity kdenlive inkscape obs-studio --noconfirm
-sudo pacman -S webapp-manager --noconfirm
+# Editor de Codigo:
+sudo pacman -S visual-studio-code-bin --noconfirm
+# Ofiatica:
+sudo pacman -S freeoffice --noconfirm
+# Mensajeria por excelencia:
+sudo pacman -S telegram-desktop  --noconfirm
+# Screncast o en español grabador de pantalla:
+sudo pacman -S obs-studio  --noconfirm
+# Navegador de su eleccion:
+sudo pacman -S  --noconfirm
+# Suite de edicion de imagem, audio, video y diseño vectorial:
+sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
+# Navegador de su eleccion:
+sudo pacman -S microsoft-edge-stable-bin --noconfirm
+# Creador de lanzadores o acceso directo a paginas como su fueran apps nativas:
 sudo pacman -S teamviewer anydesk-bin --noconfirm
+# Cliente de juegos:
 sudo pacman -S steam --noconfirm
 
 ## borrando directorios no necesarios
@@ -119,7 +133,7 @@ printf '\n \nBorrando directorio GO...\n'
 sleep 1
 rm -rf "$HOME"/go/
 
-# Cambiando de fuente y wallpaper ligthDM
+# Confuguracion de Zram con el paquete zram-generator
 clear 
 printf '\n \nOptimizando ZRAM con compresion ZSTD...\n'
 sleep 1
