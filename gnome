@@ -116,13 +116,13 @@ sudo pacman -S freeoffice --noconfirm
 sudo pacman -S telegram-desktop  --noconfirm
 # Screncast o en español grabador de pantalla:
 sudo pacman -S obs-studio  --noconfirm
-# Navegador de su eleccion:
-sudo pacman -S  --noconfirm
 # Suite de edicion de imagem, audio, video y diseño vectorial:
 sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
 # Navegador de su eleccion:
 sudo pacman -S microsoft-edge-stable-bin --noconfirm
 # Creador de lanzadores o acceso directo a paginas como su fueran apps nativas:
+sudo pacman -S webapp-manager --noconfirm
+# Manejo de escritorios remotos:
 sudo pacman -S teamviewer anydesk-bin --noconfirm
 # Cliente de juegos:
 sudo pacman -S steam --noconfirm
