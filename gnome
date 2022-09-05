@@ -99,10 +99,7 @@ sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei un
 clear 
 printf '\n \nInstalando gestor de extensiones Gnome 42.x...\n'
 sleep 1
-git clone https://github.com/ekistece/GetExtensions.git
-pip install ./GetExtensions --user
-sleep 1
-rm -rf "$HOME"/GetExtensions/
+sudo pacman -S extension-manager-git --noconfirm
 
 ## instalando paquetes personalizados para el usuario
 clear 
@@ -111,15 +108,15 @@ sleep 1
 # Editor de Codigo:
 sudo pacman -S visual-studio-code-bin --noconfirm
 # Ofiatica:
-sudo pacman -S freeoffice --noconfirm
+sudo pacman -S libreoffice-fresh-es --noconfirm
 # Mensajeria por excelencia:
-sudo pacman -S telegram-desktop  --noconfirm
+sudo pacman -S telegram-desktop --noconfirm
 # Screncast o en español grabador de pantalla:
-sudo pacman -S obs-studio  --noconfirm
+sudo pacman -S obs-studio --noconfirm
 # Suite de edicion de imagem, audio, video y diseño vectorial:
 sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
 # Navegador de su eleccion:
-sudo pacman -S microsoft-edge-stable-bin --noconfirm
+sudo pacman -S firefox --noconfirm
 # Creador de lanzadores o acceso directo a paginas como su fueran apps nativas:
 sudo pacman -S webapp-manager --noconfirm
 # Manejo de escritorios remotos:
