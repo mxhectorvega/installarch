@@ -101,6 +101,7 @@ clear
 printf '\n \nInstalando gestor de extensiones Gnome 42.x...\n'
 sleep 1
 sudo pacman -S extension-manager-git --noconfirm
+sudo pacman -S adw-gtk3-git --noconfirm
 
 ## instalando paquetes personalizados para el usuario
 clear 
