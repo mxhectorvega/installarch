@@ -34,7 +34,7 @@ sudo pacman -Syyu --noconfirm
 clear
 printf '\n \nInstalando paquetes basicos para el usuario...\n'
 sleep 1
-sudo pacman -S git make gcc htop vim btop fuse pacman-contrib man xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
+sudo pacman -S git make gcc htop vim btop fuse ntfs-3g pacman-contrib man xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
 sudo pacman -S usbutils --noconfirm
 
 # Paru AUR helper
