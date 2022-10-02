@@ -34,7 +34,7 @@ sudo pacman -Syyu --noconfirm
 clear
 printf '\n \nInstalando paquetes basicos para el usuario...\n'
 sleep 1
-sudo pacman -S git make gcc htop vim ranger neofetch pacman-contrib man xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
+sudo pacman -S git make gcc htop vim btop fuse pacman-contrib man xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
 sudo pacman -S usbutils --noconfirm
 
 # Paru AUR helper
@@ -63,9 +63,9 @@ sleep 1
 cp -rf $HOME/sway-arch/.bashrc "$HOME"
 cp -rf $HOME/sway-arch/.vimrc "$HOME"
 
-mkdir -p $HOME/.config/ranger
-cp -rf $HOME/sway-arch/.config/ranger/ "$HOME"/.config/ranger/
-cp -rf $HOME/sway-arch/.config/TWP.9.4.1.Chromium/ "$HOME"/.config/
+# mkdir -p $HOME/.config/ranger
+# cp -rf $HOME/sway-arch/.config/ranger/ "$HOME"/.config/ranger/
+# cp -rf $HOME/sway-arch/.config/TWP.9.4.1.Chromium/ "$HOME"/.config/
 
 cp -rf $HOME/sway-arch/.local/ "$HOME"
 
@@ -102,6 +102,7 @@ printf '\n \nInstalando gestor de extensiones Gnome 42.x...\n'
 sleep 1
 sudo pacman -S extension-manager-git --noconfirm
 sudo pacman -S adw-gtk3-git --noconfirm
+paru -S gnome-shell-extension-arc-menu-git gnome-shell-extension-desktop-icons-ng --noconfirm
 
 ## instalando paquetes personalizados para el usuario
 clear 
@@ -119,10 +120,11 @@ sudo pacman -S obs-studio --noconfirm
 sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
 # Navegador de su eleccion:
 sudo pacman -S firefox --noconfirm
+sudo pacman -S microsoft-edge-stable --noconfirm
 # Creador de lanzadores o acceso directo a paginas como su fueran apps nativas:
 sudo pacman -S webapp-manager --noconfirm
 # Manejo de escritorios remotos:
-sudo pacman -S teamviewer anydesk-bin --noconfirm
+sudo pacman -S rustdesk --noconfirm
 # Cliente de juegos:
 sudo pacman -S steam --noconfirm
 
