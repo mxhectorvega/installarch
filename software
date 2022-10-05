@@ -117,8 +117,15 @@ sudo pacman -S xf86-video-amdgpu mesa opencl-mesa libva-mesa-driver mesa-vdpau -
 clear
 printf '\n \nInstalando flatpak...\n'
 sleep 1
-sudo pacman -S flatpak
-flatpak install flathub net.brinkervii.grapejuice
+sudo pacman -S flatpak --noconfirm
+flatpak install -y flathub net.brinkervii.grapejuice
+
+# Instalando drivers USB wifi
+clear
+printf '\n \nInstalando drivers USB Wifi...\n'
+sleep 1
+sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
+sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
 
 ## Mensaje final
 clear
