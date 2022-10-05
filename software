@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+
+## Titulo: Instalacion automatica del software que uso en el dia a dia.
+## Autor: Hector Iván Vega Zamudio
+## Correo: mxhectorvega@gmail.com
+## Link: https://github.com/mxhectorvega
+## Versión:beta1
+## Fecha de actualización 05/10/2022
+## Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
+## Seleccionando el perfil XORG O DESKTOP con todos los controladores de código abierto.
+
+## Pacman configuraciones
+clear
+printf '\n \nConfigurando gestor de paquetes Pacman...\n'
+sleep 1
+sudo sed -i "s/#Color/Color/g" /etc/pacman.conf
+sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
+sudo sed -i "38i ILoveCandy" /etc/pacman.conf
+
+## Instalando repositorio Chaotic con software precompilado de AUR.
+sleep 1
+printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
+clear
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+sudo pacman -Syyu --noconfirm
+
+## Software basico para el usuario
+clear
+printf '\n \nInstalando paquetes basicos para el usuario...\n'
+sleep 1
+sudo pacman -S git make gcc neofetch htop vim btop fuse ntfs-3g pacman-contrib man jre17-openjdk --noconfirm --needed
+sudo pacman -S usbutils --noconfirm
+
+# Paru AUR helper
+clear
+printf '\n \nInstalando el gestor de paquetes Paru...\n'
+sleep 1
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+
+## Instalando gestor de paquetes GUI
+sudo pacman -S pamac --noconfirm
+
+## clonando repositorios mxhectorvega
+clear
+printf '\n \nClonando repositorios mxhectorvega...\n'
+sleep 1
+git clone https://github.com/mxhectorvega/sway-arch
+git clone https://github.com/mxhectorvega/tipografias
+
+## copiando archivos y directorios
+clear
+printf '\n \nCopiando archivos y directorios...\n'
+sleep 1
+cp -rf $HOME/sway-arch/.bashrc "$HOME"
+cp -rf $HOME/sway-arch/.vimrc "$HOME"
+
+mkdir -p $HOME/.local/share/fonts/
+cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
+
+rm -rf "$HOME"/tipografias
+rm -rf "$HOME"/sway-arch
+
+## Fuentes basicas
+clear
+printf '\n \nInstalando fuentes basicas...\n'
+sleep 1
+sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
+
+## instalando paquetes personalizados para el usuario
+clear
+printf '\n \nInstalando paquetes personalizados para el usuario...\n'
+sleep 1
+# Reproductor de audio y video:
+sudo pacman -S vlc --noconfirm
+# Editor de Codigo:
+sudo pacman -S visual-studio-code-bin --noconfirm
+# Ofiatica:
+sudo pacman -S libreoffice-fresh-es --noconfirm
+# Mensajeria por excelencia:
+sudo pacman -S telegram-desktop --noconfirm
+# Screncast o en español grabador de pantalla:
+sudo pacman -S obs-studio --noconfirm
+# Suite de edicion de imagem, audio, video y diseño vectorial:
+sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
+# Navegador de su eleccion:
+sudo pacman -S microsoft-edge-stable --noconfirm
+# Manejo de escritorios remotos:
+sudo pacman -S rustdesk --noconfirm
+# Cliente de juegos:
+sudo pacman -S steam --noconfirm
+
+# Confuguracion de Zram con el paquete zram-generator
+clear
+printf '\n \nOptimizando ZRAM con compresion ZSTD...\n'
+sleep 1
+sudo tee /etc/systemd/zram-generator.conf <<EOF
+[zram0]
+zram-size= ram
+swap-priority = 32767
+compression-algorithm = zstd
+EOF
+
+# Instalar drivers de video para que jale bien la edicion
+clear
+printf '\n \nInstando drivers de video para que jale bien la edicion...\n'
+sleep 1
+sudo pacman -S xf86-video-amdgpu mesa opencl-mesa libva-mesa-driver mesa-vdpau --noconfirm --needed
+
+# Instalando flatpak
+clear
+printf '\n \nInstalando flatpak...\n'
+sleep 1
+sudo pacman -S flatpak
+flatpak install flathub net.brinkervii.grapejuice
+
+## Mensaje final
+clear
+sleep 1
+printf '\n \nSoftware instalado!'
+sleep 1
+printf '\n \nContribuye paypal.me/hivz'
+sleep 3
