@@ -126,7 +126,7 @@ clear
 printf '\n \nInstalando drivers Bluetooth...\n'
 sleep 1
 sudo pacman -S bluez --noconfirm --needed
-sudo syst
+sudo systemctl enable --now bluetooth
 
 # Instalando drivers USB wifi
 clear
