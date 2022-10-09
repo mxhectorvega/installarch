@@ -4,8 +4,8 @@
 ## Autor: Hector Iván Vega Zamudio
 ## Correo: mxhectorvega@gmail.com
 ## Link: https://github.com/mxhectorvega
-## Versión:beta1
-## Fecha de actualización 05/10/2022
+## Versión:beta3
+## Fecha de actualización 09/10/2022
 ## Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
 ## Seleccionando el perfil XORG O DESKTOP con todos los controladores de código abierto.
 
@@ -119,6 +119,14 @@ printf '\n \nInstalando flatpak...\n'
 sleep 1
 sudo pacman -S flatpak --noconfirm
 flatpak install -y flathub net.brinkervii.grapejuice
+
+
+# Instalando drivers Bluetooth
+clear
+printf '\n \nInstalando drivers Bluetooth...\n'
+sleep 1
+sudo pacman -S bluez --noconfirm --needed
+sudo syst
 
 # Instalando drivers USB wifi
 clear
