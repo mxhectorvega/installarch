@@ -34,8 +34,10 @@ sudo pacman -Syyu --noconfirm
 clear
 printf '\n \nInstalando paquetes basicos para el usuario...\n'
 sleep 1
-sudo pacman -S git make gcc neofetch htop vim btop fuse ntfs-3g pacman-contrib man jre17-openjdk --noconfirm --needed
+sudo pacman -S wget curl git make gcc htop vim btop fuse ntfs-3g pacman-contrib man --noconfirm --needed
 sudo pacman -S usbutils --noconfirm
+sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
+sudo chmod +x /usr/bin/neofetch
 
 # Paru AUR helper
 clear
@@ -45,7 +47,7 @@ cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -s
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
 ## Instalando gestor de paquetes GUI
-sudo pacman -S pamac --noconfirm
+# sudo pacman -S pamac --noconfirm
 
 ## clonando repositorios mxhectorvega
 clear
@@ -80,7 +82,7 @@ sleep 1
 # Reproductor de audio y video:
 sudo pacman -S vlc --noconfirm
 # Editor de Codigo:
-sudo pacman -S visual-studio-code-bin --noconfirm
+#sudo pacman -S visual-studio-code-bin --noconfirm
 # Ofiatica:
 sudo pacman -S libreoffice-fresh-es --noconfirm
 # Mensajeria por excelencia:
@@ -114,11 +116,11 @@ sleep 1
 sudo pacman -S xf86-video-amdgpu mesa opencl-mesa libva-mesa-driver mesa-vdpau --noconfirm --needed
 
 # Instalando flatpak
-clear
-printf '\n \nInstalando flatpak...\n'
-sleep 1
-sudo pacman -S flatpak --noconfirm
-flatpak install -y flathub net.brinkervii.grapejuice
+#clear
+#printf '\n \nInstalando flatpak...\n'
+#sleep 1
+#sudo pacman -S flatpak --noconfirm
+#flatpak install -y flathub net.brinkervii.grapejuice
 
 
 # Instalando drivers Bluetooth
@@ -129,11 +131,11 @@ sudo pacman -S bluez --noconfirm --needed
 sudo systemctl enable --now bluetooth
 
 # Instalando drivers USB wifi
-clear
-printf '\n \nInstalando drivers USB Wifi...\n'
-sleep 1
-sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
-sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
+#clear
+#printf '\n \nInstalando drivers USB Wifi...\n'
+#sleep 1
+#sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
+#sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
 
 ## Mensaje final
 clear
