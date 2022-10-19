@@ -4,8 +4,8 @@
 ## Autor: Hector Iván Vega Zamudio
 ## Correo: mxhectorvega@gmail.com
 ## Link: https://github.com/mxhectorvega
-## Versión:beta3
-## Fecha de actualización 09/10/2022
+## Versión:beta5
+## Fecha de actualización 18/10/2022
 ## Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
 ## Seleccionando el perfil XORG O DESKTOP con todos los controladores de código abierto.
 
@@ -30,6 +30,9 @@ Include = /etc/pacman.d/chaotic-mirrorlist
 EOF
 sudo pacman -Syyu --noconfirm
 
+## Instalar KDE Plasma minimal
+pacman -S plasma dolphin konsole sddm --noconfirm
+
 ## Software basico para el usuario
 clear
 printf '\n \nInstalando paquetes basicos para el usuario...\n'
@@ -38,6 +41,8 @@ sudo pacman -S wget curl git make gcc htop vim btop fuse ntfs-3g pacman-contrib 
 sudo pacman -S usbutils --noconfirm
 sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
 sudo chmod +x /usr/bin/neofetch
+mkdir $HOME/.config/neofetch
+curl -L is.gd/mxneofetch > $HOME/.config/neofetch/config.conf
 
 # Paru AUR helper
 clear
@@ -122,7 +127,6 @@ sudo pacman -S xf86-video-amdgpu mesa opencl-mesa libva-mesa-driver mesa-vdpau -
 #sudo pacman -S flatpak --noconfirm
 #flatpak install -y flathub net.brinkervii.grapejuice
 
-
 # Instalando drivers Bluetooth
 clear
 printf '\n \nInstalando drivers Bluetooth...\n'
@@ -131,11 +135,14 @@ sudo pacman -S bluez --noconfirm --needed
 sudo systemctl enable --now bluetooth
 
 # Instalando drivers USB wifi
-#clear
-#printf '\n \nInstalando drivers USB Wifi...\n'
-#sleep 1
-#sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
-#sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
+clear
+printf '\n \nInstalando drivers USB Wifi...\n'
+sleep 1
+sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
+sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
+
+## Activar DSSM 
+sudo systemctl enable --now sddm
 
 ## Mensaje final
 clear
