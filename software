@@ -3,9 +3,9 @@
 ## Titulo: Instalacion automatica del software que uso en el dia a dia.
 ## Autor: Hector Iván Vega Zamudio
 ## Correo: mxhectorvega@gmail.com
-## Link: https://github.com/mxhectorvega
-## Versión:beta5
-## Fecha de actualización 18/10/2022
+## Link: https://github.com/mxhectorvega/installarch/software
+## Versión:1.0 relase
+## Fecha de actualización 28/10/2022
 ## Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
 ## Seleccionando el perfil XORG O DESKTOP con todos los controladores de código abierto.
 
@@ -81,24 +81,37 @@ sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei un
 clear
 printf '\n \nInstalando paquetes personalizados para el usuario...\n'
 sleep 1
+
 # Reproductor de audio y video:
 sudo pacman -S vlc --noconfirm
+
 # Editor de Codigo:
 #sudo pacman -S visual-studio-code-bin --noconfirm
+
 # Ofiatica:
 sudo pacman -S libreoffice-fresh-es --noconfirm
+
 # Mensajeria por excelencia:
 sudo pacman -S telegram-desktop --noconfirm
+
 # Screncast o en español grabador de pantalla:
 sudo pacman -S obs-studio --noconfirm
+
 # Suite de edicion de imagem, audio, video y diseño vectorial:
 sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
+
 # Navegador de su eleccion:
-sudo pacman -S microsoft-edge-stable --noconfirm
+#sudo pacman -S microsoft-edge-stable --noconfirm
+sudo pacman -S firefox --noconfirm
+
 # Manejo de escritorios remotos:
 sudo pacman -S rustdesk --noconfirm
+
 # Cliente de juegos:
 sudo pacman -S steam --noconfirm
+
+# Creador de lanzadores o acceso directo a paginas como su fueran apps nativas:
+sudo pacman -S webapp-manager --noconfirm
 
 # Confuguracion de Zram con el paquete zram-generator
 clear
