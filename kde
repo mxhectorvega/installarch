@@ -3,7 +3,7 @@
 ## Titulo: Instalacion automatica del software que uso en el dia a dia.
 ## Autor: Hector Iván Vega Zamudio
 ## Correo: mxhectorvega@gmail.com
-## Link: https://github.com/mxhectorvega/installarch/software
+## Link: https://github.com/mxhectorvega/installarch/kde
 ## Versión:1.0 relase
 ## Fecha de actualización 28/10/2022
 ## Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
@@ -47,6 +47,12 @@ printf '\n \nInstalando el gestor de paquetes Paru...\n'
 sleep 1
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+
+## instalando software KDE basico
+clear
+printf '\n \nInstalando software KDE basico...\n'
+sleep 1
+sudo pacman -S sddm plasma konsole dolphin ark okular kwrite kcalc spectacle partitionmanager packagekit-qt5
 
 ## Instalando gestor de paquetes GUI
 sudo pacman -S pamac --noconfirm
@@ -132,3 +138,9 @@ printf '\n \nSoftware instalado!'
 sleep 1
 printf '\n \nContribuye paypal.me/hivz'
 sleep 3
+
+## Activar DSSM
+clear
+printf '\n \nActivando display manager...\n'
+sleep 1
+sudo systemctl enable --now sddm
