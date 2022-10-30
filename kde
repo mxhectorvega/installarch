@@ -10,25 +10,25 @@
 ## Seleccionando el perfil XORG O DESKTOP con todos los controladores de código abierto.
 
 ## Pacman configuraciones
-clear
-printf '\n \nConfigurando gestor de paquetes Pacman...\n'
-sleep 1
-sudo sed -i "s/#Color/Color/g" /etc/pacman.conf
-sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
-sudo sed -i "38i ILoveCandy" /etc/pacman.conf
+#clear
+#printf '\n \nConfigurando gestor de paquetes Pacman...\n'
+#sleep 1
+#sudo sed -i "s/#Color/Color/g" /etc/pacman.conf
+#sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
+#sudo sed -i "38i ILoveCandy" /etc/pacman.conf
 
 ## Instalando repositorio Chaotic con software precompilado de AUR.
-sleep 1
-printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
-clear
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-sudo pacman -Syyu --noconfirm
+#sleep 1
+#printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
+#clear
+#sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+#sudo pacman-key --lsign-key FBA220DFC880C036
+#sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+#sudo tee -a /etc/pacman.conf <<EOF
+#[chaotic-aur]
+#Include = /etc/pacman.d/chaotic-mirrorlist
+#EOF
+#sudo pacman -Syyu --noconfirm
 
 ## Software basico para el usuario
 clear
@@ -47,12 +47,13 @@ printf '\n \nInstalando el gestor de paquetes Paru...\n'
 sleep 1
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+sudo pacman -Syyu --noconfirm
 
 ## instalando software KDE basico
 clear
 printf '\n \nInstalando software KDE basico...\n'
 sleep 1
-sudo pacman -S sddm plasma konsole dolphin ark okular kwrite kcalc spectacle partitionmanager packagekit-qt5
+sudo pacman -S sddm plasma konsole dolphin ark gwenview okular kwrite kcalc spectacle partitionmanager packagekit-qt5
 
 ## Instalando gestor de paquetes GUI
 sudo pacman -S pamac --noconfirm
@@ -94,9 +95,9 @@ sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
 ## Navegador de su eleccion:
 sudo pacman -S firefox --noconfirm
 ## Manejo de escritorios remotos:
-sudo pacman -S rustdesk --noconfirm
+#sudo pacman -S rustdesk --noconfirm
 ## Cliente de juegos:
-sudo pacman -S steam --noconfirm
+#sudo pacman -S steam --noconfirm
 ## Creador de lanzadores o acceso directo a paginas como su fueran apps nativas:
 sudo pacman -S webapp-manager --noconfirm
 
