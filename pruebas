@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+sudo pacman -Syyu --noconfirm
+
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+
+sudo pacman-key --lsign-key FBA220DFC880C036
+
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+
+sudo pacman -Syyu --noconfirm
+
+sudo pacman -S git make gcc curl wget htop vim pacman-contrib xdg-user-dirs usbutils flatpak --noconfirm --needed
+
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+
+sudo pacman -S gdm gnome-shell gnome-disk-utility gnome-terminal nautilus gnome-tweaks gnome-control-center gnome-software gnome-software-packagekit-plugin polkit-gnome --noconfirm --needed
+
+sudo pacman -S xdg-desktop-portal-gnome --noconfirm --needed
+
+sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
+
+sudo pacman -S papirus-icon-theme adw-gtk3-git --noconfirm --needed
+
+sudo pacman -S steam protonup-qt --noconfirm --needed
+
+flatpak install -y org.libreoffice.LibreOffice org.telegram.desktop org.gtk.Gtk3theme.adw-gtk3-dark
+
+sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm
+
+git clone https://aur.archlinux.org/rtl88xxau-aircrack-dkms-git.git
+
+cd rtl88xxau-aircrack-dkms-git
+
+makepkg -si
+
+sudo systemctl enable --now bluetooth
+
+sudo systemctl enable gdm
+
+sudo reboot
