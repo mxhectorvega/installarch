@@ -14,7 +14,7 @@ EOF
 
 sudo pacman -Syyu --noconfirm
 
-sudo pacman -S git make gcc curl wget htop vim pacman-contrib xdg-user-dirs usbutils flatpak --noconfirm --needed
+sudo pacman -S git make gcc curl wget htop vim pacman-contrib xdg-user-dirs usbutils ntfs-3g flatpak --noconfirm --needed
 
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 
