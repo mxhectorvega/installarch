@@ -1,6 +1,6 @@
 ## INSTALLARCH
 
->_Este repositorio contiene scripts en bash que instalan mis configuraciones personales de entornos de escritorio (gnome o kde),  gestores de ventanas (wayland o xorg), enfocados en mejorar el rendimiento, sin sacrificar un buen diseño o compatibilidad con software del usuario domestico._
+>_Este repositorio contiene scripts en bash que instalan mis configuraciones personales de entornos de escritorio como gnome o kde,  gestores de ventanas para wayland o xorg, enfocados en mejorar el rendimiento, sin sacrificar un buen diseño o compatibilidad con software del usuario domestico._
 
 **Recomendacion:**
 
