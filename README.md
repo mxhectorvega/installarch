@@ -1,10 +1,10 @@
 ## INSTALLARCH
 
->_Este repositorio contiene scripts en bash que instalan mis configuraciones personales de entornos de escritorio como gnome o kde,  gestores de ventanas para wayland o xorg, enfocados en mejorar el rendimiento, sin sacrificar un buen diseño o compatibilidad con software del usuario domestico._
+>_Este repositorio contiene scripts en bash que instalan mis configuraciones personales de entornos de escritorio como gnome o kde, gestores de ventanas para wayland o xorg, enfocados en mejorar el rendimiento, sin sacrificar un buen diseño o compatibilidad con software del usuario doméstico._
 
-**Recomendacion:**
+**Recomendación:**
 
-El script se debe de ejecutar en una **instlalacion de archlinux minima**, se preferencia echa por el metodo oficial **archinstall**, seleccioando el perfil **minimal**.
+El script se debe de ejecutar en una **instalación de archlinux mínima**, se preferencia echa por el método oficial **archinstall**, seleccionado el perfil **minimal**.
 
 **Gestores de ventanas:**
 - Hyprland
@@ -17,9 +17,9 @@ El script se debe de ejecutar en una **instlalacion de archlinux minima**, se pr
 - Kde Plasma
 - Budgie
 
-**Metodo de instalacicion:**
+**Método de instalación:**
 
-La instalacion se efectuara en la tty o terminal segun el caso, cambiando `gnome` por el entorno o gestor de ventanas deseado, ejemplo:
+La instalación se efectuara en la tty o terminal según el caso, cambiando `gnome` por el entorno o gestor de ventanas deseado, ejemplo:
 ```sh
 bash <(curl -L is.gd/mxgnome)
 ```
