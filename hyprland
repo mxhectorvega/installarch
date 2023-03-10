@@ -25,11 +25,19 @@ EOF
 sudo pacman -Syyu --noconfirm
 
 # Software adicional
-sudo pacman -S git make gcc curl wget gnome-terminal nautilus make gcc htop vim blueberry network-manager-applet pacman-contrib man bc polkit-gnome telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python-pillow imagemagick usbutils ntfs-3g flatpak --noconfirm --needed
+sudo pacman -S git make gcc curl wget gnome-terminal nautilus make gcc htop vim blueberry pacman-contrib man bc polkit-gnome telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python-pillow imagemagick usbutils ntfs-3g flatpak --noconfirm --needed
+sudo pacman -S swaybg-git --noconfirm --needed
+sudo pacman -S firefox --noconfirm --needed
+# opcional agregar el gestor GTK de redes wifi
+#network-manager-applet
 
 # Paru
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+
+# neofetch binario
+sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
+sudo chmod +x /usr/bin/neofetch
 
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/temas
