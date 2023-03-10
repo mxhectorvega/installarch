@@ -4,23 +4,15 @@
 # Autor: Hector Iván Vega Zamudio
 # Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega
-# Versión: v1.0
-# Fecha de actualización 12/06/2022
+# Versión: v2.2
+# Fecha de actualización 09/03/2023
 # Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
-# Seleccionando el perfil Xorg con todos los controladores de código abierto.
+# Seleccionando el perfil minimo.
 
-# Pacman configuraciones
-clear 
-printf '\n \nConfigurando gestor de paquetes Pacman...\n'
-sleep 1
-sudo sed -i "s/#Color/Color/g" /etc/pacman.conf 
-sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
-sudo sed -i "38i ILoveCandy" /etc/pacman.conf
+# Actualizacion
+sudo pacman -Syyu --noconfirm
 
-## Instalando repositorio Chaotic para no depender de YAY o PARU.
-sleep 1
-printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
-clear
+# Repo chaotic
 sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
 sudo pacman-key --lsign-key FBA220DFC880C036
 sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
@@ -28,94 +20,52 @@ sudo tee -a /etc/pacman.conf <<EOF
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist
 EOF
-sudo pacman -Sy --noconfirm
 
-# Paquetes adicionales
-clear
-printf '\n \nInstalando paquetes adicionales...\n'
-sleep 1
-
-# Actualizacion del SO
-sudo pacman -Syu --noconfirm
-sudo pacman -S git --noconfirm
-
-# Dotfiles Fedora en Arch
-clear
-printf '\n \nEscribe la contraseña para reemplazar archivo .bashrc...\n'
-sudo rm -rf "$HOME"/.bashrc
-
-clear
-printf '\n \nClonando repositorios mxhectorvega...\n'
-sleep 1
-
-git clone https://github.com/mxhectorvega/sway-arch
-git clone https://github.com/mxhectorvega/tipografias
-git clone https://github.com/mxhectorvega/temas
-
-cp -rf $HOME/sway-arch/.gtkrc-2.0 "$HOME"
-cp -rf $HOME/sway-arch/.bashrc "$HOME"
-cp -rf $HOME/sway-arch/.vimrc "$HOME"
-cp -rf $HOME/sway-arch/.config/ "$HOME"
-cp -rf $HOME/sway-arch/.local/ "$HOME"
-mkdir -p $HOME/.local/share/fonts/
-cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
-cp -rf $HOME/temas/.{icons,themes}/ "$HOME"
-rm -rf "$HOME"/{sway-arch,tipografias,temas}/
+# Actualizacion
+sudo pacman -Syyu --noconfirm
 
 # Software adicional
-sudo pacman -S git kitty make gcc htop vim blueberry network-manager-applet pacman-contrib man bc polkit-gnome telegram-desktop imv mpv zathura-pdf-mupdf mousepad xdg-user-dirs python-pillow imagemagick --noconfirm --needed
+sudo pacman -S git make gcc curl wget gnome-terminal nautilus make gcc htop vim blueberry network-manager-applet pacman-contrib man bc polkit-gnome telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python-pillow imagemagick usbutils ntfs-3g flatpak --noconfirm --needed
 
-# SwayWM 
-sudo pacman -S sway --noconfirm --needed
+# Paru
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+
+# Temas y fuentes mxhectorvega
+git clone https://github.com/mxhectorvega/temas
+git clone https://github.com/mxhectorvega/tipografias
+cp -rf $HOME/temas/.{icons,themes}/ "$HOME"
+mkdir -p $HOME/.local/share/fonts/
+cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
+rm -rf $HOME/tipografias
+rm -rf $HOME/temas
+
+# Hyprland
+sudo pacman -S hyprland-git waybar-hyprland-git mako wofi --noconfirm --needed
 sudo pacman -S rtkit qt5-wayland xorg-xwayland swayidle wofi mako waybar grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-wlr --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
-
-# Pipewire utilities
-#sudo pacman -S alsa-utils pipewire-alsa pipewire-pulse bluez bluez-utils pavucontrol --noconfirm --needed
-
-# Thunar extras
-sudo pacman -S gvfs thunar thunar-archive-plugin thunar-volman thunar-archive-plugin tumbler ffmpegthumbnailer xarchiver zip unzip unrar unarj p7zip lzop lzip lrzip lha cpio arj --noconfirm --needed
 
 # Fuentes basicas
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
 
 # Display manager (pantalla de inicio de sesion)
-sudo pacman -S lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings --noconfirm
-
-# Paru AUR helper
-clear 
-printf '\n \nInstalando el gestor de paquetes Paru...\n'
-sleep 1
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf 
-
-## borrando directorios no necesarios
-rm -rf "$HOME"/go/
+# sudo pacman -S lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings --noconfirm
 
 sudo pacman -S clipman --noconfirm
 
 # Cambiando de fuente y wallpaper ligthDM
-sudo tee /etc/lightdm/lightdm-gtk-greeter.conf <<EOF
-[greeter]
-font-name=SF Compact Display 9
-xft-antialias=true
-xft-dpi=96
-xft-hintstyle=hintslight
-xft-rgba=rgb
-indicators=~session;~spacer;separator;~clock;~spacer;separator;~power;
-clock-format=%a, %b %d, %H:%M
-EOF
+#sudo tee /etc/lightdm/lightdm-gtk-greeter.conf <<EOF
+#[greeter]
+#font-name=SF Compact Display 9
+#xft-antialias=true
+#xft-dpi=96
+#xft-hintstyle=hintslight
+#xft-rgba=rgb
+#indicators=~session;~spacer;separator;~clock;~spacer;separator;~power;
+#clock-format=%a, %b %d, %H:%M
+#EOF
 
-
-clear
-sleep 1
-printf '\n \nConfiguraciones aplicadas!'
-sleep 1
-printf '\n \nIniciando pantalla de inicio de session....'
-clear
-## Habilitando servicio de pantalla de inicio de sesion
-sudo systemctl enable --now lightdm
 ## Habilitando servicio de bluetooth 
 sudo systemctl enable --now bluetooth.service
 #printf '\n \nConsulte los atajos del teclado en el archivo ~/.config/sway/config'
