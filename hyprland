@@ -27,6 +27,7 @@ sudo pacman -Syyu --noconfirm
 # Software adicional
 sudo pacman -S git make gcc curl wget gnome-terminal nautilus make gcc htop vim blueberry pacman-contrib man bc polkit-gnome telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python-pillow imagemagick usbutils ntfs-3g flatpak --noconfirm --needed
 sudo pacman -S swaybg-git --noconfirm --needed
+sudo pacman -S pulsemixer --noconfirm --needed
 sudo pacman -S firefox --noconfirm --needed
 # opcional agregar el gestor GTK de redes wifi
 #network-manager-applet
@@ -42,9 +43,9 @@ sudo chmod +x /usr/bin/neofetch
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/temas
 git clone https://github.com/mxhectorvega/tipografias
-cp -rf $HOME/temas/.{icons,themes}/ "$HOME"
-mkdir -p $HOME/.local/share/fonts/
-cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
+cp -R $HOME/temas/.{icons,themes}/ $HOME
+mkdir -p $HOME/.local/share/fonts
+cp -R $HOME/tipografias "$HOME"/.local/share
 rm -rf $HOME/tipografias
 rm -rf $HOME/temas
 
