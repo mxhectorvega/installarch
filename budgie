@@ -15,7 +15,7 @@ sudo pacman -Syyu --noconfirm
 # Internos para el SO
 sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
 # Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget htop vim fuse less man --noconfirm --needed 
+sudo pacman -S git make gcc curl wget nvtop htop vim fuse less man --noconfirm --needed 
 
 # Repo chaotic
 sudo pacman -Syyu --noconfirm

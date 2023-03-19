@@ -39,7 +39,7 @@ sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
 sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
 
 # Driver (AMDGPU PRO) 
-sudo pacman -S xf86-video-amdgpu
+sudo pacman -S xf86-video-amdgpu --noconfirm --needed 
 
 git clone https://aur.archlinux.org/amdgpu-pro-installer.git
 cd amdgpu-pro-installer
@@ -52,7 +52,10 @@ Actualizado:
 paru -S opencl-amd --noconfirm
 
 # VDPAU
-sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
+sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau --noconfirm --needed 
+
+# Monitor GPU
+sudo pacman -S nvtop --noconfirm --needed 
 
 # Mensaje final
 sleep 1
