@@ -145,3 +145,10 @@ clear
 printf '\n \nActivando display manager...\n'
 sleep 1
 sudo systemctl enable --now sddm
+
+# Mensaje final
+sleep 1
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+sleep 1
+printf ''
+

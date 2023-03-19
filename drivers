@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+# Titulo: Instalación automática de Drivers AMD Privativo
+# Autor: Héctor Iván Vega Zamudio
+# Correo: mxhectorvega@gmail.com
+# Link: https://github.com/mxhectorvega/installarch
+# Versión:0.1
+# Fecha de actualización 19/03/2023
+# Nota: El sistema de preferencia debe haber sido instalado con la
+# herramienta archinstall del liveUSB, seleccionando el perfil minimo.
+
+# Pacman configuraciones
+clear
+printf '\n \nConfigurando gestor de paquetes Pacman...\n'
+sleep 1
+sudo sed -i "s/#Color/Color/g" /etc/pacman.conf
+sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
+sudo sed -i "38i ILoveCandy" /etc/pacman.conf
+
+# Instalando repositorio Chaotic con software precompilado de AUR.
+sleep 1
+printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
+clear
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+sudo pacman -Syyu --noconfirm
+
+# Paru AUR helper
+clear
+printf '\n \nInstalando el gestor de paquetes Paru...\n'
+sleep 1
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+
+# Instalando driver USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano])
+clear
+printf '\n \nInstalando drivers USB Wifi...\n'
+sleep 1
+sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
+sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
+
+# Driver (AMDGPU PRO) 
+sudo pacman -S xf86-video-amdgpu
+
+git clone https://aur.archlinux.org/amdgpu-pro-installer.git
+cd amdgpu-pro-installer
+makepkg -si
+
+paru -S amd-vulkan-prefixes --noconfirm
+
+# OpenCL
+Actualizado:
+paru -S opencl-amd --noconfirm
+
+# VDPAU
+sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
+
+# Mensaje final
+sleep 1
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+sleep 1
+printf ''
+

@@ -65,3 +65,9 @@ xdg-user-dirs-update --force
 # Otorgando permisos para cambiar brillo de pantalla
 sudo chmod +s /usr/bin/light
 
+# Mensaje final
+sleep 1
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+sleep 1
+printf ''
+

@@ -50,7 +50,11 @@ sudo pacman -Sy --noconfirm
 clear
 echo -e "Configs ZSH, Ranger, Kitty y Neovim cargadas!"
 sleep 1
-echo ""
-echo -e "Contribuye en paypal.me/hivz"
-sleep 3
+
+# Mensaje final
+sleep 1
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+sleep 1
+printf ''
+
 pkill -9 kitty

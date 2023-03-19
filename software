@@ -125,10 +125,9 @@ sleep 1
 sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
 sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
 
-## Mensaje final
-clear
+# Mensaje final
 sleep 1
-printf '\n \nSoftware instalado!'
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
 sleep 1
-printf '\n \nContribuye paypal.me/hivz'
-sleep 3
+printf ''
+

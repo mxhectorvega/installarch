@@ -149,10 +149,9 @@ sudo systemctl enable --now bluetooth.service
 ## Habilitando servicio de pantalla de inicio de sesion
 sudo systemctl enable --now lightdm
 
-## Mensaje final
-clear
+# Mensaje final
 sleep 1
-printf '\n \nConfiguraciones aplicadas!'
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
 sleep 1
-printf '\n \nContribuye paypal.me/hivz'
-sleep 3
+printf ''
+

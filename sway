@@ -123,10 +123,10 @@ clear
 sudo systemctl enable --now lightdm
 ## Habilitando servicio de bluetooth 
 sudo systemctl enable --now bluetooth.service
-#printf '\n \nConsulte los atajos del teclado en el archivo ~/.config/sway/config'
-#sleep 1
-#printf '\n \nReemplace el fondo de escritorio en .config/wall.*'
-#sleep 1
-#printf '\n \nContribuye paypal.me/hivz'
-#sleep 1
-#printf '\n \n'
+
+# Mensaje final
+sleep 1
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+sleep 1
+printf ''
+

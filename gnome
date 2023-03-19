@@ -170,3 +170,10 @@ clear
 printf '\n \nIniciando pantalla de inicio de session....'
 sleep 1
 sudo systemctl enable --now gdm
+
+# Mensaje final
+sleep 1
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+sleep 1
+printf ''
+

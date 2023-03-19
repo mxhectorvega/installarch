@@ -45,3 +45,4 @@ sudo systemctl enable --now bluetooth
 sudo systemctl enable gdm
 
 sudo reboot
+

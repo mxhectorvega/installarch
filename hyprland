@@ -6,8 +6,8 @@
 # Link: https://github.com/mxhectorvega
 # Versión: v2.2
 # Fecha de actualización 09/03/2023
-# Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
-# Seleccionando el perfil minimo.
+# Nota: El sistema de preferencia debe haber sido instalado con la
+# herramienta archinstall del liveUSB, seleccionando el perfil minimo.
 
 # Actualizacion
 sudo pacman -Syyu --noconfirm
@@ -77,10 +77,10 @@ sudo pacman -S clipman --noconfirm
 
 ## Habilitando servicio de bluetooth 
 sudo systemctl enable --now bluetooth.service
-#printf '\n \nConsulte los atajos del teclado en el archivo ~/.config/sway/config'
-#sleep 1
-#printf '\n \nReemplace el fondo de escritorio en .config/wall.*'
-#sleep 1
-#printf '\n \nContribuye paypal.me/hivz'
-#sleep 1
-#printf '\n \n'
+
+# Mensaje final
+sleep 1
+printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+sleep 1
+printf ''
+
