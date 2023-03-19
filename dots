@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 # Titulo: Script automatizado que copia mis configuraciones personales frescas.
-# Autor: Hector Iván Vega Zamudio
+# Autor: Héctor Iván Vega Zamudio
 # Correo: mxhectorvega@gmail.com
-# Link: https://github.com/mxhectorvega
-# Versión:v1.0
-# Fecha de actualización 12/06/2022
-# Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
-# Seleccionando el perfil Xorg con todos los controladores de código abierto.
+# Link: https://github.com/mxhectorvega/installarch
+# Versión: 1.0
+# Fecha de actualización 19/03/2023
+# Nota: El sistema de preferencia debe haber sido instalado con la
+# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
 clear
 echo -e "Clonando dotfiles..."
@@ -25,36 +25,8 @@ cp /tmp/dots/.p10k.zsh ~/.p10k.zsh
 git clone https://github.com/ekistece/GetExtensions.git
 
 clear
-echo -e "Ahora escribe contraseña para cambiar de Shell a ZSH"
 chsh -s /bin/zsh
-
-clear
-echo -e "Ahora escribe contraseña para instalar el Gestor de extenciones Gnome"
-sudo pacman -S python-pip --noconfirm --needed
-pip install ./GetExtensions --user
-rm -rf ~/GetExtensions
-
-## Instalando repositorio Chaotic para no depender de YAY o PARU.
-sleep 1
-printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
-clear
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-sudo pacman -Sy --noconfirm
-
-clear
-echo -e "Configs ZSH, Ranger, Kitty y Neovim cargadas!"
-sleep 1
 
 # Mensaje final
 sleep 1
 printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
-sleep 1
-printf ''
-
-pkill -9 kitty

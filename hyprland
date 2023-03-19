@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 
 # Titulo: Instalación del gestor de ventanas Hyprland para wayland
-# Autor: Hector Iván Vega Zamudio
+# Autor: Héctor Iván Vega Zamudio
 # Correo: mxhectorvega@gmail.com
-# Link: https://github.com/mxhectorvega
-# Versión: v2.2
-# Fecha de actualización 09/03/2023
+# Link: https://github.com/mxhectorvega/installarch
+# Versión: 4.0
+# Fecha de actualización 19/03/2023
 # Nota: El sistema de preferencia debe haber sido instalado con la
-# herramienta archinstall del liveUSB, seleccionando el perfil minimo.
+# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
-# Actualizacion
+# Actualización
 sudo pacman -Syyu --noconfirm
 
+# Internos para el SO
+sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
+# Para ejecutar desde la terminal
+sudo pacman -S git make gcc curl wget htop vim fuse less man --noconfirm --needed 
+
 # Repo chaotic
+sudo pacman -Syyu --noconfirm
 sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
 sudo pacman-key --lsign-key FBA220DFC880C036
 sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
@@ -21,24 +27,36 @@ sudo tee -a /etc/pacman.conf <<EOF
 Include = /etc/pacman.d/chaotic-mirrorlist
 EOF
 
-# Actualizacion
-sudo pacman -Syyu --noconfirm
-
-# Software adicional
-sudo pacman -S git make gcc curl wget gnome-terminal nautilus make gcc htop vim blueberry pacman-contrib man bc polkit-gnome telegram-desktop imv mpv zathura-pdf-mupdf xdg-user-dirs python-pillow imagemagick usbutils ntfs-3g flatpak --noconfirm --needed
-sudo pacman -S swaybg-git --noconfirm --needed
-sudo pacman -S pulsemixer --noconfirm --needed
-sudo pacman -S firefox --noconfirm --needed
-# opcional agregar el gestor GTK de redes wifi
-#network-manager-applet
-
 # Paru
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
-# neofetch binario
-sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
-sudo chmod +x /usr/bin/neofetch
+# Actualización
+sudo pacman -Syyu --noconfirm
+
+# Software adicional
+# Básicos
+sudo pacman -S gnome-terminal nautilus blueberry polkit-gnome --noconfirm --needed
+# Visores de archivos
+sudo pacman -S imv mpv zathura-pdf-mupdf --noconfirm --needed
+# Utilidad para wallpapers en wyaland
+sudo pacman -S swaybg-git --noconfirm --needed
+# Control de volumen
+sudo pacman -S pulsemixer --noconfirm --needed
+# Gestor de redes wifi GTK
+#network-manager-applet
+# Portapapeles para wayland
+sudo pacman -S clipman --noconfirm
+# Habilitando servicio de bluetooth 
+sudo systemctl enable --now bluetooth.service
+# Display manager (pantalla de inicio de sesión)
+sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm
+
+# Hyprland
+sudo pacman -S hyprland-git waybar-hyprland-git mako wofi --noconfirm --needed
+sudo pacman -S qt5-wayland xorg-xwayland swayidle grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
+sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-wlr --noconfirm --needed
+sudo pacman -S wireplumber --noconfirm --needed
 
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/temas
@@ -49,38 +67,21 @@ cp -R $HOME/tipografias "$HOME"/.local/share
 rm -rf $HOME/tipografias
 rm -rf $HOME/temas
 
-# Hyprland
-sudo pacman -S hyprland-git waybar-hyprland-git mako wofi --noconfirm --needed
-sudo pacman -S rtkit qt5-wayland xorg-xwayland swayidle wofi mako waybar grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
-sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-wlr --noconfirm --needed
-sudo pacman -S wireplumber --noconfirm --needed
+# neofetch binario
+sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
+sudo chmod +x /usr/bin/neofetch
 
-# Fuentes basicas
+# Fuentes básicas
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
-
-# Display manager (pantalla de inicio de sesion)
-# sudo pacman -S lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings --noconfirm
-
-sudo pacman -S clipman --noconfirm
-
-# Cambiando de fuente y wallpaper ligthDM
-#sudo tee /etc/lightdm/lightdm-gtk-greeter.conf <<EOF
-#[greeter]
-#font-name=SF Compact Display 9
-#xft-antialias=true
-#xft-dpi=96
-#xft-hintstyle=hintslight
-#xft-rgba=rgb
-#indicators=~session;~spacer;separator;~clock;~spacer;separator;~power;
-#clock-format=%a, %b %d, %H:%M
-#EOF
-
-## Habilitando servicio de bluetooth 
-sudo systemctl enable --now bluetooth.service
 
 # Mensaje final
 sleep 1
 printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
 sleep 1
-printf ''
+
+# Habilitando servicio de pantalla de inicio de sesión
+clear
+printf '\n \nActivando display manager...\n'
+sleep 1
+sudo systemctl enable --now lightdm
 

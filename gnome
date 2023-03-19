@@ -1,26 +1,24 @@
 #!/usr/bin/env bash
 
-## Titulo: Instalación mínima del entorno de escritorio Gnome 4x.x consumiendo 400mb al inicio.
-## Autor: Hector Iván Vega Zamudio
-## Correo: mxhectorvega@gmail.com
-## Link: https://github.com/mxhectorvega
-## Versión:v3.0
-## Fecha de actualización 03/07/2022
-## Nota: El sistema de preferencia tuvo que haber sido instalado con la herramienta archinstall del liveUSB,
-## Seleccionando el perfil MINIMO con todos los controladores de código abierto.
+# Titulo: Instalación mínima del entorno de escritorio Gnome 4x.x consumiendo 400mb al inicio.
+# Autor: Héctor Iván Vega Zamudio
+# Correo: mxhectorvega@gmail.com
+# Link: https://github.com/mxhectorvega/installarch
+# Versión: 6.0
+# Fecha de actualización 19/03/2023
+# Nota: El sistema de preferencia debe haber sido instalado con la
+# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
-## Pacman configuraciones
-clear 
-printf '\n \nConfigurando gestor de paquetes Pacman...\n'
-sleep 1
-sudo sed -i "s/#Color/Color/g" /etc/pacman.conf 
-sudo sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
-sudo sed -i "38i ILoveCandy" /etc/pacman.conf
+# Actualización
+sudo pacman -Syyu --noconfirm
 
-## Instalando repositorio Chaotic con software precompilado de AUR.
-sleep 1
-printf '\n \nInstalando repositorio Chaotic para no depender de YAY o PARU'
-clear
+# Internos para el SO
+sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
+# Para ejecutar desde la terminal
+sudo pacman -S git make gcc curl wget htop vim fuse less man --noconfirm --needed 
+
+# Repo chaotic
+sudo pacman -Syyu --noconfirm
 sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
 sudo pacman-key --lsign-key FBA220DFC880C036
 sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
@@ -28,152 +26,49 @@ sudo tee -a /etc/pacman.conf <<EOF
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist
 EOF
+
+# Paru
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+
+# Actualización
 sudo pacman -Syyu --noconfirm
 
-## Software basico para el usuario
-clear
-printf '\n \nInstalando paquetes basicos para el usuario...\n'
-sleep 1
-sudo pacman -S git make gcc htop vim btop fuse ntfs-3g pacman-contrib man xdg-user-dirs python python-pip python-pillow imagemagick --noconfirm --needed
-sudo pacman -S usbutils --noconfirm
-
-# Paru AUR helper
-clear 
-printf '\n \nInstalando el gestor de paquetes Paru...\n'
-sleep 1
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf 
-
-## Instalando gestor de paquetes GUI
-sudo pacman -S pamac --noconfirm
-
-## clonando repositorios mxhectorvega
-clear
-printf '\n \nClonando repositorios mxhectorvega...\n'
-sleep 1
-git clone https://github.com/mxhectorvega/sway-arch
-git clone https://github.com/mxhectorvega/tipografias
-git clone https://github.com/mxhectorvega/temas
-git clone https://github.com/vinceliuice/Colloid-kde
-
-## copiando archivos y directorios
-clear
-printf '\n \nCopiando archivos y directorios...\n'
-sleep 1
-cp -rf $HOME/sway-arch/.bashrc "$HOME"
-cp -rf $HOME/sway-arch/.vimrc "$HOME"
-
-# mkdir -p $HOME/.config/ranger
-# cp -rf $HOME/sway-arch/.config/ranger/ "$HOME"/.config/ranger/
-# cp -rf $HOME/sway-arch/.config/TWP.9.4.1.Chromium/ "$HOME"/.config/
-
-cp -rf $HOME/sway-arch/.local/ "$HOME"
-
-mkdir -p $HOME/.local/share/fonts/
-cp -rf $HOME/tipografias/* "$HOME"/.local/share/fonts/
-
-cp -rf $HOME/temas/.{icons,themes}/ "$HOME"
-rm -rf "$HOME"/{sway-arch,tipografias,temas}/
-
-cd $HOME/Colloid-kde
-sh install.sh
-sleep 1
-rm -rf $HOME/Colloid-kde
-
-## Paquetes minimos para que Gnome funcione
-clear
-printf '\n \nInstalando paquetes minimos para que Gnome funcione...\n'
-sleep 1
-sudo pacman -S gdm gnome-shell gnome-terminal nautilus gnome-tweaks gnome-calculator gnome-control-center polkit-gnome --noconfirm --needed
-sudo pacman -S totem evince eog --noconfirm --needed
+# Paquetes mínimos para que Gnome funcione
+sudo pacman -S gdm gnome-shell gnome-disk-utility gnome-terminal nautilus gnome-tweaks gnome-control-center gnome-software gnome-software-packagekit-plugin rtkit polkit-gnome qt5-wayland --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome --noconfirm --needed
-sudo pacman -S a52dec gst-plugins-ugly gstreamer-vaapi libmpeg2 libsidplay rtkit --noconfirm --needed
-sudo pacman -S wireplumber --noconfirm --needed
+sudo pacman -S papirus-icon-theme adw-gtk3-git --noconfirm --needed
+flatpak install -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
 
-## Fuentes basicas
-clear
-printf '\n \nInstalando fuentes basicas...\n'
-sleep 1
+# Temas y fuentes mxhectorvega
+git clone https://github.com/mxhectorvega/temas
+git clone https://github.com/mxhectorvega/tipografias
+cp -R $HOME/temas/.{icons,themes}/ $HOME
+mkdir -p $HOME/.local/share/fonts
+cp -R $HOME/tipografias "$HOME"/.local/share
+rm -rf $HOME/tipografias
+rm -rf $HOME/temas
+
+# neofetch binario
+sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
+sudo chmod +x /usr/bin/neofetch
+
+# Fuentes básicas
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
 
-## Instala gestor de extenciones gnome 42.x
-clear 
-printf '\n \nInstalando gestor de extensiones Gnome 42.x...\n'
-sleep 1
-sudo pacman -S extension-manager-git --noconfirm
-sudo pacman -S adw-gtk3-git --noconfirm
-paru -S gnome-shell-extension-arc-menu-git gnome-shell-extension-desktop-icons-ng --noconfirm
-
-## instalando paquetes personalizados para el usuario
-clear 
-printf '\n \nInstalando paquetes personalizados para el usuario...\n'
-sleep 1
-# Editor de Codigo:
-sudo pacman -S visual-studio-code-bin --noconfirm
-# Ofiatica:
-sudo pacman -S libreoffice-fresh-es --noconfirm
-# Mensajeria por excelencia:
-sudo pacman -S telegram-desktop --noconfirm
-# Screncast o en español grabador de pantalla:
-sudo pacman -S obs-studio --noconfirm
-# Suite de edicion de imagem, audio, video y diseño vectorial:
-sudo pacman -S gimp audacity kdenlive inkscape --noconfirm
-# Navegador de su eleccion:
-sudo pacman -S firefox --noconfirm
-sudo pacman -S microsoft-edge-stable --noconfirm
-# Creador de lanzadores o acceso directo a paginas como su fueran apps nativas:
-sudo pacman -S webapp-manager --noconfirm
-# Manejo de escritorios remotos:
-sudo pacman -S rustdesk --noconfirm
-# Cliente de juegos:
-sudo pacman -S steam --noconfirm
-
-## borrando directorios no necesarios
-clear 
-printf '\n \nBorrando directorio GO...\n'
-sleep 1
-rm -rf "$HOME"/go/
-
-# Confuguracion de Zram con el paquete zram-generator
-clear 
-printf '\n \nOptimizando ZRAM con compresion ZSTD...\n'
-sleep 1
-sudo tee /etc/systemd/zram-generator.conf <<EOF
-[zram0]
-zram-size= ram
-swap-priority = 32767
-compression-algorithm = zstd
-EOF
-
-## habilitando bluetooth
-clear 
-printf '\n \nHabilitando bluetooth...\n'
-sleep 1
+# habilitando bluetooth
 sudo systemctl enable --now bluetooth.service
 
-## crear direciorios de usuario
-clear 
-printf '\n \nCreando direciorios de usuario...\n'
-sleep 1
+# crear directorios de usuario
 xdg-user-dirs-update
-
-## Mensaje final
-clear
-sleep 1
-printf '\n \nConfiguraciones aplicadas!'
-sleep 1
-printf '\n \nContribuye paypal.me/hivz'
-sleep 3
-
-## Habilitando servicio de pantalla de inicio de sesion
-clear
-printf '\n \nIniciando pantalla de inicio de session....'
-sleep 1
-sudo systemctl enable --now gdm
 
 # Mensaje final
 sleep 1
 printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
 sleep 1
-printf ''
 
+# Habilitando servicio de pantalla de inicio de sesión
+clear
+printf '\n \nActivando display manager...\n'
+sleep 1
+sudo systemctl enable --now gdm
