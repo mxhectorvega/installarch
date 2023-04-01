@@ -54,7 +54,7 @@ sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm
 
 # Hyprland
 sudo pacman -S hyprland-git waybar-hyprland-git mako wofi --noconfirm --needed
-sudo pacman -S qt5-wayland xorg-xwayland swayidle grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
+sudo pacman -S qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-ecorder brightnessctl --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-wlr --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
 
