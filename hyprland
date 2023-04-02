@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
 # Titulo: Instalación del gestor de ventanas Hyprland para wayland
-# Autor: Héctor Iván Vega Zamudio
-# Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega/installarch
-# Versión: 4.0
-# Fecha de actualización 19/03/2023
+# Versión: 4.5 01/04/2023
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
@@ -15,7 +12,7 @@ sudo pacman -Syyu --noconfirm
 # Internos para el SO
 sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
 # Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget nvtop htop vim fuse less man --noconfirm --needed 
+sudo pacman -S git make gcc curl wget nvtop htop vim fuse less imagemagick man --noconfirm --needed 
 
 # Repo chaotic
 sudo pacman -Syyu --noconfirm
@@ -36,7 +33,7 @@ sudo pacman -Syyu --noconfirm
 
 # Software adicional
 # Básicos
-sudo pacman -S gnome-terminal nautilus blueberry polkit-gnome --noconfirm --needed
+sudo pacman -S kitty thunar thunar-archive-plugin thunar-volman gvfs file-roller tumbler blueberry polkit-gnome --noconfirm --needed
 # Visores de archivos
 sudo pacman -S imv mpv zathura-pdf-mupdf --noconfirm --needed
 # Utilidad para wallpapers en wyaland
@@ -50,12 +47,14 @@ sudo pacman -S clipman --noconfirm
 # Habilitando servicio de bluetooth 
 sudo systemctl enable --now bluetooth.service
 # Display manager (pantalla de inicio de sesión)
-sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm
+#sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm
+# Gestor de paquetes pacman GUI
+paru -S pamac-all --noconfirm
 
 # Hyprland
 sudo pacman -S hyprland-git waybar-hyprland-git mako wofi --noconfirm --needed
 sudo pacman -S qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-ecorder brightnessctl --noconfirm --needed
-sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-wlr --noconfirm --needed
+sudo pacman -S xdg-desktop-portal xdg-desktop-portal-wlr --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
 
 # Temas y fuentes mxhectorvega
@@ -74,14 +73,22 @@ sudo chmod +x /usr/bin/neofetch
 # Fuentes básicas
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
 
+# ajustando VIM, HTOP y NVTOP para que los lanzadores.desktop funcionen con kitty
+sudo sed -i "s/Exec=vim %F/Exec=kitty -e vim/g" /usr/share/applications/vim.desktop
+sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/vim.desktop
+sudo sed -i "s/Exec=htop/Exec=kitty -e htop/g" /usr/share/applications/htop.desktop
+sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/htop.desktop
+sudo sed -i "s/Exec=nvtop/Exec=kitty -e nvtop/g" /usr/share/applications/nvtop.desktop
+sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/nvtop.desktop
+
 # Mensaje final
 sleep 1
 printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
 sleep 1
 
 # Habilitando servicio de pantalla de inicio de sesión
-clear
-printf '\n \nActivando display manager...\n'
-sleep 1
-sudo systemctl enable --now lightdm
+#clear
+#printf '\n \nActivando display manager...\n'
+#sleep 1
+#sudo systemctl enable --now lightdm
 
