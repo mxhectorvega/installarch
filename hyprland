@@ -92,4 +92,4 @@ sleep 1
 #sleep 1
 #sudo systemctl enable --now lightdm
 
-#prueba1
+#prueba5
