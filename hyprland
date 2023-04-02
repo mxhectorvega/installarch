@@ -54,7 +54,7 @@ paru -S pamac-all --noconfirm
 # Hyprland
 sudo pacman -S hyprland-git waybar-hyprland-git mako wofi --noconfirm --needed
 sudo pacman -S qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-ecorder brightnessctl --noconfirm --needed
-sudo pacman -S xdg-desktop-portal xdg-desktop-portal-wlr --noconfirm --needed
+sudo pacman -S xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
 
 # Temas y fuentes mxhectorvega
