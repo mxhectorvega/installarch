@@ -46,8 +46,8 @@ sudo pacman -S pulsemixer --noconfirm --needed
 sudo pacman -S clipman --noconfirm
 # Habilitando servicio de bluetooth 
 sudo systemctl enable --now bluetooth.service
-# Display manager (pantalla de inicio de sesión)
-#sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm
+# Utilidad para guardar contraseñas
+sudo pacman -S gnome-keyring libsecret libgnome-keyring --noconfirm --needed
 # Gestor de paquetes pacman GUI
 paru -S pamac-all --noconfirm
 
