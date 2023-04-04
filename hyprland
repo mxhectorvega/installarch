@@ -60,11 +60,12 @@ sudo pacman -S wireplumber --noconfirm --needed
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/temas
 git clone https://github.com/mxhectorvega/tipografias
-cp -R $HOME/temas/.{icons,themes}/ $HOME
+git clone https://github.com/mxhectorvega/hhyprland
 mkdir -p $HOME/.local/share/fonts
-cp -R $HOME/tipografias "$HOME"/.local/share
-rm -rf $HOME/tipografias
-rm -rf $HOME/temas
+cp -R $HOME/temas/.{icons,themes}/ $HOME
+cp -R $HOME/tipografias/ $HOME/.local/share/fonts/
+cp -R $HOME/hyprland/.config/ $HOME
+rm -rf $HOME/{tipografias,temas,hyprland}/
 
 # neofetch binario
 sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
