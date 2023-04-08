@@ -60,7 +60,7 @@ sudo pacman -S wireplumber --noconfirm --needed
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/temas
 git clone https://github.com/mxhectorvega/tipografias
-git clone https://github.com/mxhectorvega/hhyprland
+git clone https://github.com/mxhectorvega/hyprland
 mkdir -p $HOME/.local/share/fonts
 cp -R $HOME/temas/.{icons,themes}/ $HOME
 cp -R $HOME/tipografias/ $HOME/.local/share/fonts/
