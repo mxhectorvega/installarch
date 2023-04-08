@@ -74,6 +74,8 @@ sudo chmod +x /usr/bin/neofetch
 # Fuentes básicas
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
 
+sudo pacman -S xdg-desktop-portal-gnome --noconfirm
+
 # ajustando VIM, HTOP y NVTOP para que los lanzadores.desktop funcionen con kitty
 sudo sed -i "s/Exec=vim %F/Exec=kitty -e vim/g" /usr/share/applications/vim.desktop
 sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/vim.desktop
