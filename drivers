@@ -9,12 +9,6 @@
 # Actualización
 sudo pacman -Syyu --noconfirm
 
-# Internos para el SO
-sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
-
-# Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget nvtop htop vim fuse less imagemagick man --noconfirm --needed 
-
 # Utilidades para desarollo
 sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
 
@@ -22,23 +16,23 @@ sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
-# Actualizacion
-sudo pacman -Syyu --noconfirm
-
 # DRIVER AMDGPU 
-sudo pacman -S xf86-video-amdgpu
+sudo pacman -S xf86-video-amdgpu --noconfirm --needed
 
 # VULKAN
-sudo pacman -S vulkan-radeon lib32-vulkan-radeon 
+sudo pacman -S vulkan-radeon lib32-vulkan-radeon  --noconfirm --needed
 
 # OPENCL
-sudo pacman -S opencl-mesa
+sudo pacman -S opencl-mesa --noconfirm --needed
 
 # VDPAU
-sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
+sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau --noconfirm --needed
 
 # Instalando driver USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano])
 paru -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
+
+# habilitando bluetooth
+sudo systemctl enable --now bluetooth.service
 
 # Mensaje final
 sleep 1
