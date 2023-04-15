@@ -38,7 +38,7 @@ sudo pacman -S gnome-keyring libsecret libgnome-keyring --noconfirm --needed
 
 # Hyprland
 sudo pacman -S sway waybar mako wofi --noconfirm --needed
-sudo pacman -S qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-ecorder brightnessctl --noconfirm --needed
+sudo pacman -S qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
 paru -S hyprland wayfire --noconfirm --needed
