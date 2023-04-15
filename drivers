@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
 # Titulo: Instalación automática de Drivers AMD Privativo
-# Autor: Héctor Iván Vega Zamudio
-# Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega/installarch
-# Versión:4.0
-# Fecha de actualización 19/03/2023
+# Versión: 5.0 15/04/2023
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
@@ -14,18 +11,12 @@ sudo pacman -Syyu --noconfirm
 
 # Internos para el SO
 sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
-# Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget htop vim fuse less man --noconfirm --needed 
 
-# Repo chaotic
-sudo pacman -Syyu --noconfirm
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
+# Para ejecutar desde la terminal
+sudo pacman -S git make gcc curl wget nvtop htop vim fuse less imagemagick man --noconfirm --needed 
+
+# Utilidades para desarollo
+sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
 
 # Paru
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
@@ -34,28 +25,20 @@ sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 # Actualizacion
 sudo pacman -Syyu --noconfirm
 
-# Instalando driver USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano])
-sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
-sudo pacman -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
+# DRIVER AMDGPU 
+sudo pacman -S xf86-video-amdgpu
 
-# Driver (AMDGPU PRO) 
-sudo pacman -S xf86-video-amdgpu --noconfirm --needed 
+# VULKAN
+sudo pacman -S vulkan-radeon lib32-vulkan-radeon 
 
-git clone https://aur.archlinux.org/amdgpu-pro-installer.git
-cd amdgpu-pro-installer
-makepkg -si
-
-paru -S amd-vulkan-prefixes --noconfirm
-
-# OpenCL
-Actualizado:
-paru -S opencl-amd --noconfirm
+# OPENCL
+sudo pacman -S opencl-mesa
 
 # VDPAU
-sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau --noconfirm --needed 
+sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
 
-# Monitor GPU
-sudo pacman -S nvtop --noconfirm --needed 
+# Instalando driver USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano])
+paru -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
 
 # Mensaje final
 sleep 1
