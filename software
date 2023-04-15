@@ -1,38 +1,30 @@
 #!/usr/bin/env bash
 
 ## Titulo: Instalación automática del software que uso en el día a día.
-# Autor: Héctor Iván Vega Zamudio
-# Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega/installarch
-## Versión: 7.0
-# Fecha de actualización 19/03/2023
+## Versión: 8.0 15/04/2023
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
 # Actualización
 sudo pacman -Syyu --noconfirm
 
-# Internos para el SO
-sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
-# Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget nvtop htop vim fuse less man --noconfirm --needed 
+# Software de repositorios oficiales
+sudo pacman -S obs-studio gimp kdenlive inkscape audacity steam libreoffice-fresh-es gnome-disk-utility supertux supertuxkart gcompris-qt --noconfirm --needed
 
-# Repo chaotic
-sudo pacman -Syyu --noconfirm
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
+# Software de repositorios oficiales
+paru -S vscodium-bin microsoft-edge-stable-bin appimagelauncher ventoy-bin protonup-git spotify --noconfirm --needed
 
-# Paru
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+# SERVER
+sudo pacman -S cockpìt-podman --noconfirm --needed
 
-# Actualización
-sudo pacman -Syyu --noconfirm
+# WINE
+sudo pacman -Syu wine gnutls lib32-gnutls libpulse lib32-libpulse --noconfirm --needed
+
+# ROBLOX
+git clone --depth=1 https://aur.archlinux.org/grapejuice-git.git /tmp/grapejuice-git
+cd /tmp/grapejuice-git
+makepkg -si
 
 # Mensaje final
 sleep 1
