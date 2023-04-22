@@ -16,7 +16,7 @@ sudo pacman -S obs-studio gimp kdenlive inkscape audacity steam libreoffice-fres
 paru -S vscodium-bin microsoft-edge-stable-bin appimagelauncher ventoy-bin protonup-git spotify --noconfirm --needed
 
 # SERVER
-sudo pacman -S cockpìt-podman --noconfirm --needed
+sudo pacman -S cockpit-podman --noconfirm --needed
 
 # WINE
 sudo pacman -Syu wine gnutls lib32-gnutls libpulse lib32-libpulse --noconfirm --needed
