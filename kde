@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
 # Titulo: Instalacion automatica del software que uso en el dia a dia.
-# Autor: Héctor Iván Vega Zamudio
-# Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega/installarch
-# Versión: 1.1
-# Fecha de actualización 19/03/2023
+# Versión: 2.1 23/04/2023
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
@@ -14,18 +11,9 @@ sudo pacman -Syyu --noconfirm
 
 # Internos para el SO
 sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
+
 # Para ejecutar desde la terminal
 sudo pacman -S git make gcc curl wget nvtop htop vim fuse less man --noconfirm --needed 
-
-# Repo chaotic
-sudo pacman -Syyu --noconfirm
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
 
 # Paru
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
@@ -35,7 +23,7 @@ sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 sudo pacman -Syyu --noconfirm
 
 # instalando software KDE básico
-sudo pacman -S sddm plasma konsole dolphin ark gwenview okular kwrite kcalc spectacle partitionmanager packagekit-qt5
+sudo pacman -S sddm plasma konsole dolphin ark spectacle partitionmanager packagekit-qt5 --noconfirm --needed 
 
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/tipografias
@@ -60,4 +48,3 @@ clear
 printf '\n \nActivando display manager...\n'
 sleep 1
 sudo systemctl enable --now sddm
-
