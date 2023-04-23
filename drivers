@@ -16,6 +16,9 @@ sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
+# Driver bluetooth
+sudo pacman -S bluez bluez-utils --noconfirm --needed
+
 # DRIVER AMDGPU 
 sudo pacman -S xf86-video-amdgpu --noconfirm --needed
 
