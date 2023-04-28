@@ -28,7 +28,7 @@ sudo pacman -S sddm plasma konsole dolphin ark spectacle partitionmanager packag
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/tipografias
 mkdir -p $HOME/.local/share/fonts
-cp -R $HOME/tipografias "$HOME"/.local/share
+cp -R $HOME/tipografias $HOME/.local/share/fonts
 rm -rf $HOME/tipografias
 
 # neofetch binario
