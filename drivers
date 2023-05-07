@@ -11,6 +11,7 @@ sudo pacman -Syyu --noconfirm
 
 # Utilidades para desarollo
 #sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
+sudo pacman -Syu --needed git --noconfirm --needed
 
 # Repo chaotic
 sudo pacman -Syyu --noconfirm
