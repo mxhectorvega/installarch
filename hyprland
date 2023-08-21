@@ -2,7 +2,7 @@
 
 # Titulo: Instalación del gestor de ventanas Hyprland para wayland
 # Link: https://github.com/mxhectorvega/installarch
-# Versión: 6.21.08.23
+# Versión: 7.21.08.23
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
@@ -36,7 +36,7 @@ sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
 # Básicos
 sudo pacman -S foot gvfs file-roller blueberry polkit-gnome --noconfirm --needed
-pacman -S acpi unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_co zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} breeze{,-gtk} android-{tools,file-transfer} bc nmap tldr man-pages-es mediainfo breeze{,-gtk} mplayer mpv{,-mpris} noto-fonts noto-fonts-cjk --noconfirm --needed
+pacman -S acpi unicode-character-database gnu-free-fonts wqy-microhei ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_co zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} breeze{,-gtk} android-{tools,file-transfer} bc nmap tldr man-pages-es mediainfo breeze{,-gtk} mplayer mpv{,-mpris} noto-fonts noto-fonts-cjk --noconfirm --needed
 
 # Thubar administrador de archivos
 pacman -S thunar{,-{volman,{archive,media-tags}-plugin}} ffmpegthumbnailer tumbler --needed --noconfirm
