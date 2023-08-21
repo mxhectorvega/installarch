@@ -2,7 +2,7 @@
 
 # Titulo: Instalación del gestor de ventanas Hyprland para wayland
 # Link: https://github.com/mxhectorvega/installarch
-# Versión: 5.0 15/04/2023
+# Versión: 6.21.08.23
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
@@ -13,10 +13,25 @@ sudo pacman -Syyu --noconfirm
 sudo pacman -S usbutils ntfs-3g pacman-contrib xdg-user-dirs --noconfirm --needed
 
 # Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget nvtop htop vim fuse less imagemagick man --noconfirm --needed 
+sudo pacman -S git make gcc meson ninja curl wget nvtop htop vim fuse less imagemagick man unrar --noconfirm --needed 
+
+# Repo chaotic
+sudo pacman -Syyu --noconfirm
+sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key FBA220DFC880C036
+sudo pacman -U https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst --noconfirm
+sudo pacman -U https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+
+# Paru
+cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
+sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
 # Básicos
-sudo pacman -S kitty thunar thunar-archive-plugin thunar-volman gvfs file-roller tumbler blueberry polkit-gnome --noconfirm --needed
+sudo pacman -S foot thunar thunar-archive-plugin thunar-volman gvfs file-roller tumbler blueberry polkit-gnome --noconfirm --needed
 
 # Visores de archivos
 sudo pacman -S imv mpv zathura-pdf-mupdf --noconfirm --needed
@@ -38,10 +53,10 @@ sudo pacman -S gnome-keyring libsecret libgnome-keyring --noconfirm --needed
 
 # Hyprland
 sudo pacman -S sway waybar mako wofi --noconfirm --needed
-sudo pacman -S qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
+sudo pacman -S qt6-wayland qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk --noconfirm --needed
 sudo pacman -S wireplumber --noconfirm --needed
-paru -S hyprland wayfire --noconfirm --needed
+sudo pacman -S hyprland wayfire --noconfirm --needed
 
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/temas
@@ -56,21 +71,33 @@ rm -rf $HOME/{tipografias,temas,hyprland}/
 # Fuentes básicas
 sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
 
-# ajustando VIM, HTOP y NVTOP para que los lanzadores.desktop funcionen con kitty
-sudo sed -i "s/Exec=vim %F/Exec=kitty -e vim/g" /usr/share/applications/vim.desktop
+# ajustando VIM, HTOP y NVTOP para que los lanzadores.desktop funcionen con foot
+sudo sed -i "s/Exec=vim %F/Exec=foot -e vim/g" /usr/share/applications/vim.desktop
 sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/vim.desktop
-sudo sed -i "s/Exec=htop/Exec=kitty -e htop/g" /usr/share/applications/htop.desktop
+sudo sed -i "s/Exec=htop/Exec=foot -e htop/g" /usr/share/applications/htop.desktop
 sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/htop.desktop
-sudo sed -i "s/Exec=nvtop/Exec=kitty -e nvtop/g" /usr/share/applications/nvtop.desktop
+sudo sed -i "s/Exec=nvtop/Exec=foot -e nvtop/g" /usr/share/applications/nvtop.desktop
 sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/nvtop.desktop
 
 # neofetch binario
 sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
 sudo chmod +x /usr/bin/neofetch
 
+# ZRAM configuracion
+sudo tee -a /etc/systemd/zram-generator.conf <<EOF
+zram-size= ram
+compression-algorithm = zstd
+EOF
+
 # Gestor de paquetes AUR GUI
 paru -S pamac-aur-git --noconfirm --needed
 
+# WINDECOR - decoraciones para ventanas wayfireWM (opcional)
+#git clone https://gitlab.com/wayfireplugins/windecor
+#cd windecor
+#meson build --prefix=/usr --buildtype=release
+#ninja -C build -k 0 -j $(nproc) && sudo ninja -C build install
+
 # Mensaje final
 sleep 1
-printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'

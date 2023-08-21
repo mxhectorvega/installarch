@@ -64,7 +64,7 @@ xdg-user-dirs-update
 
 # Mensaje final
 sleep 1
-printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
 sleep 1
 
 # Habilitando servicio de pantalla de inicio de sesión
