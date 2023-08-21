@@ -62,7 +62,7 @@ sudo pacman -S gnome-keyring libsecret libgnome-keyring --noconfirm --needed
 
 # Hyprland
 sudo pacman -S sway waybar mako wofi hyprland wayfire --noconfirm --needed
-sudo pacman -S qt6-wayland qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
+sudo pacman -S qt6-wayland qt5-wayland xorg-xwayland swayidle swaylock grim slurp wf-recorder brightnessctl --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk --noconfirm --needed
 sudo pacman -S lib32-pipewire pipewire{,-{alsa,pulse,jack}} rtkit wireplumber alsa-utils --needed
 
@@ -106,6 +106,9 @@ sudo pacman -S pamac-aur --noconfirm --needed
 #ninja -C build -k 0 -j $(nproc) && sudo ninja -C build install
 #cd $HOME
 #rm -rf $HOME/windecor
+
+# CLIPBOARD 2.0 fix wayfire compatible
+paru -S wl-clipboard --noconfirm
 
 # Mensaje final
 sleep 1
