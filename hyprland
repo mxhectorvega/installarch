@@ -26,6 +26,8 @@ sudo tee -a /etc/pacman.conf <<EOF
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist
 EOF
+cd $HOME
+rm -rf $HOME/*.zst
 sudo pacman -Syyu --noconfirm
 
 # Paru
@@ -88,17 +90,20 @@ sudo chmod +x /usr/bin/neofetch
 # ZRAM configuracion
 sudo tee -a /etc/systemd/zram-generator.conf <<EOF
 zram-size= ram
-compression-algorithm = zstd
+compression-algorithm = zsthd
 EOF
 
 # Gestor de paquetes AUR GUI
 paru -S pamac-aur-git --noconfirm --needed
 
 # WINDECOR - decoraciones para ventanas wayfireWM (opcional)
+#sudo pacman -S pkg-config cmake glm --noconfirm
 #git clone https://gitlab.com/wayfireplugins/windecor
 #cd windecor
 #meson build --prefix=/usr --buildtype=release
 #ninja -C build -k 0 -j $(nproc) && sudo ninja -C build install
+#cd $HOME
+#rm -rf $HOME/windecor
 
 # Mensaje final
 sleep 1
