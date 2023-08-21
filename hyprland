@@ -10,7 +10,7 @@
 sudo pacman -Syyu --noconfirm
 
 # Internos para el SO
-sudo pacman -S usbutils ntfs-3g pacman-contrib xdg-user-dirs --noconfirm --needed
+sudo pacman -S usbutils ntfs-3g pacman-contrib plocate xdg-user-dirs --noconfirm --needed
 
 # Para ejecutar desde la terminal
 sudo pacman -S git make gcc meson ninja curl wget nvtop htop vim fuse less imagemagick man unrar --noconfirm --needed 
@@ -35,7 +35,11 @@ cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -s
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
 # Básicos
-sudo pacman -S foot thunar thunar-archive-plugin thunar-volman gvfs file-roller tumbler blueberry polkit-gnome --noconfirm --needed
+sudo pacman -S foot gvfs file-roller blueberry polkit-gnome --noconfirm --needed
+pacman -S acpi unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_co zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} breeze{,-gtk} android-{tools,file-transfer} bc nmap tldr man-pages-es mediainfo breeze{,-gtk} mplayer mpv{,-mpris} noto-fonts noto-fonts-cjk --noconfirm --needed
+
+# Thubar administrador de archivos
+pacman -S thunar{,-{volman,{archive,media-tags}-plugin}} ffmpegthumbnailer tumbler --needed --noconfirm
 
 # Visores de archivos
 sudo pacman -S imv mpv zathura-pdf-mupdf --noconfirm --needed
@@ -49,18 +53,18 @@ sudo pacman -S pulsemixer --noconfirm --needed
 # Portapapeles para wayland
 paru -S clipman --noconfirm --needed
 
-# Habilitando servicio de bluetooth 
+# Habilitando servicio de bluetooth
+sudo pacman -S bluez{,-utils} --needed --noconfirm
 sudo systemctl enable --now bluetooth.service
 
 # Utilidad para guardar contraseñas
 sudo pacman -S gnome-keyring libsecret libgnome-keyring --noconfirm --needed
 
 # Hyprland
-sudo pacman -S sway waybar mako wofi --noconfirm --needed
+sudo pacman -S sway waybar mako wofi hyprland wayfire --noconfirm --needed
 sudo pacman -S qt6-wayland qt5-wayland xorg-xwayland swayidle swaylock grim slurp wl-clipboard wf-recorder brightnessctl --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk --noconfirm --needed
-sudo pacman -S wireplumber --noconfirm --needed
-sudo pacman -S hyprland wayfire --noconfirm --needed
+sudo pacman -S lib32-pipewire pipewire{,-{alsa,pulse,jack}} rtkit wireplumber alsa-utils --needed
 
 # Temas y fuentes mxhectorvega
 git clone https://github.com/mxhectorvega/temas
@@ -71,9 +75,6 @@ cp -R $HOME/temas/.{icons,themes}/ $HOME
 cp -R $HOME/tipografias/ $HOME/.local/share/fonts/
 cp -R $HOME/hyprland/.config/ $HOME
 rm -rf $HOME/{tipografias,temas,hyprland}/
-
-# Fuentes básicas
-sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
 
 # ajustando VIM, HTOP y NVTOP para que los lanzadores.desktop funcionen con foot
 sudo sed -i "s/Exec=vim %F/Exec=foot -e vim/g" /usr/share/applications/vim.desktop
@@ -94,7 +95,8 @@ compression-algorithm = zsthd
 EOF
 
 # Gestor de paquetes AUR GUI
-paru -S pamac-aur-git --noconfirm --needed
+sudo pacman -S pamac-aur --noconfirm --needed
+#paru -S pamac-aur-git --noconfirm --needed
 
 # WINDECOR - decoraciones para ventanas wayfireWM (opcional)
 #sudo pacman -S pkg-config cmake glm --noconfirm
