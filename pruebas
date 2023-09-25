@@ -1,2 +1,32 @@
 #!/usr/bin/env bash
 
+sudo pacman -Syyu --noconfirm
+
+# Chaotic-AUR - Automated building repo for AUR packages
+sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+sudo  pacman-key --lsign-key 3056513887B78AEB
+
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
+
+sudo pacman -U chaotic-keyring.pkg.tar.zst --noconfirm
+sudo pacman -U chaotic-mirrorlist.pkg.tar.zst --noconfirm
+
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+
+# FCGU - Repo for GNOME pre-releases
+sudo pacman-key --keyserver hkps://keys.openpgp.org --recv-keys 6E58E886A8E07538A2485FAED6A4F386B4881229
+sudo pacman-key --lsign-key 6E58E886A8E07538A2485FAED6A4F386B4881229
+
+sudo pacman -U https://br-mirror.amanoteam.com/fcgu/fcgu-mirrorlist-4-3-any.pkg.tar.zst  --noconfirm
+
+sudo pacman -Syyu --noconfirm
+
+sudo tee -a /etc/pacman.conf <<EOF
+[fcgu]
+Include = /etc/pacman.d/fcgu-mirrorlist
+EOF
+
