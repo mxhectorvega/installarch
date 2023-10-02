@@ -18,14 +18,14 @@ sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm
 sudo pacman -S git make gcc curl wget nvtop htop vim fuse less man --noconfirm --needed 
 
 # Repo chaotic
-sudo pacman -Syyu --noconfirm
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
+#sudo pacman -Syyu --noconfirm
+#sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
+#sudo pacman-key --lsign-key FBA220DFC880C036
+#sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
+#sudo tee -a /etc/pacman.conf <<EOF
+#[chaotic-aur]
+#Include = /etc/pacman.d/chaotic-mirrorlist
+#EOF
 
 # Paru
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
@@ -35,26 +35,30 @@ sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 sudo pacman -Syyu --noconfirm
 
 # Paquetes mínimos para que Gnome funcione
-sudo pacman -S gdm gnome-shell gnome-disk-utility gnome-terminal nautilus gnome-tweaks gnome-control-center gnome-software gnome-software-packagekit-plugin rtkit polkit-gnome qt5-wayland --noconfirm --needed
-sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome --noconfirm --needed
+sudo pacman -S gdm gnome-shell gnome-disk-utility gnome-terminal nautilus gnome-tweaks gnome-control-center polkit-gnome qt5-wayland qt6-wayland --noconfirm --needed
+#gnome-software gnome-software-packagekit-plugin rtkit 
+sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
+#xdg-desktop-portal-gtk 
 sudo pacman -S papirus-icon-theme adw-gtk3-git --noconfirm --needed
 flatpak install -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
 
 # Temas y fuentes mxhectorvega
-git clone https://github.com/mxhectorvega/temas
-git clone https://github.com/mxhectorvega/tipografias
-cp -R $HOME/temas/.{icons,themes}/ $HOME
-mkdir -p $HOME/.local/share/fonts
-cp -R $HOME/tipografias "$HOME"/.local/share
-rm -rf $HOME/tipografias
-rm -rf $HOME/temas
+#git clone https://github.com/mxhectorvega/temas
+#git clone https://github.com/mxhectorvega/tipografias
+#cp -R $HOME/temas/.{icons,themes}/ $HOME
+#mkdir -p $HOME/.local/share/fonts
+#cp -R $HOME/tipografias "$HOME"/.local/share
+#rm -rf $HOME/tipografias
+#rm -rf $HOME/temas
 
 # neofetch binario
 sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
 sudo chmod +x /usr/bin/neofetch
 
 # Fuentes básicas
-sudo pacman -S ttf-{dejavu,hack,roboto,liberation} terminus-font wqy-microhei unicode-character-database noto-fonts noto-fonts-cjk --noconfirm --needed
+sudo pacman -S acpi unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx --needed --noconfirm
+pacman -S plocate pacman-contrib --needed --noconfirm
+
 
 # habilitando bluetooth
 sudo systemctl enable --now bluetooth.service

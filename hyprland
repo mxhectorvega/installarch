@@ -36,8 +36,7 @@ sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
 # Básicos
 sudo pacman -S foot gvfs file-roller blueberry polkit-gnome --noconfirm --needed
-pacman -S acpi unicode-character-database gnu-free-fonts wqy-microhei ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_co zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} breeze{,-gtk} android-{tools,file-transfer} bc nmap tldr man-pages-es mediainfo breeze{,-gtk} mplayer mpv{,-mpris} noto-fonts noto-fonts-cjk --noconfirm --needed
-
+sudo pacman -S acpi unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_co zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} breeze{,-gtk} android-{tools,file-transfer} heimdall bc nmap speedtest-cli tldr man-pages-es cmus mediainfo yt-dlp breeze{,-gtk} mousepad mplayer mpv{,-mpris} atomicparsley vlc peek telegram-desktop scrot cmus gpick imagemagick --needed --noconfirm
 # Thubar administrador de archivos
 pacman -S thunar{,-{volman,{archive,media-tags}-plugin}} ffmpegthumbnailer tumbler --needed --noconfirm
 
