@@ -79,8 +79,10 @@ cd $HOME
 git clone https://github.com/mxhectorvega/tipografias
 git clone https://github.com/mxhectorvega/tipografiaswin
 mkdir -p $HOME/.local/share/fonts
-cp -R $HOME/tipografias{win} "$HOME"/.local/share
-rm -rf $HOME/tipografias{win}
+cp -R $HOME/tipografias "$HOME"/.local/share
+cp -R $HOME/tipografiaswin "$HOME"/.local/share
+rm -rf $HOME/tipografias
+rm -rf $HOME/tipografiaswin
 
 # Fuentes básicas dakata
 sudo pacman -S unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} --needed --noconfirm
