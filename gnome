@@ -4,61 +4,47 @@
 # Autor: Héctor Iván Vega Zamudio
 # Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega/installarch
-# Versión: 6.0
-# Fecha de actualización 19/03/2023
+# Versión: 7.0
+# Fecha de actualización 11/11/2023
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
 # Actualización
-sudo pacman -Syyu --noconfirm
+sudo pacman -Sy --noconfirm
 
 # Internos para el SO
-sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
+sudo pacman -S seahorse acpi plocate usbutils ntfs-3g flatpak pacman-contrib fuse xdg-user-dirs --noconfirm --needed
 # Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget nvtop htop vim fuse less man --noconfirm --needed 
+sudo pacman -S fastfetch git curl wget nvtop htop vim less man --noconfirm --needed 
 
-# Repo chaotic
-#sudo pacman -Syyu --noconfirm
-#sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-#sudo pacman-key --lsign-key FBA220DFC880C036
-#sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-#sudo tee -a /etc/pacman.conf <<EOF
-#[chaotic-aur]
-#Include = /etc/pacman.d/chaotic-mirrorlist
-#EOF
+# Chaotic-AUR - Automated building repo for AUR packages
+sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+sudo  pacman-key --lsign-key 3056513887B78AEB
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
+sudo pacman -U chaotic-keyring.pkg.tar.zst  --noconfirm
+sudo pacman -U chaotic-mirrorlist.pkg.tar.zst  --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+cd $HOME
+rm -rf $HOME/*.zst
+sudo pacman -Sy --noconfirm
 
 # Paru
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
-
-# Actualización
-sudo pacman -Syyu --noconfirm
+sudo pacman -Sy --noconfirm
 
 # Paquetes mínimos para que Gnome funcione
-sudo pacman -S gdm gnome-shell gnome-disk-utility gnome-terminal nautilus gnome-tweaks gnome-control-center polkit-gnome qt5-wayland qt6-wayland --noconfirm --needed
-#gnome-software gnome-software-packagekit-plugin rtkit 
+sudo pacman -S gdm gnome-shell nautilus gnome-control-center gnome-tweaks gnome-disk-utility polkit-gnome --noconfirm --needed
+sudo pacman -S blackbox-terminal --noconfirm --needed
+sudo pacman -S file-roller --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
-#xdg-desktop-portal-gtk 
+
 sudo pacman -S papirus-icon-theme adw-gtk3-git --noconfirm --needed
 flatpak install -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
-
-# Temas y fuentes mxhectorvega
-#git clone https://github.com/mxhectorvega/temas
-#git clone https://github.com/mxhectorvega/tipografias
-#cp -R $HOME/temas/.{icons,themes}/ $HOME
-#mkdir -p $HOME/.local/share/fonts
-#cp -R $HOME/tipografias "$HOME"/.local/share
-#rm -rf $HOME/tipografias
-#rm -rf $HOME/temas
-
-# neofetch binario
-sudo curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
-sudo chmod +x /usr/bin/neofetch
-
-# Fuentes básicas
-sudo pacman -S acpi unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx --needed --noconfirm
-pacman -S plocate pacman-contrib --needed --noconfirm
-
 
 # habilitando bluetooth
 sudo systemctl enable --now bluetooth.service
@@ -66,13 +52,45 @@ sudo systemctl enable --now bluetooth.service
 # crear directorios de usuario
 xdg-user-dirs-update
 
+# Compatibilidad con impresoras
+sudo pacman -S system-config-printer cups --noconfirm --needed
+sudo gpasswd -a $(whoami) sys
+sudo gpasswd -a $(whoami) wheel
+sudo gpasswd -a $(whoami) root
+sudo gpasswd -a $(whoami) lp
+
+# Iniciar los servicios de impresion
+sudo systemctl enable --now cups
+
+# Creando enlaces simbolicos para askpass package
+sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass --noconfirm --needed
+
+# Instalando gestor de paquetes (ofl-repo, aur, appimage y flatpak)
+sudo pacman -S bauh --noconfirm --needed
+
+# ZRAM configuracion
+sudo tee -a /etc/systemd/zram-generator.conf <<EOF
+zram-size= ram
+compression-algorithm = zsthd
+EOF
+
+# Fuentes mxhectorvega
+cd $HOME
+git clone https://github.com/mxhectorvega/tipografias
+git clone https://github.com/mxhectorvega/tipografiaswin
+mkdir -p $HOME/.local/share/fonts
+cp -R $HOME/tipografias{win} "$HOME"/.local/share
+rm -rf $HOME/tipografias{win}
+
+# Fuentes básicas dakata
+sudo pacman -S unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} --needed --noconfirm
+
 # Mensaje final
 sleep 1
 printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
 sleep 1
 
 # Habilitando servicio de pantalla de inicio de sesión
-clear
 printf '\n \nActivando display manager...\n'
 sleep 1
 sudo systemctl enable --now gdm
