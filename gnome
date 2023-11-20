@@ -13,7 +13,7 @@
 sudo pacman -Sy --noconfirm
 
 # Internos para el SO
-sudo pacman -S seahorse acpi plocate usbutils ntfs-3g flatpak pacman-contrib fuse xdg-user-dirs --noconfirm --needed
+sudo pacman -S seahorse acpi plocate usbutils ntfs-3g dosfstools flatpak pacman-contrib fuse xdg-user-dirs --noconfirm --needed
 # Para ejecutar desde la terminal
 sudo pacman -S fastfetch git curl wget nvtop htop vim less man --noconfirm --needed 
 
