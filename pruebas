@@ -4,7 +4,7 @@
 sudo pacman -Syyu --noconfirm
 
 # Paquetes basicos para KDE Plasma
-sudo pacman -S acpi plocate usbutils ntfs-3g dosfstools pacman-contrib git curl wget vim nano fastfetch htop spectacle print-manager flatpak flatpak-kcm partitionmanager --noconfirm --needed
+sudo pacman -S openssh acpi plocate usbutils ntfs-3g dosfstools pacman-contrib git curl wget vim nano fastfetch htop spectacle print-manager flatpak flatpak-kcm partitionmanager --noconfirm --needed
 
 # Compatibilidad con impresoras
 sudo pacman -S system-config-printer --noconfirm --needed
