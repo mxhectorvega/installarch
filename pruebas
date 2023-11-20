@@ -38,6 +38,7 @@ sudo tee -a /etc/pacman.conf <<EOF
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist
 EOF
+sudo pacman -Syyu --noconfirm
 
 # Spotify sin publicidad (Chaotic REPO)
 sudo pacman -S spotify-adblock-git --noconfirm --needed
@@ -90,6 +91,7 @@ sudo tee -a /etc/systemd/zram-generator.conf <<EOF
 zram-size= ram
 compression-algorithm = zsthd
 EOF
+sleep 1
 
 # Fuentes básicas dakata
 sudo pacman -S unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} --needed --noconfirm
