@@ -24,7 +24,10 @@ sudo pacman -Sy --noconfirm
 sudo pacman -S dkms linux-headers broadcom-wl-dkms --noconfirm --needed
 
 # Drivers impresora Epson L3210 multifuncional de tinta continua
-paru -S epson-inkjet-printer-202101w facetimehd-firmware --noconfirm --needed
+paru -S epson-inkjet-printer-202101w --noconfirm --needed
+
+# Firmware de webcam (facetime apple)
+paru -S facetimehd-firmware --noconfirm --needed
 
 # FIX para el driver oficial de impresora L3210
 sudo ln -s /opt/epson-inkjet-printer-202101w/cups/lib/filter/epson_inkjet_printer_filter /usr/lib/cups/filter/epson_inkjet_printer_filter
@@ -109,7 +112,11 @@ rm -rf $HOME/tipografias
 rm -rf $HOME/tipografiaswin
 
 # Descargar Minecraft Bedrock
-wget https://github.com/minecraft-linux/appimage-builder/releases/download/v0.9.0-713/Minecraft_Bedrock_Launcher-x86_64-v0.9.0.713.AppImage
+wget https://github.com/minecraft-linux/appimage-builder/releases/download/v0.12.1-763/Minecraft_Bedrock_Launcher-x86_64-v0.12.1.763.AppImage
+
+# Rustdesk visor de escritorio remoto escrito en RUST
+wget https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-0-x86_64.pkg.tar.zst
+sudo pacman -U rustdesk-1.2.3-0-x86_64.pkg.tar.zst
 
 # Mensaje final
 sleep 1
