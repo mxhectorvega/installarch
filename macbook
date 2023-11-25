@@ -137,7 +137,7 @@ rm -rf $HOME/tipografias
 rm -rf $HOME/tipografiaswin
 
 # Remove gnome-console
-sudo pacman -Rns gnome-console --noconfirm --needed
+sudo pacman -Rns gnome-console --noconfirm
 
 # Activando SSH para acceso remoto
 sudo systemctl enable --now sshd
