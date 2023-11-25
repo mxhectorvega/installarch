@@ -79,7 +79,7 @@ wget https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3
 sudo pacman -U rustdesk-1.2.3-0-x86_64.pkg.tar.zst --noconfirm
 
 # Creando enlaces simbolicos para askpass package
-sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass --noconfirm --needed
+sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
 
 # Software personal en flatpak
 flatpak install -y \
@@ -104,7 +104,7 @@ org.mozilla.Thunderbird \
 org.pipewire.Helvum \
 org.ryujinx.Ryujinx \
 org.supertuxproject.SuperTux \
-org.telegram.desktop \
+org.telegram.desktop
 
 # habilitando bluetooth
 sudo systemctl enable --now bluetooth.service
