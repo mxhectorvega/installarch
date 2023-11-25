@@ -68,9 +68,6 @@ paru -S colloid-cursors-git colloid-gtk-theme-git colloid-icon-theme-git plasma5
 # BlacBOX terminal 
 sudo pacman -S blackbox-terminal --noconfirm --needed
 
-# Remove gnome-console
-sudo pacman -R gnome-console --noconfirm --needed
-
 # Administrador de temas KDE para entornos GTK
 sudo pacman -S kvantum --noconfirm --needed
 
@@ -138,6 +135,9 @@ sleep 1
 cd $HOME
 rm -rf $HOME/tipografias
 rm -rf $HOME/tipografiaswin
+
+# Remove gnome-console
+sudo pacman -Rns gnome-console --noconfirm --needed
 
 # Activando SSH para acceso remoto
 sudo systemctl enable --now sshd
