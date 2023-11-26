@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-# Titulo: Instalación del gestor de ventanas Hyprland para wayland
-# Link: https://github.com/mxhectorvega/installarch
-# Versión: 7.21.08.23
-# Nota: El sistema de preferencia debe haber sido instalado con la
-# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
+# Descripcion: Post instalacion para HYPRLAND (compositor wayland).
+# Fecha de actualizacion: 26/11/2023
+# Nota: Requiere de Paru AUR helper para poderse instalar.
 
 # Actualización
 sudo pacman -Syyu --noconfirm

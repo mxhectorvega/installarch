@@ -1,34 +1,95 @@
 #!/usr/bin/env bash
 
-## Titulo: Instalación automática del software que uso en el día a día.
-# Link: https://github.com/mxhectorvega/installarch
-## Versión: 8.0 15/04/2023
-# Nota: El sistema de preferencia debe haber sido instalado con la
-# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
+# Descripcion: Instalacion de software de uso personal en Archlinux.
+# Fecha de actualizacion: 26/11/2023
+# Nota: Inlcuye paquetes flatpak.
 
-# Actualización
+# Actualziacion
 sudo pacman -Syyu --noconfirm
 
-# Software de repositorios oficiales
-sudo pacman -S obs-studio gimp kdenlive inkscape audacity steam libreoffice-fresh-es gnome-disk-utility supertux supertuxkart gcompris-qt --noconfirm --needed
+# Paquetes basicos
+sudo pacman -S seahorse unrar openssh acpi plocate usbutils ntfs-3g exfatprogs dosfstools pacman-contrib git curl wget vim nano fastfetch htop flatpak less man --noconfirm --needed
 
-# Software de repositorios oficiales
-paru -S vscodium-bin microsoft-edge-stable-bin appimagelauncher ventoy-bin protonup-git spotify --noconfirm --needed
+# Fuentes y paquetes para descopresion dakata
+sudo pacman -S unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} --needed --noconfirm
 
-# SERVER
-sudo pacman -S cockpit-podman --noconfirm --needed
+# Compatibilidad con impresoras
+sudo pacman -S system-config-printer --noconfirm --needed
+sudo pacman -S cups --noconfirm --needed
+sudo gpasswd -a $(whoami) sys
+sudo gpasswd -a $(whoami) wheel
+sudo gpasswd -a $(whoami) root
+sudo gpasswd -a $(whoami) lp
+sudo systemctl enable --now cups
 
-# WINE
-sudo pacman -Syu wine gnutls lib32-gnutls libpulse lib32-libpulse --noconfirm --needed
+# Actualziacion
+sudo pacman -Syyu --noconfirm
 
-# ROBLOX
-git clone --depth=1 https://aur.archlinux.org/grapejuice-git.git /tmp/grapejuice-git
-cd /tmp/grapejuice-git
-makepkg -si
+# Spotify sin publicidad (Chaotic REPO)
+sudo pacman -S spotify-adblock-git --noconfirm --needed
+
+# Gestor de software APPIMAGE
+sudo pacman -S appimagelauncher --noconfirm --needed
+
+# Preparador de USB booteable
+sudo pacman -S ventoy-bin --noconfirm --needed
+
+# Administrador de temas KDE para entornos GTK
+sudo pacman -S kvantum --noconfirm --needed
+
+# Descargar Minecraft Bedrock
+wget https://github.com/minecraft-linux/appimage-builder/releases/download/v0.12.1-763/Minecraft_Bedrock_Launcher-x86_64-v0.12.1.763.AppImage
+
+# Rustdesk visor de escritorio remoto escrito en RUST
+wget https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-0-x86_64.pkg.tar.zst
+sudo pacman -U rustdesk-1.2.3-0-x86_64.pkg.tar.zst --noconfirm
+
+# Creando enlaces simbolicos para askpass package
+sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
+
+# Software personal en flatpak
+flatpak install -y \
+com.github.KRTirtho.Spotube \
+com.github.iwalton3.jellyfin-media-player \
+com.github.tchx84.Flatseal \
+com.google.Chrome \
+com.mattjakeman.ExtensionManager \
+com.obsproject.Studio \
+com.valvesoftware.Steam \
+fr.handbrake.ghb \
+io.itch.itch \
+net.brinkervii.grapejuice \
+net.davidotek.pupgui2 \
+net.minetest.Minetest \
+org.audacityteam.Audacity \
+org.fedoraproject.MediaWriter \
+org.gimp.GIMP \
+org.kde.kdenlive \
+org.libreoffice.LibreOffice \
+org.mozilla.Thunderbird \
+org.pipewire.Helvum \
+org.ryujinx.Ryujinx \
+org.supertuxproject.SuperTux \
+org.telegram.desktop
+
+# habilitando bluetooth
+sudo systemctl enable --now bluetooth.service
+
+# Fuentes mxhectorvega
+cd $HOME
+mkdir -p $HOME/.local/share/fonts
+cd $HOME
+git clone https://github.com/mxhectorvega/tipografias
+git clone https://github.com/mxhectorvega/tipografiaswin
+cp -R $HOME/tipografias "$HOME"/.local/share/fonts
+cp -R $HOME/tipografiaswin "$HOME"/.local/share/fonts
+sleep 1
+cd $HOME
+rm -rf $HOME/tipografias
+rm -rf $HOME/tipografiaswin
+
+# Activando SSH para acceso remoto
+sudo systemctl enable --now sshd
 
 # Mensaje final
-sleep 1
-printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
-sleep 1
-printf ''
-
+printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'

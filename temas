@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# Descripcion: Implementacion de temas uniformes para flatpak y host en Archlinux.
+# Fecha de actualizacion: 26/11/2023
+# Nota: Requiere de Paru AUR helper para poderse instalar.
+
+# Tema colloid
+paru -S colloid-cursors-git colloid-gtk-theme-git colloid-icon-theme-git plasma5-themes-colloid-git --noconfirm --needed
+
+# Ajustar temas para 
+mkdir -p $HOME/.{themes,icons}/
+cp -rf /usr/share/themes/* $HOME/.themes
+cp -rf /usr/share/icons/* $HOME/.icons
+sudo flatpak override --filesystem=$HOME/.themes
+sudo flatpak override --filesystem=$HOME/.icons
+sudo flatpak override --filesystem=xdg-config/gtk-2.0:ro
+sudo flatpak override --filesystem=xdg-config/gtk-3.0:ro
+sudo flatpak override --filesystem=xdg-config/gtk-4.0:ro
+rm -rf .config/gtk-*
+cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-2.0" "$HOME/.config/"
+cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-3.0" "$HOME/.config/"
+cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-4.0" "$HOME/.config/"
+
+# Mensaje final
+printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'

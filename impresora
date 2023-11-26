@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# Descripcion: Instalacion de compatibilidad con impresora EPSON L3210 en Archlinux.
+# Fecha de actualizacion: 26/11/2023
+# Nota: Requiere de Paru AUR helper para poderse instalar.
+
+# Actualziacion
+sudo pacman -Syyu --noconfirm
+
+# Drivers impresora Epson L3210 multifuncional de tinta continua
+paru -S epson-inkjet-printer-202101w --noconfirm --needed
+
+# FIX para el driver oficial de impresora L3210
+sudo ln -s /opt/epson-inkjet-printer-202101w/cups/lib/filter/epson_inkjet_printer_filter /usr/lib/cups/filter/epson_inkjet_printer_filter
+
+# Actualziacion
+sudo pacman -Syyu --noconfirm
+
+# Mensaje final
+printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
