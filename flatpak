@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Descripcion: Instalacion de paquetes flatpak.
+# Fecha de actualizacion: 26/11/2023
+# Nota: Requiere del paquete flatpak para poderse instalar.
+
+# Actualziacion
+sudo pacman -Syyu --noconfirm
+
+sudo pacmab -S flatpak --noconfirm --needed
+
+# Software personal en flatpak
+flatpak install -y \
+com.github.KRTirtho.Spotube \
+com.github.iwalton3.jellyfin-media-player \
+com.github.tchx84.Flatseal \
+com.google.Chrome \
+com.mattjakeman.ExtensionManager \
+com.obsproject.Studio \
+com.valvesoftware.Steam \
+fr.handbrake.ghb \
+io.itch.itch \
+net.brinkervii.grapejuice \
+net.davidotek.pupgui2 \
+net.minetest.Minetest \
+org.audacityteam.Audacity \
+org.fedoraproject.MediaWriter \
+org.gimp.GIMP \
+org.kde.kdenlive \
+org.libreoffice.LibreOffice \
+org.mozilla.Thunderbird \
+org.pipewire.Helvum \
+org.audacityteam.Audacity \
+org.ryujinx.Ryujinx \
+org.supertuxproject.SuperTux \
+org.telegram.desktop
+
+# Mensaje final
+printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
