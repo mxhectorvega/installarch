@@ -33,7 +33,8 @@ org.pipewire.Helvum \
 org.audacityteam.Audacity \
 org.ryujinx.Ryujinx \
 org.supertuxproject.SuperTux \
-org.telegram.desktop
+org.telegram.desktop \
+io.github.vikdevelop.SaveDesktop
 
 # Mensaje final
 printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
