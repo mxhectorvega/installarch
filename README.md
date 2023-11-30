@@ -4,7 +4,7 @@ _Este repositorio contiene scripts en bash que instalan mis configuraciones pers
 
 **Recomendación:**
 
-El script se debe de ejecutar en una **instalación de archlinux mínima**, se preferencia echa por el método oficial **archinstall**, seleccionado el perfil **minimal**.
+El script se debe ejecutarse, despues de una **instalación* limpia, echa por el método oficial **archinstall**, seleccionado el perfil **desktop** de su eleccion.
 
 **Gestores de ventanas:**
 - Hyprland
