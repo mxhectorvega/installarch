@@ -15,7 +15,6 @@ com.github.KRTirtho.Spotube \
 com.github.iwalton3.jellyfin-media-player \
 com.github.tchx84.Flatseal \
 com.google.Chrome \
-com.mattjakeman.ExtensionManager \
 com.obsproject.Studio \
 com.valvesoftware.Steam \
 fr.handbrake.ghb \
@@ -29,12 +28,17 @@ org.gimp.GIMP \
 org.kde.kdenlive \
 org.libreoffice.LibreOffice \
 org.mozilla.Thunderbird \
-org.pipewire.Helvum \
 org.audacityteam.Audacity \
 org.ryujinx.Ryujinx \
 org.supertuxproject.SuperTux \
 org.telegram.desktop \
-io.github.vikdevelop.SaveDesktop
+org.jdownloader.JDownloader
+
+flatpak install \
+org.pipewire.Helvum \
+io.github.celluloid_player.Celluloid \
+io.github.vikdevelop.SaveDesktop \
+com.mattjakeman.ExtensionManager
 
 # Mensaje final
 printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
