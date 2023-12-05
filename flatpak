@@ -13,8 +13,6 @@ sudo pacmab -S flatpak --noconfirm --needed
 flatpak install -y \
 com.github.KRTirtho.Spotube \
 com.github.iwalton3.jellyfin-media-player \
-com.github.tchx84.Flatseal \
-com.google.Chrome \
 com.obsproject.Studio \
 com.valvesoftware.Steam \
 fr.handbrake.ghb \
@@ -25,20 +23,16 @@ net.minetest.Minetest \
 org.audacityteam.Audacity \
 org.fedoraproject.MediaWriter \
 org.gimp.GIMP \
+org.jdownloader.JDownloader \
 org.kde.kdenlive \
 org.libreoffice.LibreOffice \
 org.mozilla.Thunderbird \
-org.audacityteam.Audacity \
+org.mozilla.firefox \
+org.rncbc.qpwgraph \
 org.ryujinx.Ryujinx \
 org.supertuxproject.SuperTux \
 org.telegram.desktop \
-org.jdownloader.JDownloader
-
-flatpak install \
-org.pipewire.Helvum \
-io.github.celluloid_player.Celluloid \
-io.github.vikdevelop.SaveDesktop \
-com.mattjakeman.ExtensionManager
+org.videolan.VLC
 
 # Mensaje final
 printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
