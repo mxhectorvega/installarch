@@ -35,6 +35,7 @@ org.kde.gwenview \
 org.kde.kdenlive \
 org.kde.okular \
 org.videolan.VLC \
+org.kde.kcalc \
 io.github.jliljebl.Flowblade
 
 # para sacar la lista de apps:
