@@ -20,6 +20,7 @@ com.valvesoftware.Steam \
 fr.handbrake.ghb \
 io.github.celluloid_player.Celluloid \
 io.itch.itch \
+io.missioncenter.MissionCenter \
 net.brinkervii.grapejuice \
 net.davidotek.pupgui2 \
 net.minetest.Minetest \
@@ -35,7 +36,6 @@ org.pipewire.Helvum \
 org.ryujinx.Ryujinx \
 org.supertuxproject.SuperTux \
 org.telegram.desktop
-
 
 # para sacar la lista de apps:
 # flatpak list --app --columns=application
