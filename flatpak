@@ -12,10 +12,13 @@ sudo pacmab -S flatpak --noconfirm --needed
 # Software personal en flatpak
 flatpak install -y \
 com.github.KRTirtho.Spotube \
+com.github.gabutakut.gabutdm \
 com.github.iwalton3.jellyfin-media-player \
+com.mattjakeman.ExtensionManager \
 com.obsproject.Studio \
 com.valvesoftware.Steam \
 fr.handbrake.ghb \
+io.github.celluloid_player.Celluloid \
 io.itch.itch \
 net.brinkervii.grapejuice \
 net.davidotek.pupgui2 \
@@ -24,19 +27,15 @@ org.audacityteam.Audacity \
 org.fedoraproject.MediaWriter \
 org.gimp.GIMP \
 org.jdownloader.JDownloader \
+org.kde.kdenlive \
 org.libreoffice.LibreOffice \
 org.mozilla.Thunderbird \
 org.mozilla.firefox \
-org.rncbc.qpwgraph \
+org.pipewire.Helvum \
 org.ryujinx.Ryujinx \
 org.supertuxproject.SuperTux \
-org.telegram.desktop \
-org.kde.gwenview \
-org.kde.kdenlive \
-org.kde.okular \
-org.videolan.VLC \
-org.kde.kcalc \
-io.github.jliljebl.Flowblade
+org.telegram.desktop
+
 
 # para sacar la lista de apps:
 # flatpak list --app --columns=application
