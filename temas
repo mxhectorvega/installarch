@@ -8,17 +8,28 @@
 #paru -S colloid-cursors-git colloid-gtk-theme-git colloid-icon-theme-git plasma5-themes-colloid-git --noconfirm --needed
 
 # Ajustar temas para 
+git clone https://github.com/mxhectorvega/temas
+cd temas
+cp -rf .{themes,icons}/ $HOME
+cp -rf /usr/share/themes/* $HOME/.themes
+cp -rf /usr/share/icons/* $HOME/.icons
+
+gsettings set org.gnome.desktop.interface gtk-theme 'Colloid-Dark'
+gsettings set org.gnome.desktop.interface icon-theme 'Colloid-dark'
+gsettings set org.gnome.desktop.interface cursor-theme 'Colloid-dark'
+gsettings set org.gnome.desktop.interface font-name 'SF Compact Display Regular 11'
+gsettings set org.gnome.desktop.interface monospace-font-name 'SF Mono 10'
+gsettings set org.gnome.desktop.interface document-font-name 'SF Compact Display Regular 11'
+gsettings set org.gnome.desktop.wm.preferences titlebar-font 'SF Compact Display SemiBold 11'
+gsettings set org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
+gsettings set org.gnome.desktop.default-applications.terminal exec 'gnome-terminal'
+
 git clone https://github.com/vinceliuice/Colloid-kde
 cd Colloid-kde
 sh install.sh
 cd ..
 rm -rf Colloid-kde
 
-git cone https://github.com/mxhectorvega/temas
-cd temas
-cp -rf .{themes,icons}/ $HOME
-cp -rf /usr/share/themes/* $HOME/.themes
-cp -rf /usr/share/icons/* $HOME/.icons
 sudo flatpak override --filesystem=$HOME/.themes
 sudo flatpak override --filesystem=$HOME/.icons
 sudo flatpak override --filesystem=xdg-config/gtk-2.0:ro
