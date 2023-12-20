@@ -5,10 +5,18 @@
 # Nota: Requiere de Paru AUR helper para poderse instalar.
 
 # Tema colloid
-paru -S colloid-cursors-git colloid-gtk-theme-git colloid-icon-theme-git plasma5-themes-colloid-git --noconfirm --needed
+#paru -S colloid-cursors-git colloid-gtk-theme-git colloid-icon-theme-git plasma5-themes-colloid-git --noconfirm --needed
 
 # Ajustar temas para 
-mkdir -p $HOME/.{themes,icons}/
+git clone https://github.com/vinceliuice/Colloid-kde
+cd Colloid-kde
+sh install.sh
+cd ..
+rm -rf Colloid-kde
+
+git cone https://github.com/mxhectorvega/temas
+cd temas
+cp -rf .{themes,icons}/ $HOME
 cp -rf /usr/share/themes/* $HOME/.themes
 cp -rf /usr/share/icons/* $HOME/.icons
 sudo flatpak override --filesystem=$HOME/.themes
