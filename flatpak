@@ -14,6 +14,8 @@ flatpak install -y \
 com.github.KRTirtho.Spotube \
 com.github.gabutakut.gabutdm \
 com.github.iwalton3.jellyfin-media-player \
+com.github.tchx84.Flatseal \
+com.hunterwittenborn.Celeste \
 com.mattjakeman.ExtensionManager \
 com.obsproject.Studio \
 com.valvesoftware.Steam \
