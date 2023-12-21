@@ -1,35 +1,46 @@
 #!/usr/bin/env bash
 
-# Descripcion: Implementacion de temas uniformes para flatpak y host en Archlinux.
-# Fecha de actualizacion: 26/11/2023
+# Descripción: Implementación de temas uniformes para flatpak y host en Archlinux.
+# Fecha de actualización: 20/12/2023
 # Nota: Requiere de Paru AUR helper para poderse instalar.
 
-# Tema colloid
+# Instalación de los paquetes Colloid gtk, icons e kde (kvantum).
 #paru -S colloid-cursors-git colloid-gtk-theme-git colloid-icon-theme-git plasma5-themes-colloid-git --noconfirm --needed
 
-# Ajustar temas para 
+# Eliminar rastros de otros temas para evitar conflictos
+rm -rf $HOME/.{themes,icons}
+
+# Clonar los temas cuidadosamente seleccionados por Héctor Vega
 git clone https://github.com/mxhectorvega/temas
 cd temas
+
+# Crear los directorios
 cp -rf .{themes,icons}/ $HOME
+
+# Copiar los temas e iconos existentes
 cp -rf /usr/share/themes/* $HOME/.themes
 cp -rf /usr/share/icons/* $HOME/.icons
 
-gsettings set org.gnome.desktop.interface gtk-theme 'Colloid-Dark'
-gsettings set org.gnome.desktop.interface icon-theme 'Colloid-dark'
+# Definir temas para gnome gtk apareance
+gsettings set org.gnome.desktop.interface icon-theme 'Colloid-dark-cursors'
 gsettings set org.gnome.desktop.interface cursor-theme 'Colloid-dark'
+gsettings set org.gnome.shell.extensions.user-theme name "Colloid-Dark-Compact"
+gsettings set org.gnome.desktop.interface gtk-theme 'Colloid-Dark-Compact'
 gsettings set org.gnome.desktop.interface font-name 'SF Compact Display Regular 11'
-gsettings set org.gnome.desktop.interface monospace-font-name 'SF Mono 10'
 gsettings set org.gnome.desktop.interface document-font-name 'SF Compact Display Regular 11'
+gsettings set org.gnome.desktop.interface monospace-font-name 'SF Mono 10'
 gsettings set org.gnome.desktop.wm.preferences titlebar-font 'SF Compact Display SemiBold 11'
 gsettings set org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
 gsettings set org.gnome.desktop.default-applications.terminal exec 'gnome-terminal'
 
+# Clonar tema Colloid para KDE (kvantum)
 git clone https://github.com/vinceliuice/Colloid-kde
 cd Colloid-kde
 sh install.sh
 cd ..
 rm -rf Colloid-kde
 
+# Definir el tema para las aplicaciones Flatpak
 sudo flatpak override --filesystem=$HOME/.themes
 sudo flatpak override --filesystem=$HOME/.icons
 sudo flatpak override --filesystem=xdg-config/gtk-2.0:ro
