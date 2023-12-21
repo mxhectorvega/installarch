@@ -22,9 +22,9 @@ cp -rf /usr/share/themes/* $HOME/.themes
 cp -rf /usr/share/icons/* $HOME/.icons
 
 # Definir temas para gnome gtk apareance
-gsettings set org.gnome.desktop.interface icon-theme 'Colloid-dark-cursors'
-gsettings set org.gnome.desktop.interface cursor-theme 'Colloid-dark'
-#gsettings set org.gnome.shell.extensions.user-theme name "Colloid-Dark-Compact"
+gsettings set org.gnome.desktop.interface icon-theme 'Colloid-dark'
+gsettings set org.gnome.desktop.interface cursor-theme 'Colloid-dark-cursors'
+gsettings set org.gnome.shell.extensions.user-theme name "Colloid-Dark-Compact"
 gsettings set org.gnome.desktop.interface gtk-theme 'Colloid-Dark-Compact'
 gsettings set org.gnome.desktop.interface font-name 'SF Compact Display Regular 11'
 gsettings set org.gnome.desktop.interface document-font-name 'SF Compact Display Regular 11'
@@ -38,7 +38,6 @@ git clone https://github.com/vinceliuice/Colloid-kde
 cd Colloid-kde
 sh install.sh
 cd ..
-rm -rf Colloid-kde
 
 # Definir el tema para las aplicaciones Flatpak
 sudo flatpak override --filesystem=$HOME/.themes
@@ -50,6 +49,10 @@ rm -rf .config/gtk-*
 cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-2.0" "$HOME/.config/"
 cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-3.0" "$HOME/.config/"
 cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-4.0" "$HOME/.config/"
+
+# Eliminar directorios basura
+rm -rf $HOME/temas
+rm -rf Colloid-kde
 
 # Mensaje final
 printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
