@@ -33,12 +33,6 @@ gsettings set org.gnome.desktop.wm.preferences titlebar-font 'SF Compact Display
 gsettings set org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
 gsettings set org.gnome.desktop.default-applications.terminal exec 'gnome-terminal'
 
-# Clonar tema Colloid para KDE (kvantum)
-git clone https://github.com/vinceliuice/Colloid-kde
-cd Colloid-kde
-sh install.sh
-cd ..
-
 # Definir el tema para las aplicaciones Flatpak
 sudo flatpak override --filesystem=$HOME/.themes
 sudo flatpak override --filesystem=$HOME/.icons
@@ -49,6 +43,12 @@ rm -rf .config/gtk-*
 cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-2.0" "$HOME/.config/"
 cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-3.0" "$HOME/.config/"
 cp -rf "$HOME/.themes/$(dconf read /org/gnome/desktop/interface/gtk-theme | tr -d "''")/gtk-4.0" "$HOME/.config/"
+
+# Clonar tema Colloid para KDE (kvantum)
+git clone https://github.com/vinceliuice/Colloid-kde
+cd Colloid-kde
+sh install.sh
+cd $HOME
 
 # Eliminar directorios basura
 rm -rf $HOME/temas
