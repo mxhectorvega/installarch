@@ -8,7 +8,7 @@
 sudo pacman -Syyu --noconfirm
 
 # Paquetes basicos
-sudo pacman -S seahorse unrar openssh acpi plocate usbutils ntfs-3g exfatprogs dosfstools pacman-contrib git curl wget vim nano fastfetch htop flatpak less man --noconfirm --needed
+sudo pacman -S qt5ct qt6ct seahorse unrar openssh acpi plocate usbutils ntfs-3g exfatprogs dosfstools pacman-contrib git curl wget vim nano fastfetch htop flatpak less man --noconfirm --needed
 
 # Fuentes y paquetes para descopresion dakata
 sudo pacman -S unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} --needed --noconfirm
