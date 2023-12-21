@@ -24,7 +24,7 @@ cp -rf /usr/share/icons/* $HOME/.icons
 # Definir temas para gnome gtk apareance
 gsettings set org.gnome.desktop.interface icon-theme 'Colloid-dark-cursors'
 gsettings set org.gnome.desktop.interface cursor-theme 'Colloid-dark'
-gsettings set org.gnome.shell.extensions.user-theme name "Colloid-Dark-Compact"
+#gsettings set org.gnome.shell.extensions.user-theme name "Colloid-Dark-Compact"
 gsettings set org.gnome.desktop.interface gtk-theme 'Colloid-Dark-Compact'
 gsettings set org.gnome.desktop.interface font-name 'SF Compact Display Regular 11'
 gsettings set org.gnome.desktop.interface document-font-name 'SF Compact Display Regular 11'
