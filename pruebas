@@ -1,6 +1,7 @@
 # Desinstalar software no usado Gnome
 sudo pacman -R totem \
 epiphany \
+gnome-system-monitor \
 gnome-backgrounds \
 gnome-contacts \
 gnome-music \
