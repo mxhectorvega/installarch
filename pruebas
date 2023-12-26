@@ -1,4 +1,5 @@
 # Desinstalar software no usado Gnome
+
 sudo pacman -R totem \
 epiphany \
 gnome-system-monitor \
@@ -10,3 +11,9 @@ gnome-tour \
 gnome-clocks \
 gnome-calendar \
 gnome-weather
+
+sudo pacman -Rns $(pacman -Qdtq)
+du -sh /var/cache/pacman/pkg/
+du -sh ~/.cache/paru
+sudo pacman -Scc --noconfirm
+paru -Scc --noconfirm
