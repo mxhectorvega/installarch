@@ -1,1 +1,11 @@
-# Naranjas
+# Desinstalar software no usado Gnome
+sudo pacman -R totem \
+epiphany \
+gnome-backgrounds \
+gnome-contacts \
+gnome-music \
+gnome-maps \
+gnome-tour \
+gnome-clocks \
+gnome-calendar \
+gnome-weather
