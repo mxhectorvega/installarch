@@ -10,7 +10,8 @@ gnome-maps \
 gnome-tour \
 gnome-clocks \
 gnome-calendar \
-gnome-weather
+gnome-weather \
+gnome-software
 
 sudo pacman -Rns $(pacman -Qdtq)
 du -sh /var/cache/pacman/pkg/
