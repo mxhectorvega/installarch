@@ -11,12 +11,12 @@ sudo pacmab -S flatpak --noconfirm --needed
 
 # Software personal en flatpak
 flatpak install -y \
-com.github.Bleuzen.FFaudioConverter \
 com.github.KRTirtho.Spotube \
 com.github.gabutakut.gabutdm \
 com.github.iwalton3.jellyfin-media-player \
 com.github.marktext.marktext \
 com.github.tchx84.Flatseal \
+com.google.Chrome \
 com.mattjakeman.ExtensionManager \
 com.obsproject.Studio \
 com.usebottles.bottles \
@@ -26,6 +26,7 @@ io.github.celluloid_player.Celluloid \
 io.github.peazip.PeaZip \
 io.itch.itch \
 io.missioncenter.MissionCenter \
+me.timschneeberger.jdsp4linux \
 net.brinkervii.grapejuice \
 net.davidotek.pupgui2 \
 net.minetest.Minetest \
@@ -37,10 +38,10 @@ org.jdownloader.JDownloader \
 org.kde.kdenlive \
 org.libreoffice.LibreOffice \
 org.mozilla.Thunderbird \
-org.mozilla.firefox \
 org.pipewire.Helvum \
 org.ryujinx.Ryujinx \
 org.signal.Signal \
+org.soundconverter.SoundConverter \
 org.supertuxproject.SuperTux \
 org.telegram.desktop
 
