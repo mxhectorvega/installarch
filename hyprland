@@ -7,16 +7,16 @@
 sudo pacman -Syyu --noconfirm
 
 # Internos para el SO
-sudo pacman -S usbutils ntfs-3g pacman-contrib plocate --noconfirm --needed
+sudo pacman -S flatpak usbutils ntfs-3g pacman-contrib plocate --noconfirm --needed
 
 # Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget htop vim fuse less man unrar pulsemixer --noconfirm --needed 
+sudo pacman -S git make gcc curl wget fuse less man unrar --noconfirm --needed 
 
 # Thunar administrador de archivos
 sudo pacman -S thunar{,-{volman,{archive,media-tags}-plugin}} ffmpegthumbnailer tumbler --needed --noconfirm
 
 # Hyprland, dependencias y demas paquetes para su buen funcionamiento
-sudo pacman -S cliphist hyprland hyprpaper hyprlock sway wayfire foot waybar wofi mako xdg-desktop-portal-hyprland xdg-desktop-portal xdg-user-dirs xdg-utils pulsemixer wf-recorder gammastep grim slurp blueberry brightnessctl qt6-wayland qt5-wayland qt5ct qt6ct iwd smartmontools wireless_tools wpa_supplicant htop nano vim networkmanager gsettings-desktop-schemas dconf --noconfirm --needed
+sudo pacman -S cliphist hyprland hyprpaper hyprlock sway foot waybar wofi mako xdg-desktop-portal-hyprland xdg-desktop-portal xdg-user-dirs xdg-utils pulsemixer wf-recorder gammastep grim slurp blueberry brightnessctl qt6-wayland qt5-wayland qt5ct qt6ct iwd smartmontools wireless_tools wpa_supplicant htop nano vim fastfetch networkmanager gsettings-desktop-schemas dconf --noconfirm --needed
 
 # Visores de archivos
 sudo pacman -S imv zathura-pdf-mupdf mpv --noconfirm --needed
@@ -25,7 +25,7 @@ sudo pacman -S imv zathura-pdf-mupdf mpv --noconfirm --needed
 sudo pacman -S gnome-keyring libsecret libgnome-keyring --noconfirm --needed
 
 # Básicos
-sudo pacman -S gvfs blueberry acpi android-{tools,file-transfer} speedtest-cli --needed --noconfirm
+sudo pacman -S gvfs blueberry acpi speedtest-cli --needed --noconfirm
 
 # Habilitando servicio de bluetooth
 sudo pacman -S bluez{,-utils} --needed --noconfirm
