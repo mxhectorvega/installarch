@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Descripcion: Instalacion de paquetes flatpak.
-# Fecha de actualizacion: 26/11/2023
+# Fecha de actualizacion: 12/05/2024
 # Nota: Requiere del paquete flatpak para poderse instalar.
 
 # Actualziacion
@@ -16,7 +16,7 @@ com.github.gabutakut.gabutdm \
 com.github.iwalton3.jellyfin-media-player \
 com.github.marktext.marktext \
 com.github.tchx84.Flatseal \
-com.google.EarthPro \ 
+com.google.EarthPro \
 com.microsoft.Edge \
 com.obsproject.Studio \
 com.valvesoftware.Steam \
