@@ -20,7 +20,6 @@ com.google.EarthPro \
 com.mattjakeman.ExtensionManager \
 com.microsoft.Edge \
 com.obsproject.Studio \
-com.rustdesk.RustDesk \
 com.spotify.Client \
 com.valvesoftware.Steam \
 com.vscodium.codium \
@@ -50,6 +49,7 @@ org.ryujinx.Ryujinx \
 org.signal.Signal \
 org.soundconverter.SoundConverter \
 org.supertuxproject.SuperTux \
+net.supertuxkart.SuperTuxKart \
 org.telegram.desktop
 
 
