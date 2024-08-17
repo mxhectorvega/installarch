@@ -11,6 +11,7 @@ sudo pacmab -S flatpak --noconfirm --needed
 
 # Software personal en flatpak
 flatpak install -y \
+app.drey.Dialect \
 com.github.KRTirtho.Spotube \
 com.github.gabutakut.gabutdm \
 com.github.iwalton3.jellyfin-media-player \
@@ -33,13 +34,15 @@ io.mrarm.mcpelauncher \
 net.brinkervii.grapejuice \
 net.davidotek.pupgui2 \
 net.minetest.Minetest \
+net.supertuxkart.SuperTuxKart \
 org.audacityteam.Audacity \
 org.gimp.GIMP \
-org.gnome.Boxes \
 org.gnome.Calculator \
 org.gnome.Evince \
 org.gnome.Loupe \
-org.gnome.seahorse.Application  \
+org.gnome.TextEditor \
+org.gnome.seahorse.Application \
+org.inkscape.Inkscape \
 org.jdownloader.JDownloader \
 org.kde.kdenlive \
 org.libreoffice.LibreOffice \
@@ -49,8 +52,8 @@ org.ryujinx.Ryujinx \
 org.signal.Signal \
 org.soundconverter.SoundConverter \
 org.supertuxproject.SuperTux \
-net.supertuxkart.SuperTuxKart \
 org.telegram.desktop
+
 
 
 # para sacar la lista de apps:
