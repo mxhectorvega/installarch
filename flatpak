@@ -5,12 +5,12 @@
 # Nota: Requiere del paquete flatpak para poderse instalar.
 
 # Actualziacion
-sudo pacman -Syyu --noconfirm
+#sudo pacman -Syyu --noconfirm
 
-sudo pacmab -S flatpak --noconfirm --needed
+#sudo pacmab -S flatpak --noconfirm --needed
 
 # Software personal en flatpak
-flatpak install -y \
+flatpak install --user -y \
 app.drey.Dialect \
 com.github.KRTirtho.Spotube \
 com.github.gabutakut.gabutdm \
@@ -29,9 +29,7 @@ io.github.celluloid_player.Celluloid \
 io.github.peazip.PeaZip \
 io.gitlab.adhami3310.Impression \
 io.itch.itch \
-io.missioncenter.MissionCenter \
 io.mrarm.mcpelauncher \
-net.brinkervii.grapejuice \
 net.davidotek.pupgui2 \
 net.minetest.Minetest \
 net.supertuxkart.SuperTuxKart \
@@ -46,7 +44,6 @@ org.inkscape.Inkscape \
 org.jdownloader.JDownloader \
 org.kde.kdenlive \
 org.libreoffice.LibreOffice \
-org.mozilla.firefox \
 org.pipewire.Helvum \
 org.ryujinx.Ryujinx \
 org.signal.Signal \
