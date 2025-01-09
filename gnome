@@ -67,7 +67,7 @@ sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass --noconfirm --
 # ZRAM configuracion
 sudo tee -a /etc/systemd/zram-generator.conf <<EOF
 zram-size= ram
-compression-algorithm = zsthd
+compression-algorithm = zstd
 EOF
 
 # Fuentes mxhectorvega
