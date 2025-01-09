@@ -4,8 +4,8 @@
 # Autor: Héctor Iván Vega Zamudio
 # Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega/installarch
-# Versión: 7.0
-# Fecha de actualización 11/11/2023
+# Versión: 7.10
+# Fecha de actualización 09/01/2025
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
@@ -14,8 +14,9 @@ sudo pacman -Sy --noconfirm
 
 # Internos para el SO
 sudo pacman -S openssh seahorse acpi plocate usbutils ntfs-3g dosfstools flatpak pacman-contrib fuse xdg-user-dirs --noconfirm --needed
+
 # Para ejecutar desde la terminal
-sudo pacman -S fastfetch git curl wget nvtop htop vim less man --noconfirm --needed 
+sudo pacman -S fastfetch git curl wget nvtop htop vim less man speedtest-cli --noconfirm --needed 
 
 # Chaotic-AUR - Automated building repo for AUR packages
 sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
@@ -38,12 +39,10 @@ sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 sudo pacman -Sy --noconfirm
 
 # Paquetes mínimos para que Gnome funcione
-sudo pacman -S gdm gnome-shell nautilus gnome-control-center gnome-tweaks gnome-disk-utility polkit-gnome --noconfirm --needed
-sudo pacman -S blackbox-terminal --noconfirm --needed
-sudo pacman -S file-roller --noconfirm --needed
+sudo pacman -S gdm gnome-shell nautilus gnome-control-center gnome-software gnome-console gnome-tweaks gnome-disk-utility polkit-gnome --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
 
-sudo pacman -S papirus-icon-theme adw-gtk3-git --noconfirm --needed
+sudo pacman -S adw-gtk-theme --noconfirm --needed
 flatpak install -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
 
 # habilitando bluetooth
@@ -65,9 +64,6 @@ sudo systemctl enable --now cups
 # Creando enlaces simbolicos para askpass package
 sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass --noconfirm --needed
 
-# Instalando gestor de paquetes (ofl-repo, aur, appimage y flatpak)
-sudo pacman -S bauh --noconfirm --needed
-
 # ZRAM configuracion
 sudo tee -a /etc/systemd/zram-generator.conf <<EOF
 zram-size= ram
@@ -79,13 +75,10 @@ cd $HOME
 git clone https://github.com/mxhectorvega/tipografias
 git clone https://github.com/mxhectorvega/tipografiaswin
 mkdir -p $HOME/.local/share/fonts
-cp -R $HOME/tipografias "$HOME"/.local/share
-cp -R $HOME/tipografiaswin "$HOME"/.local/share
+cp -R $HOME/tipografias "$HOME"/.local/share/fonts
+cp -R $HOME/tipografiaswin "$HOME"/.local/share/fonts
 rm -rf $HOME/tipografias
 rm -rf $HOME/tipografiaswin
-
-# Fuentes básicas dakata
-sudo pacman -S unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} --needed --noconfirm
 
 # Mensaje final
 sleep 1
