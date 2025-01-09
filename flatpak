@@ -10,13 +10,12 @@
 #sudo pacmab -S flatpak --noconfirm --needed
 
 # Software personal en flatpak
-flatpak install --user -y \
+flatpak instalo -y \
 app.drey.Dialect \
 com.github.KRTirtho.Spotube \
 com.github.gabutakut.gabutdm \
 com.github.iwalton3.jellyfin-media-player \
 com.github.tchx84.Flatseal \
-com.google.EarthPro \
 com.mattjakeman.ExtensionManager \
 com.obsproject.Studio \
 com.rustdesk.RustDesk \
@@ -38,7 +37,6 @@ org.gnome.Connections \
 org.gnome.Evince \
 org.gnome.Evolution \
 org.gnome.Loupe \
-org.gnome.Photos \
 org.gnome.TextEditor \
 org.gnome.gitlab.YaLTeR.VideoTrimmer \
 org.gnome.gitlab.somas.Apostrophe \
@@ -52,9 +50,8 @@ org.pipewire.Helvum \
 org.signal.Signal \
 org.soundconverter.SoundConverter \
 org.supertuxproject.SuperTux \
-org.telegram.desktop
-
-
+org.telegram.desktop \
+com.spotify.Client
 
 # para sacar la lista de apps:
 # flatpak list --app --columns=application
