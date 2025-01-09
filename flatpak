@@ -60,4 +60,4 @@ flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
 # flatpak list --app --columns=application
 
 # Mensaje final
-printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
+printf '\n\n\tContribuye:\n\tmxhectorvega.vercel.app\n\n\n'
