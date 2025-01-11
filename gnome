@@ -13,7 +13,7 @@
 sudo pacman -Sy --noconfirm
 
 # Internos para el SO
-sudo pacman -S openssh seahorse acpi plocate usbutils ntfs-3g dosfstools flatpak pacman-contrib fuse xdg-user-dirs rsync --noconfirm --needed
+sudo pacman -S openssh seahorse acpi plocate usbutils ntfs-3g dosfstools flatpak pacman-contrib fuse xdg-user-dirs rsync nano --noconfirm --needed
 
 # Para ejecutar desde la terminal
 sudo pacman -S fastfetch git curl wget nvtop htop vim less man speedtest-cli --noconfirm --needed 
