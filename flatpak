@@ -55,7 +55,7 @@ org.telegram.desktop \
 com.spotify.Client
 
 # roblox en Linux
-flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
+sudo flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
 
 # para sacar la lista de apps:
 # flatpak list --app --columns=application
