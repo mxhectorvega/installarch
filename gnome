@@ -24,7 +24,7 @@ sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 sudo pacman -Sy --noconfirm
 
 # Paquetes mínimos para que Gnome funcione
-sudo pacman -S gdm gnome-shell nautilus gnome-control-center gnome-software gnome-console gnome-tweaks gnome-disk-utility polkit-gnome --noconfirm --needed
+sudo pacman -S gdm gnome-shell nautilus gnome-control-center gnome-software gnome-console gnome-disk-utility polkit-gnome --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
 
 sudo pacman -S adw-gtk-theme --noconfirm --needed
