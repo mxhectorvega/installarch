@@ -7,7 +7,7 @@
 # Actualziacion
 #sudo pacman -Syyu --noconfirm
 
-#sudo pacmab -S flatpak --noconfirm --needed
+#sudo pacman -S flatpak --noconfirm --needed
 
 # Software personal en flatpak
 flatpak install -y \
