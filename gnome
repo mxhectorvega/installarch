@@ -4,8 +4,8 @@
 # Autor: Héctor Iván Vega Zamudio
 # Correo: mxhectorvega@gmail.com
 # Link: https://github.com/mxhectorvega/installarch
-# Versión: 7.10
-# Fecha de actualización 09/01/2025
+# Versión: 7.20
+# Fecha de actualización 16/01/2025
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
@@ -18,21 +18,6 @@ sudo pacman -S openssh seahorse acpi plocate usbutils ntfs-3g dosfstools flatpak
 # Para ejecutar desde la terminal
 sudo pacman -S fastfetch git curl wget nvtop htop vim less man speedtest-cli --noconfirm --needed 
 
-# Chaotic-AUR - Automated building repo for AUR packages
-sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-sudo  pacman-key --lsign-key 3056513887B78AEB
-wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
-wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
-sudo pacman -U chaotic-keyring.pkg.tar.zst  --noconfirm
-sudo pacman -U chaotic-mirrorlist.pkg.tar.zst  --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-cd $HOME
-rm -rf $HOME/*.zst
-sudo pacman -Sy --noconfirm
-
 # Paru
 cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
@@ -43,10 +28,7 @@ sudo pacman -S gdm gnome-shell nautilus gnome-control-center gnome-software gnom
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
 
 sudo pacman -S adw-gtk-theme --noconfirm --needed
-flatpak install -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
-
-# habilitando bluetooth
-sudo systemctl enable --now bluetooth.service
+flatpak install org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
 
 # crear directorios de usuario
 xdg-user-dirs-update
@@ -79,6 +61,24 @@ cp -R $HOME/tipografias "$HOME"/.local/share/fonts
 cp -R $HOME/tipografiaswin "$HOME"/.local/share/fonts
 rm -rf $HOME/tipografias
 rm -rf $HOME/tipografiaswin
+
+# Chaotic-AUR - Automated building repo for AUR packages
+sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+sudo  pacman-key --lsign-key 3056513887B78AEB
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
+sudo pacman -U chaotic-keyring.pkg.tar.zst  --noconfirm
+sudo pacman -U chaotic-mirrorlist.pkg.tar.zst  --noconfirm
+sudo tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+EOF
+cd $HOME
+rm -rf $HOME/*.zst
+sudo pacman -Sy --noconfirm
+
+# habilitando bluetooth
+sudo systemctl enable --now bluetooth.service
 
 # Mensaje final
 sleep 1
