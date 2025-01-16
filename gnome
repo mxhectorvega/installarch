@@ -62,6 +62,12 @@ cp -R $HOME/tipografiaswin "$HOME"/.local/share/fonts
 rm -rf $HOME/tipografias
 rm -rf $HOME/tipografiaswin
 
+# Driver bluetooth
+sudo pacman -S bluez bluez-utils --noconfirm --needed
+
+# habilitando bluetooth
+sudo systemctl enable --now bluetooth.service
+
 # Chaotic-AUR - Automated building repo for AUR packages
 sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
 sudo  pacman-key --lsign-key 3056513887B78AEB
@@ -76,9 +82,6 @@ EOF
 cd $HOME
 rm -rf $HOME/*.zst
 sudo pacman -Sy --noconfirm
-
-# habilitando bluetooth
-sudo systemctl enable --now bluetooth.service
 
 # Mensaje final
 sleep 1
