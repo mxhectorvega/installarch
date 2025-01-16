@@ -35,7 +35,6 @@ org.gimp.GIMP \
 org.gnome.Calculator \
 org.gnome.Connections \
 org.gnome.Evince \
-org.gnome.Evolution \
 org.gnome.Loupe \
 org.gnome.TextEditor \
 org.gnome.gitlab.YaLTeR.VideoTrimmer \
@@ -53,7 +52,8 @@ org.supertuxproject.SuperTux \
 org.telegram.desktop \
 com.spotify.Client \
 page.tesk.Refine \
-org.virt_manager.virt-manager
+org.virt_manager.virt-manager \
+com.getmailspring.Mailspring
 
 # roblox en Linux
 sudo flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
