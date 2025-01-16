@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Descripcion: Instalacion de paquetes flatpak.
-# Fecha de actualizacion: 12/05/2024
+# Fecha de actualizacion: 16/01/2025
 # Nota: Requiere del paquete flatpak para poderse instalar.
 
 # Actualziacion
@@ -51,7 +51,9 @@ org.signal.Signal \
 org.soundconverter.SoundConverter \
 org.supertuxproject.SuperTux \
 org.telegram.desktop \
-com.spotify.Client
+com.spotify.Client \
+page.tesk.Refine \
+org.virt_manager.virt-manager
 
 # roblox en Linux
 sudo flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
