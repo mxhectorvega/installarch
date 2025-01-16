@@ -32,6 +32,7 @@ net.minetest.Minetest \
 net.supertuxkart.SuperTuxKart \
 org.audacityteam.Audacity \
 org.gimp.GIMP \
+org.gnome.Evolution \
 org.gnome.Calculator \
 org.gnome.Connections \
 org.gnome.Evince \
@@ -52,8 +53,7 @@ org.supertuxproject.SuperTux \
 org.telegram.desktop \
 com.spotify.Client \
 page.tesk.Refine \
-org.virt_manager.virt-manager \
-com.getmailspring.Mailspring
+org.virt_manager.virt-manager
 
 # roblox en Linux
 sudo flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
