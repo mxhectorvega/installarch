@@ -45,7 +45,8 @@ org.jdownloader.JDownloader \
 org.kde.kdenlive \
 org.kde.krita \
 org.libreoffice.LibreOffice \
-org.mozilla.firefox \
+com.brave.Browser \
+org.cockpit_project.CockpitClient \
 org.pipewire.Helvum \
 org.signal.Signal \
 org.soundconverter.SoundConverter \
