@@ -83,6 +83,9 @@ cd $HOME
 rm -rf $HOME/*.zst
 sudo pacman -Sy --noconfirm
 
+# gestor de maquinas virtuales
+sudo pacman -S virt-manager --noconfirm --needed
+
 # Mensaje final
 sleep 1
 printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
