@@ -44,7 +44,7 @@ sudo gpasswd -a $(whoami) lp
 sudo systemctl enable --now cups
 
 # Creando enlaces simbolicos para askpass package
-sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass --noconfirm --needed
+sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
 
 # ZRAM configuracion
 sudo tee -a /etc/systemd/zram-generator.conf <<EOF
