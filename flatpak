@@ -53,8 +53,7 @@ org.soundconverter.SoundConverter \
 org.supertuxproject.SuperTux \
 org.telegram.desktop \
 com.spotify.Client \
-page.tesk.Refine \
-org.virt_manager.virt-manager
+page.tesk.Refine
 
 # roblox en Linux
 sudo flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
