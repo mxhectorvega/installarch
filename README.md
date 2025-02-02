@@ -1,6 +1,3 @@
-Comprendo. Aquí tienes el contenido del archivo sin cortes ni interrupciones, en un solo bloque de texto plano para que puedas copiar y pegar fácilmente en tu editor de texto:
-
-
 # INSTALLARCH
 
 **Optimiza tu Arch Linux con Estilo y Rendimiento**
@@ -13,24 +10,29 @@ El script debe ejecutarse después de una **instalación limpia** realizada medi
 
 ## 🖥️ Gestores de Ventanas Disponibles
 
-+--------------------+
+```
++--+
 |     Hyprland       |
-+--------------------+
++--+
 |       Sway         |
-+--------------------+
++--+
 |       BSPWM        |
-+--------------------+
++--+
 |         i3         |
-+--------------------+
++--+
+```
 
 ## 🌐 Entornos de Escritorio Disponibles
-+--------------------+
+
+```
++--+
 |       GNOME        |
-+--------------------+
++--+
 |    KDE Plasma      |
-+--------------------+
++--+
 |       Budgie       |
-+--------------------+
++--+
+```
 
 ## 🛠️ Métodos de Instalación
 
@@ -66,19 +68,19 @@ sh mxgnome
 
 ```
 [ Iniciar Arch Linux ]
-                 │
-                 ▼
+          │
+          ▼
 [ Instalación Limpia con archinstall (perfil minimal) ]
-                 │
-                 ▼
+          │
+          ▼
 [ Seleccionar Entorno o Gestor de Ventanas ]
-                 │
-                / \
-               /   \
-              ▼     ▼
+          │
+         / \
+        /   \
+       ▼     ▼
 [ Método Uno ]    [ Método Dos ]
-           │                 │
-           ▼                 ▼
+    │                 │
+    ▼                 ▼
 [ Ejecutar Script ]  [ Editar y Ejecutar Script ]
 ```
 
