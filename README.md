@@ -1,38 +1,48 @@
 # INSTALLARCH
 
-**Optimiza tu Arch Linux con Estilo y Rendimiento**
+┌──────────────────────────────────────────────┐
+
+│  **Optimiza tu Arch Linux con Estilo y Rendimiento**  │
+
+└──────────────────────────────────────────────┘
 
 *Este repositorio contiene scripts en Bash que instalan mis configuraciones personales de entornos de escritorio como **GNOME** o **KDE**, y gestores de ventanas para **Wayland** o **Xorg**. Están enfocados en mejorar el rendimiento sin sacrificar un diseño elegante ni la compatibilidad con el software de uso cotidiano.*
+
+---
 
 ## 🚀 Recomendación
 
 El script debe ejecutarse después de una **instalación limpia** realizada mediante el método oficial `archinstall`, seleccionando el perfil **minimal**.
 
+---
+
 ## 🖥️ Gestores de Ventanas Disponibles
 
 ```
-+--+
++--------------------+
 |     Hyprland       |
-+--+
++--------------------+
 |       Sway         |
-+--+
++--------------------+
 |       BSPWM        |
-+--+
++--------------------+
 |         i3         |
-+--+
++--------------------+
 ```
 
 ## 🌐 Entornos de Escritorio Disponibles
 
 ```
-+--+
++--------------------+
 |       GNOME        |
-+--+
++--------------------+
 |    KDE Plasma      |
-+--+
++--------------------+
 |       Budgie       |
-+--+
++--------------------+
 ```
+
+---
 
 ## 🛠️ Métodos de Instalación
 
@@ -64,6 +74,8 @@ Ejecuta el script:
 sh mxgnome
 ```
 
+---
+
 ## 📝 Flujo de Instalación
 
 ```
@@ -84,8 +96,14 @@ sh mxgnome
 [ Ejecutar Script ]  [ Editar y Ejecutar Script ]
 ```
 
+---
+
 ## 🙌 Créditos
 
 [@mxhectorvega](#) • [@darch7](#) • [@cristoalv](#) • [@bourne_again](#) • [@tenashito](#) y muchos otros de la comunidad Linux.
 
+---
+
 ✨**Disfruta de un sistema optimizado sin sacrificar estilo ni funcionalidad. ¡Contribuye y comparte tus propias configuraciones!**
+
+---
