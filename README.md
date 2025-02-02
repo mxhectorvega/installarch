@@ -20,21 +20,18 @@ El script debe ejecutarse después de una **instalación limpia** realizada medi
 
 ## 🖥️ Gestores de Ventanas Disponibles
 
-```
 +--------------------+
-|     Hyprland       |
+|       Hyprland
 +--------------------+
-|       Sway         |
+|       Sway
 +--------------------+
-|       BSPWM        |
+|       BSPWM
 +--------------------+
-|         i3         |
+|         i3
 +--------------------+
-```
 
 ## 🌐 Entornos de Escritorio Disponibles
 
-```
 +--------------------+
 |       GNOME        |
 +--------------------+
@@ -42,7 +39,6 @@ El script debe ejecutarse después de una **instalación limpia** realizada medi
 +--------------------+
 |       Budgie       |
 +--------------------+
-```
 
 ---
 
@@ -82,19 +78,19 @@ sh mxgnome
 
 ```
 [ Iniciar Arch Linux ]
-          │
-          ▼
+                 │
+                 ▼
 [ Instalación Limpia con archinstall (perfil minimal) ]
-          │
-          ▼
+                 │
+                 ▼
 [ Seleccionar Entorno o Gestor de Ventanas ]
-          │
-         / \
-        /   \
-       ▼     ▼
+                 │
+                / \
+               /   \
+              ▼     ▼
 [ Método Uno ]    [ Método Dos ]
-    │                 │
-    ▼                 ▼
+           │                 │
+           ▼                 ▼
 [ Ejecutar Script ]  [ Editar y Ejecutar Script ]
 ```
 
