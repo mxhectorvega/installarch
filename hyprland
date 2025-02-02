@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Descripcion: Post instalacion para HYPRLAND (compositor wayland).
-# Fecha de actualizacion: 12/05/2024
+# Fecha de actualización: 12/05/2024
 
 # Actualización
 sudo pacman -Syyu --noconfirm

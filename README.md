@@ -1,36 +1,111 @@
-## INSTALLARCH
+Comprendo. Aquí tienes el contenido del archivo sin cortes ni interrupciones, en un solo bloque de texto plano para que puedas copiar y pegar fácilmente en tu editor de texto:
 
-_Este repositorio contiene scripts en bash que instalan mis configuraciones personales de entornos de escritorio como gnome o kde, gestores de ventanas para wayland o xorg, enfocados en mejorar el rendimiento, sin sacrificar un buen diseño o compatibilidad con software del usuario doméstico._
+---
 
-**Recomendación:**
+# INSTALLARCH
 
-El script se debe ejecutarse, despues de una **instalación* limpia, echa por el método oficial **archinstall**, seleccionado el perfil **desktop** de su eleccion.
+┌──────────────────────────────────────────────┐
+│  **Optimiza tu Arch Linux con Estilo y Rendimiento**  │
+└──────────────────────────────────────────────┘
 
-**Gestores de ventanas:**
-- Hyprland
-- Sway
-- BWPWM
-- i3
+*Este repositorio contiene scripts en Bash que instalan mis configuraciones personales de entornos de escritorio como **GNOME** o **KDE**, y gestores de ventanas para **Wayland** o **Xorg**. Están enfocados en mejorar el rendimiento sin sacrificar un diseño elegante ni la compatibilidad con el software de uso cotidiano.*
 
-**Entornos de escritorios:**
-- Gnome 
-- Kde Plasma
-- Budgie
+---
 
-**Método UNO de instalación:**
+## 🚀 Recomendación
 
-La instalación se efectuara en la tty o terminal según el caso, cambiando `gnome` por el entorno o gestor de ventanas deseado, ejemplo:
-```sh
+El script debe ejecutarse después de una **instalación limpia** realizada mediante el método oficial `archinstall`, seleccionando el perfil **minimal**.
+
+---
+
+## 🖥️ Gestores de Ventanas Disponibles
+
+```
++--------------------+
+|     Hyprland       |
++--------------------+
+|       Sway         |
++--------------------+
+|       BSPWM        |
++--------------------+
+|         i3         |
++--------------------+
+```
+
+## 🌐 Entornos de Escritorio Disponibles
+
+```
++--------------------+
+|       GNOME        |
++--------------------+
+|    KDE Plasma      |
++--------------------+
+|       Budgie       |
++--------------------+
+```
+
+---
+
+## 🛠️ Métodos de Instalación
+
+### Método Uno
+
+La instalación se efectuará en la **TTY** o terminal. Reemplaza `gnome` por el entorno o gestor de ventanas deseado.
+
+**Ejemplo:**
+
+```bash
 bash <(curl -L is.gd/mxgnome)
 ```
 
-**Método DOS de instalación:**
+### Método Dos
 
-Puede descargar el script para editar al gusto ejemplo:
-`wget is.gd/mxgnome`
+Descarga el script para editarlo a tu gusto.
 
-Para después editar el archivo
-`vim mxgnome`
+**Paso 1:**
 
-**Creditos:**
-@mxhectorvega @darch7 @cristoalv @bourne_again @tenashito y muchos otros de la comunidad Linux.
+```bash
+wget is.gd/mxgnome
+```
+
+**Paso 2:**
+
+Ejecuta el script:
+
+```bash
+sh mxgnome
+```
+
+---
+
+## 📝 Flujo de Instalación
+
+```
+[ Iniciar Arch Linux ]
+          │
+          ▼
+[ Instalación Limpia con archinstall (perfil minimal) ]
+          │
+          ▼
+[ Seleccionar Entorno o Gestor de Ventanas ]
+          │
+         / \
+        /   \
+       ▼     ▼
+[ Método Uno ]    [ Método Dos ]
+    │                 │
+    ▼                 ▼
+[ Ejecutar Script ]  [ Editar y Ejecutar Script ]
+```
+
+---
+
+## 🙌 Créditos
+
+[@mxhectorvega](#) • [@darch7](#) • [@cristoalv](#) • [@bourne_again](#) • [@tenashito](#) y muchos otros de la comunidad Linux.
+
+---
+
+✨**Disfruta de un sistema optimizado sin sacrificar estilo ni funcionalidad. ¡Contribuye y comparte tus propias configuraciones!**
+
+---

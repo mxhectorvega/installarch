@@ -3,11 +3,11 @@
 # Titulo: Instalación mínima del entorno de escritorio Gnome 4x.x consumiendo 400mb al inicio.
 # Autor: Héctor Iván Vega Zamudio
 # Correo: mxhectorvega@gmail.com
-# Link: https://github.com/mxhectorvega/installarch
+# Repositorio: https://github.com/mxhectorvega/installarch
 # Versión: 7.20
 # Fecha de actualización 16/01/2025
 # Nota: El sistema de preferencia debe haber sido instalado con la
-# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
+# herramienta archinstall del liveUSB, seleccionando el perfil mínimal.
 
 # Actualización
 sudo pacman -Sy --noconfirm

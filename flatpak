@@ -11,27 +11,29 @@
 
 # Software personal en flatpak
 flatpak install -y \
+fr.handbrake.ghb \
 app.drey.Dialect \
+page.tesk.Refine \
+org.gnome.Showtime \
+net.davidotek.pupgui2 \
+net.minetest.Minetest \
+net.supertuxkart.SuperTuxKart \
 com.github.KRTirtho.Spotube \
 com.github.gabutakut.gabutdm \
 com.github.iwalton3.jellyfin-media-player \
 com.github.tchx84.Flatseal \
+com.github.neithern.g4music \
+com.spotify.Client \
 com.mattjakeman.ExtensionManager \
 com.obsproject.Studio \
 com.rustdesk.RustDesk \
 com.valvesoftware.Steam \
-fr.handbrake.ghb \
-org.gnome.Showtime \
-io.missioncenter.MissionCenter \
+com.brave.Browser \
 io.github.peazip.PeaZip \
 io.gitlab.adhami3310.Impression \
+io.missioncenter.MissionCenter \
 io.itch.itch \
 io.mrarm.mcpelauncher \
-net.davidotek.pupgui2 \
-net.minetest.Minetest \
-net.supertuxkart.SuperTuxKart \
-org.audacityteam.Audacity \
-org.gimp.GIMP \
 org.gnome.Evolution \
 org.gnome.Calculator \
 org.gnome.Connections \
@@ -40,19 +42,18 @@ org.gnome.Loupe \
 org.gnome.TextEditor \
 org.gnome.gitlab.YaLTeR.VideoTrimmer \
 org.gnome.gitlab.somas.Apostrophe \
+org.audacityteam.Audacity \
+org.gimp.GIMP \
 org.inkscape.Inkscape \
 org.jdownloader.JDownloader \
 org.kde.kdenlive \
 org.kde.krita \
 org.libreoffice.LibreOffice \
-com.brave.Browser \
 org.pipewire.Helvum \
 org.signal.Signal \
 org.soundconverter.SoundConverter \
 org.supertuxproject.SuperTux \
-org.telegram.desktop \
-com.spotify.Client \
-page.tesk.Refine
+org.telegram.desktop
 
 # roblox en Linux
 sudo flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
