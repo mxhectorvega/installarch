@@ -57,6 +57,7 @@ cd $HOME
 git clone https://github.com/mxhectorvega/tipografias
 git clone https://github.com/mxhectorvega/tipografiaswin
 mkdir -p $HOME/.local/share/fonts
+sleep 1
 cp -R $HOME/tipografias "$HOME"/.local/share/fonts
 cp -R $HOME/tipografiaswin "$HOME"/.local/share/fonts
 rm -rf $HOME/tipografias
@@ -70,7 +71,7 @@ sudo systemctl enable --now bluetooth.service
 
 # Chaotic-AUR - Automated building repo for AUR packages
 sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-sudo  pacman-key --lsign-key 3056513887B78AEB
+sudo pacman-key --lsign-key 3056513887B78AEB
 wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
 wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
 sudo pacman -U chaotic-keyring.pkg.tar.zst  --noconfirm
@@ -84,7 +85,10 @@ rm -rf $HOME/*.zst
 sudo pacman -Sy --noconfirm
 
 # gestor de maquinas virtuales
-sudo pacman -S virt-manager --noconfirm --needed
+#sudo pacman -S virt-manager --noconfirm --needed
+
+# Java para los estudiambres
+sudo pacman -S jre8-openjdk --noconfirm --needed
 
 # Mensaje final
 sleep 1
