@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 
-# Solicitar la contraseña al inicio con puntos por cada carácter
+# Función para solicitar la contraseña al inicio con puntos por cada carácter
 mostrar_contrasena() {
-    PASSWORD=$(zenity --password --title="Contraseña de sudo" --text="Ingrese su contraseña de sudo:\n\n🗒️ Log: /tmp/installarch.log")
+    PASSWORD=$(whiptail --passwordbox "Ingrese su contraseña de sudo:\n\n🗒️ Log: /tmp/installarch.log" 10 60 3>&1 1>&2 2>&3)
+    echo "$PASSWORD" | sudo -S echo "Contraseña ingresada correctamente." > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        whiptail --title "Error" --msgbox "Contraseña incorrecta. Intente de nuevo.\n\n🗒️ Log: /tmp/installarch.log" 10 60
+        mostrar_contrasena
+    fi
 }
 
 # Función para mostrar la bienvenida
 mostrar_bienvenida() {
-    zenity --info --title="Bienvenido a InstallArch" --text="\n\n💻 Bienvenido a InstallArch\n\nTu gestor para la instalación y configuración de Arch Linux\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ El log de la instalación se guardará en /tmp/installarch.log\n" --width=400 --height=200
+    whiptail --title "Bienvenido a InstallArch" --msgbox "\n\n💻 Bienvenido a InstallArch\n\nTu gestor para la instalación y configuración de Arch Linux\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ El log de la instalación se guardará en /tmp/installarch.log\n" 15 60
 }
 
 # Función para listar y seleccionar scripts del repositorio
@@ -18,49 +23,46 @@ listar_scripts() {
     for script in $scripts; do
         content=$(curl -s https://raw.githubusercontent.com/mxhectorvega/installarch/main/$script)
         if echo "$content" | grep -q '^#!/usr/bin/env bash'; then
-            lista+=("$script")
+            lista+=("$script" "")
         fi
     done
 
     if [ ${#lista[@]} -eq 0 ]; then
-        zenity --error --text="No se encontraron scripts en el repositorio.\n\n🗒️ Log: /tmp/installarch.log" --width=300 --height=100
+        whiptail --title "Error" --msgbox "No se encontraron scripts en el repositorio.\n\n🗒️ Log: /tmp/installarch.log" 10 50
         exit 1
     fi
 
-    seleccion=$(zenity --list --title="Seleccione un script para ejecutar" --text="🗒️ Log: /tmp/installarch.log" --column="Scripts" "${lista[@]}" --width=400 --height=300)
+    seleccion=$(whiptail --title "Seleccione un script para ejecutar" --menu "Elige el script a ejecutar:\n\n🗒️ Log: /tmp/installarch.log" 20 60 15 "${lista[@]}" 3>&1 1>&2 2>&3)
     echo "$seleccion" > /tmp/menuopt
 }
 
 # Función para ejecutar el script seleccionado y asegurarse de que makepkg se ejecute como usuario
 ejecutar_script() {
     script_url="https://raw.githubusercontent.com/mxhectorvega/installarch/main/$seleccion"
-    zenity --info --title="Instalación de $seleccion" --text="Descargando y ejecutando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" --width=300 --height=100
+    whiptail --title "Instalación de $seleccion" --infobox "Descargando y ejecutando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" 10 70
 
     # Crear archivo de registro con permisos adecuados
     sudo touch /tmp/installarch.log
     sudo chmod 666 /tmp/installarch.log
 
-    # Descargar el script y ejecutarlo con makepkg como usuario
-    script_content=$(curl -s "$script_url")
-
-    # Crear un script temporal para ejecutarlo
+    # Descargar el script y guardarlo en un archivo temporal
     temp_script="/tmp/$(basename "$seleccion")"
-    echo "$script_content" > "$temp_script"
+    wget -q -O "$temp_script" "$script_url"
     chmod +x "$temp_script"
 
     # Ejecutar el script temporal y asegurar que makepkg se ejecute como usuario
     (
-        wget -q -O - "$script_url" | sudo -u $USER bash | tee /tmp/installarch.log
-    ) | zenity --progress --title="Progreso de instalación" --text="Instalando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" --percentage=0 --width=400 --height=100 --auto-close
+        sudo -u $USER bash "$temp_script" | tee /tmp/installarch.log
+    ) | whiptail --title "Progreso de instalación" --gauge "Instalando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" 10 70 0
 
     # Mostrar el contenido del archivo de registro en tiempo real
-    zenity --text-info --title="Progreso de instalación" --filename="/tmp/installarch.log" --width=600 --height=400 --text="🗒️ Log: /tmp/installarch.log"
+    whiptail --title "Progreso de instalación" --textbox /tmp/installarch.log 20 70
 }
 
-# Verificar si zenity, wget y jq están instalados, si no, instalarlos
-for cmd in zenity wget jq; do
+# Verificar si whiptail, wget y jq están instalados, si no, instalarlos
+for cmd in whiptail wget jq; do
     if ! command -v "$cmd" &> /dev/null; then
-        sudo -S pacman -S "$cmd" --noconfirm --needed
+        echo "$PASSWORD" | sudo -S pacman -S "$cmd" --noconfirm --needed
     fi
 done
 
@@ -77,7 +79,7 @@ listar_scripts
 ejecutar_script
 
 # Mensaje final
-zenity --info --title="Finalizado" --text="\n\n❤️ Gracias por usar InstallArch\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ Log: /tmp/installarch.log" --width=400 --height=200
+whiptail --title "Finalizado" --msgbox "\n\n❤️ Gracias por usar InstallArch\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ Log: /tmp/installarch.log" 15 60
 
 # Limpiar archivos temporales si existen
 [ -f /tmp/menuopt ] && rm /tmp/menuopt
