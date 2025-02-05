@@ -1,44 +1,85 @@
 #!/usr/bin/env bash
 
-# Instalacion de repositorio CHAOTIC (paquetes precompilados) y Paru AUR helper en Archlinux.
+# Instalación de Paru y configuración del repositorio Chaotic AUR en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecucion: bash <(curl -L is.gd/mxrepos)
-# Fecha de actualización 04/02/2025
-# Versión: 2.3
+# Ejecución: bash <(curl -L is.gd/mxrepos)
+# Fecha de actualización: 04/02/2025
+# Versión: 5.0
 
-# Actualziacion
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
+
+# Actualizar y sincronizar repositorios
 sudo pacman -Sy --noconfirm
 
-# Instalar git
-sudo pacman -S git --noconfirm --needed
+# Verificar si git está instalado, si no, instalarlo
+if ! command -v git &> /dev/null; then
+    echo "git no está instalado. Instalándolo..."
+    sudo pacman -S git --noconfirm --needed
+fi
 
-# Paru AUR Helper
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+# Verificar si wget está instalado, si no, instalarlo
+if ! command -v wget &> /dev/null; then
+    echo "wget no está instalado. Instalándolo..."
+    sudo pacman -S wget --noconfirm --needed
+fi
 
-# Actualziacion
-sudo pacman -Sy --noconfirm
+# Instalar Paru, AUR helper
+echo "Instalando Paru, AUR helper..."
+sudo pacman -S --needed --noconfirm base-devel
+if ! command -v paru &> /dev/null; then
+    git clone https://aur.archlinux.org/paru.git
+    cd paru || exit
+    makepkg -si --noconfirm
+    cd ..
+    rm -rf paru
+fi
 
-# Chaotic-AUR - Automated building repo for AUR packages
+# Añadir repositorio Chaotic AUR al archivo de configuración y configurar claves
+echo "Configurando el repositorio Chaotic AUR..."
+
+# Recepción y firma de la clave
 sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
 sudo pacman-key --lsign-key 3056513887B78AEB
+
+# Descarga e instalación de paquetes de clave y lista de espejos
 wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
 wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
-sudo pacman -U chaotic-keyring.pkg.tar.zst  --noconfirm
-sudo pacman -U chaotic-mirrorlist.pkg.tar.zst  --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-cd $HOME
-rm -rf $HOME/*.zst
+sudo pacman -U chaotic-keyring.pkg.tar.zst --noconfirm
+sudo pacman -U chaotic-mirrorlist.pkg.tar.zst --noconfirm
 
-# Actualziacion
-sudo pacman -Sy --noconfirm
+# Eliminar archivos descargados
+rm chaotic-keyring.pkg.tar.zst chaotic-mirrorlist.pkg.tar.zst
+
+# Añadir el repositorio Chaotic AUR al archivo /etc/pacman.conf
+sudo tee -a /etc/pacman.conf <<EOF
+
+[chaotic-aur]
+SigLevel = PackageRequired
+Server = https://geo-mirror.chaotic.cx/\$repo/\$arch
+EOF
+
+# Optimizar el gestor de paquetes pacman
+echo "Optimizando el gestor de paquetes pacman..."
+sudo sed -i 's/^#ParallelDownloads.*$/ParallelDownloads = 25/' /etc/pacman.conf
+sudo sed -i 's/^#Color/Color/' /etc/pacman.conf
+sudo sed -i 's/^#ILoveCandy/ILoveCandy/' /etc/pacman.conf
+sudo sed -i 's/^#UseDelta/UseDelta = true/' /etc/pacman.conf
+
+# Optimizar el gestor de paquetes paru
+echo "Optimizando el gestor de paquetes paru..."
+sudo sed -i 's/#BottomUp/BottomUp/g' /etc/paru.conf
+sudo sed -i 's/^#AurTimeout.*$/AurTimeout = 300/' /etc/paru.conf
+
+# Actualizar el sistema con el nuevo repositorio
+sudo pacman -Syyu --noconfirm
 
 # Mensaje final
-sleep 0.1
-clear
-sleep 0.1
-printf '\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega\n\n\n\n\n\n\n\n\n\n'
-sleep 3
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
+
+# Comando opcional para verificar la configuración del nuevo repositorio
+# sudo pacman -Syy

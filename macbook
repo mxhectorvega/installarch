@@ -1,26 +1,46 @@
 #!/usr/bin/env bash
 
-# Instalacion de drivers para MacBookPro 2011-2015 y MacBookAIR 2011-2017 en Archlinux
+# Configuración de hardware y paquetes específicos para MacBook en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecucion: bash <(curl -L is.gd/mxmacbook)
-# Fecha de actualización 04/02/2025
-# Versión: 1.9
+# Ejecución: bash <(curl -L is.gd/mxmacbook)
+# Fecha de actualización: 04/02/2025
+# Versión: 5.0
 
-# Actualziacion
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
+
+# Actualizar y sincronizar repositorios
 sudo pacman -Sy --noconfirm
 
-# Paquetes de compatibilidad WIFI MacBookPro 2011-2015 y MacBookAIR 2011-2017
-sudo pacman -S dkms linux-headers broadcom-wl-dkms --noconfirm --needed
+# Instalar paquetes específicos para MacBook
+paquetes_macbook=(
+    "broadcom-wl-dkms"
+    "xf86-input-synaptics"
+    "mbpfan"
+    "pommed"
+    "bluez"
+    "bluez-utils"
+)
 
-# Drivers para bluetooth
-sudo pacman -S bluez{,-utils} --needed --noconfirm
+sudo pacman -S "${paquetes_macbook[@]}" --noconfirm --needed
 
-# habilitando bluetooth
+# Configuración de mbpfan
+sudo systemctl enable --now mbpfan
+
+# Configuración de pommed
+sudo systemctl enable --now pommed
+
+# Configuración del servicio de Bluetooth
 sudo systemctl enable --now bluetooth.service
 
 # Mensaje final
-sleep 0.1
-clear
-sleep 0.1
-printf '\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega\n\n\n\n\n\n\n\n\n\n'
-sleep 3
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
+
+# Comando opcional para verificar el estado de los servicios
+# sudo systemctl status mbpfan
+# sudo systemctl status pommed
+# sudo systemctl status bluetooth.service

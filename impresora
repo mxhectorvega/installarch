@@ -1,40 +1,78 @@
 #!/usr/bin/env bash
 
-# Instalacion de controladores para impresoras EPSON L3210 en Archlinux.
+# Instalación y configuración de impresoras en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecucion: bash <(curl -L is.gd/mximpresoras)
-# Fecha de actualizacion: 04/02/2025
-# Version: 3.1
+# Ejecución: bash <(curl -L is.gd/mximpresora)
+# Fecha de actualización: 04/02/2025
+# Versión: 5.0
 
-# Actualizar
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
+
+# Actualizar y sincronizar repositorios
 sudo pacman -Sy --noconfirm
 
-# Instalar git
-sudo pacman -S git --noconfirm --needed
+# Instalar paquetes esenciales para la impresora
+paquetes_impresora=(
+    "system-config-printer"
+    "cups"
+    "cups-pdf"
+    "ghostscript"
+    "gsfonts"
+    "hplip"
+    "foomatic-db-engine"
+    "foomatic-db"
+    "foomatic-db-ppds"
+    "foomatic-db-nonfree"
+    "foomatic-db-nonfree-ppds"
+)
 
-# Clonar los controladores para impresoras Epson L3210 de un repositorio github
-git clone https://github.com/razein97/Epson-L3210-Arch-Driver
-cd Epson-L3210-Arch-Driver
-makepkg -si
+sudo pacman -S "${paquetes_impresora[@]}" --noconfirm --needed
 
-# Eliminar archivos clonados
-rm -rf $HOME/Epson-L3210-Arch-Driver
+# Agregar el usuario al grupo de impresoras y otros grupos necesarios
+sudo gpasswd -a "$(whoami)" sys
+sudo gpasswd -a "$(whoami)" lp
 
-# FIX problema con el filtro (se pone en pausa la impresion).
-sudo ln -s /opt/epson-inkjet-printer-202101w/cups/lib/filter/epson_inkjet_printer_filter /usr/lib/cups/filter/epson_inkjet_printer_filter
-
-# Instalar administrador de impresoras y establecer permisos en el sistema
-sudo pacman -S system-config-printer cups --noconfirm --needed
-sudo gpasswd -a $(whoami) sys
-sudo gpasswd -a $(whoami) wheel
-sudo gpasswd -a $(whoami) root
-sudo gpasswd -a $(whoami) lp
-
-# Iniciar los servicios de impresion
+# Iniciar y habilitar el servicio CUPS
 sudo systemctl enable --now cups
 
+# Verificar si git está instalado, si no, instalarlo
+if ! command -v git &> /dev/null; then
+    echo "git no está instalado. Instalándolo..."
+    sudo pacman -S git --noconfirm --needed
+fi
+
+# Clonar los controladores para impresoras Epson L3210 de un repositorio github
+echo "Clonando e instalando controladores Epson L3210..."
+if git clone https://github.com/razein97/Epson-L3210-Arch-Driver; then
+    cd Epson-L3210-Arch-Driver || exit
+    if makepkg -si --noconfirm; then
+        echo "Controladores instalados exitosamente."
+    else
+        echo "Error al instalar los controladores."
+        exit 1
+    fi
+    cd ..
+    rm -rf Epson-L3210-Arch-Driver
+else
+    echo "Error al clonar el repositorio."
+    exit 1
+fi
+
+# FIX problema con el filtro (se pone en pausa la impresión).
+if [ ! -f /usr/lib/cups/filter/epson_inkjet_printer_filter ]; then
+    sudo ln -s /opt/epson-inkjet-printer-202101w/cups/lib/filter/epson_inkjet_printer_filter /usr/lib/cups/filter/epson_inkjet_printer_filter
+    echo "Enlace simbólico para el filtro de impresión creado."
+else
+    echo "El enlace simbólico para el filtro de impresión ya existe."
+fi
+
 # Mensaje final
-sleep 0.1
-clear
-sleep 0.1
-printf '\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega\n\n\n\n\n\n\n\n\n\n'
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
+
+# Comando opcional para verificar el estado de los servicios de impresión
+# sudo systemctl status cups
