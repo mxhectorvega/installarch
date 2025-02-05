@@ -1,108 +1,91 @@
 #!/usr/bin/env bash
 
-# Configuración inicial
-set -e
+# Configuración
+LOG_FILE="/tmp/installer.log"
+REPO_DIR="/tmp/installarch"
+REPO_URL="https://github.com/mxhectorvega/installarch"
 
-# Variables globales
-LOG_DIR="$HOME/installarch_logs"
-LOG_FILE="$LOG_DIR/installation.log"
-REPO_DIR="$HOME/installarch"
-
-# Crear directorio de logs si no existe
-mkdir -p "$LOG_DIR"
-
-# Función para mostrar mensajes de error
-mostrar_error() {
-    whiptail --title "Error" --msgbox "$1" 8 78
+# Función para registrar errores
+log_error() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# Función para pedir contraseña de root
-pedir_contraseña() {
-    PASSWORD=$(whiptail --passwordbox "Ingresa la contraseña de root:" 8 78 --title "Permisos de administrador" 3>&1 1>&2 2>&3)
-    echo "$PASSWORD" | sudo -S echo "" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        mostrar_error "Contraseña incorrecta. Por favor, inténtalo de nuevo."
-        pedir_contraseña
+# Función para clonar el repositorio
+clone_repo() {
+    if [ ! -d "$REPO_DIR" ]; then
+        git clone "$REPO_URL" "$REPO_DIR" || { log_error "Error al clonar el repositorio"; return 1; }
     fi
+    return 0
 }
 
-# Función para actualizar repositorio
-actualizar_repositorio() {
-    if [ -d "$REPO_DIR" ]; then
-        cd "$REPO_DIR"
-        git pull
+# Función para listar scripts
+list_scripts() {
+    find "$REPO_DIR" -type f -exec awk '/^#!\/usr\/bin\/env bash/{print FILENAME}{nextfile}' {} + | xargs -n1 basename
+}
+
+# Función para ejecutar un script
+run_script() {
+    local script="$1"
+    local script_path="$REPO_DIR/$script"
+
+    if [ -x "$script_path" ]; then
+        if grep -q "sudo" "$script_path"; then
+            dialog --insecure --passwordbox "Ingresar contraseña para ejecutar $script:" 10 50 2> /tmp/password
+            PASSWORD=$(cat /tmp/password)
+            rm /tmp/password
+            echo "$PASSWORD" | sudo -S bash "$script_path" 2>&1 | tee -a "$LOG_FILE"
+        else
+            bash "$script_path" 2>&1 | tee -a "$LOG_FILE"
+        fi
     else
-        git clone https://github.com/mxhectorvega/installarch "$REPO_DIR"
+        log_error "El script $script no es ejecutable"
+        dialog --msgbox "El script $script no es ejecutable." 10 50
     fi
-}
-
-# Función para obtener lista de scripts
-obtener_lista_scripts() {
-    find "$REPO_DIR" -type f -exec awk '/^#!\/usr\/bin\/env bash/ { print FILENAME }' {} \; | xargs -n1 basename
 }
 
 # Pantalla de bienvenida
-pantalla_bienvenida() {
-    whiptail --title "Bienvenido" --msgbox "¡Hola! Este script guardará el log en: $LOG_FILE" 10 60
+welcome_screen() {
+    dialog --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl registro de errores se almacenará en: $LOG_FILE" 10 50
+    dialog --yesno "¿Desea iniciar la instalación?" 10 50
+    case $? in
+        0) clone_repo && script_selection_screen ;;
+        1) exit 0 ;;
+    esac
 }
 
-# Pantalla de selección de script
-seleccionar_script() {
-    SCRIPTS=$(obtener_lista_scripts)
-    OPTIONS=()
-    for script in $SCRIPTS; do
-        OPTIONS+=("$script" "")
+# Pantalla de selección de scripts
+script_selection_screen() {
+    local scripts=($(list_scripts))
+    local options=()
+    for script in "${scripts[@]}"; do
+        options+=("$script" "")
     done
-    SCRIPT_SELECCIONADO=$(whiptail --title "Selecciona un script" --menu "Elige el script a ejecutar:" 20 78 10 "${OPTIONS[@]}" 3>&1 1>&2 2>&3)
-    if [ -z "$SCRIPT_SELECCIONADO" ]; then
-        mostrar_error "No seleccionaste ningún script."
-        seleccionar_script
-    fi
+
+    local choice
+    choice=$(dialog --title "Seleccione un script" --menu "Seleccione un script para ejecutar:" 15 50 5 "${options[@]}" 3>&1 1>&2 2>&3)
+
+    case $? in
+        0) run_script "$choice" && installation_screen ;;
+        1) welcome_screen ;;
+        255) exit 0 ;;
+    esac
 }
 
-# Función para ejecutar script seleccionado con salida verbosa
-ejecutar_script() {
-    OUTPUT_FILE=$(mktemp)
-    EXIT_FILE=$(mktemp)
-
-    # Ejecutar el script y capturar salida
-    (
-        script -qefc "bash '$REPO_DIR/$SCRIPT_SELECCIONADO' 2>&1; echo \$? > '$EXIT_FILE'" "$OUTPUT_FILE"
-    ) &
-    INSTALL_PID=$!
-
-    # Mostrar salida en tiempo real
-    whiptail --title "Progreso de la Instalación" --textbox "$OUTPUT_FILE" 20 80
-
-    # Esperar a que termine la instalación
-    wait $INSTALL_PID
-    INSTALL_EXIT=$(cat "$EXIT_FILE")
-
-    # Añadir salida al log principal
-    cat "$OUTPUT_FILE" >> "$LOG_FILE"
-
-    # Limpiar archivos temporales
-    rm -f "$OUTPUT_FILE" "$EXIT_FILE"
-
-    return $INSTALL_EXIT
+# Pantalla de instalación
+installation_screen() {
+    dialog --title "Instalación" --msgbox "La instalación ha finalizado. Puede revisar el registro de errores en: $LOG_FILE" 10 50
+    final_screen
 }
 
 # Pantalla final
-pantalla_final() {
-    whiptail --title "Instalación Completa" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60
+final_screen() {
+    dialog --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 50
+    dialog --yesno "¿Desea mostrar el registro de errores?" 10 50
+    case $? in
+        0) dialog --textbox "$LOG_FILE" 20 80 ;;
+        1) exit 0 ;;
+    esac
 }
 
-# Programa principal
-main() {
-    pantalla_bienvenida
-    actualizar_repositorio
-    seleccionar_script
-    pedir_contraseña
-    ejecutar_script || {
-        mostrar_error "La instalación ha fallado. Revisa el log en: $LOG_FILE"
-        exit 1
-    }
-    pantalla_final
-}
-
-main
+# Iniciar el instalador
+welcome_screen
