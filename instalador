@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+# Script principal TUI para seleccionar y ejecutar scripts del repositorio installarch.
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: bash <(curl -L is.gd/mxinstallarch)
+# Fecha de actualización: 04/02/2025
+# Versión: 1.0
+
+# Función para mostrar la bienvenida con estilo Apple
+mostrar_bienvenida() {
+    whiptail --title "Bienvenido a InstallArch" --msgbox "\n\n      💻 Bienvenido a InstallArch\n\n      Tu gestor para la instalación y configuración de Arch Linux\n\n      🌐 https://www.github.com/mxhectorvega/installarch\n\n" 15 60
+}
+
+# Función para listar y seleccionar scripts del repositorio
+listar_scripts() {
+    scripts=$(curl -s https://api.github.com/repos/mxhectorvega/installarch/contents | grep 'name' | cut -d '"' -f 4 | grep '.sh$')
+    lista=()
+    for script in $scripts; do
+        lista+=("$script" "$script")
+    done
+
+    seleccion=$(whiptail --title "Seleccione un script para ejecutar" --menu "Elige el script a ejecutar:" 20 60 15 "${lista[@]}" 3>&1 1>&2 2>&3)
+}
+
+# Función para ejecutar el script seleccionado con barra de progreso y caja de diálogo
+ejecutar_script() {
+    script_url="https://raw.githubusercontent.com/mxhectorvega/installarch/main/$seleccion"
+    whiptail --title "Instalación de $seleccion" --infobox "Descargando y ejecutando $seleccion..." 10 70
+
+    # Crear una nueva sesión de tmux
+    tmux new-session -d -s installarch
+
+    # Dividir la ventana en dos paneles
+    tmux split-window -v -p 25
+
+    # Ejecutar el script seleccionado en el panel superior
+    tmux send-keys -t installarch.0 "wget -q -O - \"$script_url\" | bash 2>&1 | tee /tmp/install.log" C-m
+
+    # Mostrar el contenido del archivo de registro en el panel inferior
+    tmux send-keys -t installarch.1 "tail -f /tmp/install.log" C-m
+
+    # Adjuntar la sesión de tmux
+    tmux attach -t installarch
+}
+
+# Verificar si whiptail y wget están instalados, si no, instalarlos
+if ! command -v whiptail &> /dev/null; then
+    echo "whiptail no está instalado. Instalándolo..."
+    sudo pacman -S whiptail --noconfirm --needed
+fi
+
+if ! command -v wget &> /dev/null; then
+    echo "wget no está instalado. Instalándolo..."
+    sudo pacman -S wget --noconfirm --needed
+fi
+
+# Verificar si tmux está instalado, si no, instalarlo
+if ! command -v tmux &> /dev/null; then
+    echo "tmux no está instalado. Instalándolo..."
+    sudo pacman -S tmux --noconfirm --needed
+fi
+
+# Mostrar bienvenida
+mostrar_bienvenida
+
+# Listar scripts y seleccionar uno
+listar_scripts
+
+# Ejecutar el script seleccionado con barra de progreso y caja de diálogo
+ejecutar_script
+
+# Mensaje final
+whiptail --title "Finalizado" --msgbox "\n\n      ❤️ Gracias por usar InstallArch\n\n      🌐 https://www.github.com/mxhectorvega/installarch\n\n" 15 60
+
+# Limpiar archivos temporales
+rm /tmp/menuopt
