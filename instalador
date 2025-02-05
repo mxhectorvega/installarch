@@ -53,15 +53,26 @@ clone_and_list_scripts() {
     || clone_and_list_scripts
 }
 
-# Ejecutar script seleccionado
+# Ejecutar script seleccionado con barra de progreso
 run_script() {
     whiptail --title "Instalación" --msgbox "Iniciando la instalación del script '$SCRIPT'..." 8 50
 
     if grep -q "sudo" "$SCRIPT_DIR/$SCRIPT"; then
         PASSWORD=$(whiptail --title "Contraseña" --passwordbox "El script requiere permisos de root. Ingrese su contraseña:" 8 50 3>&1 1>&2 2>&3) || return 1
-        echo "$PASSWORD" | sudo -S "$SCRIPT_DIR/$SCRIPT" >> "$LOG_FILE" 2>&1 || error "La instalación falló."
+        echo "$PASSWORD" | sudo -S "$SCRIPT_DIR/$SCRIPT" >> "$LOG_FILE" 2>&1 &
     else
-        "$SCRIPT_DIR/$SCRIPT" >> "$LOG_FILE" 2>&1 || error "La instalación falló."
+        "$SCRIPT_DIR/$SCRIPT" >> "$LOG_FILE" 2>&1 &
+    fi
+
+    PID=$!
+    while ps -p $PID > /dev/null; do
+        sleep 1
+        echo "50"
+    done | whiptail --gauge "Instalando el script '$SCRIPT'..." 6 50 0
+
+    wait $PID
+    if [ $? -ne 0 ]; then
+        error "La instalación falló."
     fi
 
     whiptail --title "Instalación Completada" --msgbox "La instalación del script '$SCRIPT' ha finalizado." 8 50
