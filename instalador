@@ -27,11 +27,21 @@ ejecutar_script() {
     script_url="https://raw.githubusercontent.com/mxhectorvega/installarch/main/$seleccion"
     whiptail --title "Instalación de $seleccion" --infobox "Descargando y ejecutando $seleccion..." 10 70
 
+    # Verificar si ya existe una sesión de tmux llamada installarch y finalizarla
+    if tmux has-session -t installarch 2>/dev/null; then
+        tmux kill-session -t installarch
+    fi
+
     # Crear una nueva sesión de tmux
     tmux new-session -d -s installarch
 
-    # Dividir la ventana en dos paneles
-    tmux split-window -v -p 25
+    # Dividir la ventana en dos paneles si hay suficiente espacio
+    if tmux list-panes | grep -q '^[0-9]$'; then
+        tmux split-window -v -p 25
+    else
+        echo "No hay suficiente espacio para un nuevo panel."
+        return 1
+    fi
 
     # Ejecutar el script seleccionado en el panel superior
     tmux send-keys -t installarch.0 "wget -q -O - \"$script_url\" | bash 2>&1 | tee /tmp/install.log" C-m
@@ -72,5 +82,5 @@ ejecutar_script
 # Mensaje final
 whiptail --title "Finalizado" --msgbox "\n\n      ❤️ Gracias por usar InstallArch\n\n      🌐 https://www.github.com/mxhectorvega/installarch\n\n" 15 60
 
-# Limpiar archivos temporales
-rm /tmp/menuopt
+# Limpiar archivos temporales si existen
+[ -f /tmp/menuopt ] && rm /tmp/menuopt
