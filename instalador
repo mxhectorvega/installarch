@@ -30,23 +30,21 @@ run_script() {
 
     if [ -x "$script_path" ]; then
         if grep -q "sudo" "$script_path"; then
-            dialog --insecure --passwordbox "Ingresar contraseña para ejecutar $script:" 10 50 2> /tmp/password
-            PASSWORD=$(cat /tmp/password)
-            rm /tmp/password
+            PASSWORD=$(whiptail --passwordbox "Ingresar contraseña para ejecutar $script:" 10 50 3>&1 1>&2 2>&3)
             echo "$PASSWORD" | sudo -S bash "$script_path" 2>&1 | tee -a "$LOG_FILE"
         else
             bash "$script_path" 2>&1 | tee -a "$LOG_FILE"
         fi
     else
         log_error "El script $script no es ejecutable"
-        dialog --msgbox "El script $script no es ejecutable." 10 50
+        whiptail --msgbox "El script $script no es ejecutable." 10 50
     fi
 }
 
 # Pantalla de bienvenida
 welcome_screen() {
-    dialog --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl registro de errores se almacenará en: $LOG_FILE" 10 50
-    dialog --yesno "¿Desea iniciar la instalación?" 10 50
+    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl registro de errores se almacenará en: $LOG_FILE" 10 50
+    whiptail --yesno "¿Desea iniciar la instalación?" 10 50
     case $? in
         0) clone_repo && script_selection_screen ;;
         1) exit 0 ;;
@@ -62,7 +60,7 @@ script_selection_screen() {
     done
 
     local choice
-    choice=$(dialog --title "Seleccione un script" --menu "Seleccione un script para ejecutar:" 15 50 5 "${options[@]}" 3>&1 1>&2 2>&3)
+    choice=$(whiptail --title "Seleccione un script" --menu "Seleccione un script para ejecutar:" 15 50 5 "${options[@]}" 3>&1 1>&2 2>&3)
 
     case $? in
         0) run_script "$choice" && installation_screen ;;
@@ -73,16 +71,16 @@ script_selection_screen() {
 
 # Pantalla de instalación
 installation_screen() {
-    dialog --title "Instalación" --msgbox "La instalación ha finalizado. Puede revisar el registro de errores en: $LOG_FILE" 10 50
+    whiptail --title "Instalación" --msgbox "La instalación ha finalizado. Puede revisar el registro de errores en: $LOG_FILE" 10 50
     final_screen
 }
 
 # Pantalla final
 final_screen() {
-    dialog --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 50
-    dialog --yesno "¿Desea mostrar el registro de errores?" 10 50
+    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 50
+    whiptail --yesno "¿Desea mostrar el registro de errores?" 10 50
     case $? in
-        0) dialog --textbox "$LOG_FILE" 20 80 ;;
+        0) whiptail --textbox "$LOG_FILE" 20 80 ;;
         1) exit 0 ;;
     esac
 }
