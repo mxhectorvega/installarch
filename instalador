@@ -23,6 +23,10 @@ check_dependencies() {
         echo "Instalando git..."
         sudo pacman -S --noconfirm git >/dev/null 2>&1 || error "No se pudo instalar git."
     fi
+    if ! command -v makepkg >/dev/null 2>&1; then
+        echo "Instalando makepkg..."
+        sudo pacman -S --noconfirm pacman >/dev/null 2>&1 || error "No se pudo instalar makepkg."
+    fi
 }
 
 # Pantalla de Bienvenida
@@ -53,15 +57,18 @@ clone_and_list_scripts() {
     || clone_and_list_scripts
 }
 
-# Ejecutar script seleccionado con barra de progreso
+# Ejecutar script seleccionado con barra de progreso y salida verbosa
 run_script() {
     whiptail --title "Instalación" --msgbox "Iniciando la instalación del script '$SCRIPT'..." 8 50
 
+    # Crear un archivo temporal para la salida verbosa
+    TEMP_LOG=$(mktemp)
+
     if grep -q "sudo" "$SCRIPT_DIR/$SCRIPT"; then
         PASSWORD=$(whiptail --title "Contraseña" --passwordbox "El script requiere permisos de root. Ingrese su contraseña:" 8 50 3>&1 1>&2 2>&3) || return 1
-        echo "$PASSWORD" | sudo -S "$SCRIPT_DIR/$SCRIPT" >> "$LOG_FILE" 2>&1 &
+        echo "$PASSWORD" | sudo -S "$SCRIPT_DIR/$SCRIPT" >> "$TEMP_LOG" 2>&1 &
     else
-        "$SCRIPT_DIR/$SCRIPT" >> "$LOG_FILE" 2>&1 &
+        "$SCRIPT_DIR/$SCRIPT" >> "$TEMP_LOG" 2>&1 &
     fi
 
     PID=$!
@@ -72,8 +79,12 @@ run_script() {
 
     wait $PID
     if [ $? -ne 0 ]; then
-        error "La instalación falló."
+        cat "$TEMP_LOG" >> "$LOG_FILE"
+        error "La instalación falló. Consulte el registro de errores en $LOG_FILE."
     fi
+
+    cat "$TEMP_LOG" >> "$LOG_FILE"
+    rm -f "$TEMP_LOG"
 
     whiptail --title "Instalación Completada" --msgbox "La instalación del script '$SCRIPT' ha finalizado." 8 50
 }
