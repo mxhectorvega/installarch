@@ -1,86 +1,75 @@
 #!/usr/bin/env bash
 
-# Script principal TUI para seleccionar y ejecutar scripts del repositorio installarch.
-# Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L https://is.gd/mxinstalador)
-# Fecha de actualización: 04/02/2025
-# Versión: 1.0
+# Solicitar la contraseña al inicio con puntos por cada carácter
+mostrar_contrasena() {
+    PASSWORD=$(zenity --password --title="Contraseña de sudo" --text="Ingrese su contraseña de sudo:")
+}
 
-# Función para mostrar la bienvenida con estilo Apple
+# Función para mostrar la bienvenida
 mostrar_bienvenida() {
-    whiptail --title "Bienvenido a InstallArch" --msgbox "\n\n      💻 Bienvenido a InstallArch\n\n      Tu gestor para la instalación y configuración de Arch Linux\n\n      🌐 https://www.github.com/mxhectorvega/installarch\n\n" 15 60
+    zenity --info --title="Bienvenido a InstallArch" --text="\n\n💻 Bienvenido a InstallArch\n\nTu gestor para la instalación y configuración de Arch Linux\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ El log de la instalación se guardará en /tmp/installarch.log\n\n" --width=400 --height=200
 }
 
 # Función para listar y seleccionar scripts del repositorio
 listar_scripts() {
-    scripts=$(curl -s https://api.github.com/repos/mxhectorvega/installarch/contents | grep 'name' | cut -d '"' -f 4 | grep '.sh$')
+    # Obtener la lista de archivos desde el repositorio y buscar aquellos que comienzan con #!/usr/bin/env bash
+    scripts=$(curl -s https://api.github.com/repos/mxhectorvega/installarch/contents | jq -r '.[] | select(.type=="file") | .name')
     lista=()
     for script in $scripts; do
-        lista+=("$script" "$script")
+        content=$(curl -s https://raw.githubusercontent.com/mxhectorvega/installarch/main/$script)
+        if echo "$content" | grep -q '^#!/usr/bin/env bash'; then
+            lista+=("$script")
+        fi
     done
 
-    seleccion=$(whiptail --title "Seleccione un script para ejecutar" --menu "Elige el script a ejecutar:" 20 60 15 "${lista[@]}" 3>&1 1>&2 2>&3)
+    if [ ${#lista[@]} -eq 0 ]; then
+        zenity --error --text="No se encontraron scripts en el repositorio." --width=300 --height=100
+        exit 1
+    fi
+
+    seleccion=$(zenity --list --title="Seleccione un script para ejecutar" --column="Scripts" "${lista[@]}" --width=400 --height=300)
+    echo "$seleccion" > /tmp/menuopt
 }
 
-# Función para ejecutar el script seleccionado con barra de progreso y caja de diálogo
+# Función para ejecutar el script seleccionado y mostrar el progreso
 ejecutar_script() {
     script_url="https://raw.githubusercontent.com/mxhectorvega/installarch/main/$seleccion"
-    whiptail --title "Instalación de $seleccion" --infobox "Descargando y ejecutando $seleccion..." 10 70
+    zenity --info --title="Instalación de $seleccion" --text="Descargando y ejecutando $seleccion..." --width=300 --height=100
 
-    # Verificar si ya existe una sesión de tmux llamada installarch y finalizarla
-    if tmux has-session -t installarch 2>/dev/null; then
-        tmux kill-session -t installarch
-    fi
+    # Crear archivo de registro con permisos adecuados
+    sudo touch /tmp/installarch.log
+    sudo chmod 666 /tmp/installarch.log
 
-    # Crear una nueva sesión de tmux
-    tmux new-session -d -s installarch
+    # Ejecutar el script seleccionado y mostrar el progreso en un cuadro de diálogo
+    (
+        echo "$PASSWORD" | sudo -S bash -c "wget -q -O - \"$script_url\" | bash 2>&1 | tee /tmp/installarch.log"
+    ) | zenity --progress --title="Progreso de instalación" --text="Instalando $seleccion..." --percentage=0 --width=400 --height=100 --auto-close
 
-    # Dividir la ventana en dos paneles si hay suficiente espacio
-    if tmux list-panes | grep -q '^[0-9]$'; then
-        tmux split-window -v -p 25
-    else
-        echo "No hay suficiente espacio para un nuevo panel."
-        return 1
-    fi
-
-    # Ejecutar el script seleccionado en el panel superior
-    tmux send-keys -t installarch.0 "wget -q -O - \"$script_url\" | bash 2>&1 | tee /tmp/install.log" C-m
-
-    # Mostrar el contenido del archivo de registro en el panel inferior
-    tmux send-keys -t installarch.1 "tail -f /tmp/install.log" C-m
-
-    # Adjuntar la sesión de tmux
-    tmux attach -t installarch
+    # Mostrar el contenido del archivo de registro en tiempo real
+    zenity --text-info --title="Progreso de instalación" --filename="/tmp/installarch.log" --width=600 --height=400
 }
 
-# Verificar si whiptail y wget están instalados, si no, instalarlos
-if ! command -v whiptail &> /dev/null; then
-    echo "whiptail no está instalado. Instalándolo..."
-    sudo pacman -S whiptail --noconfirm --needed
-fi
-
-if ! command -v wget &> /dev/null; then
-    echo "wget no está instalado. Instalándolo..."
-    sudo pacman -S wget --noconfirm --needed
-fi
-
-# Verificar si tmux está instalado, si no, instalarlo
-if ! command -v tmux &> /dev/null; then
-    echo "tmux no está instalado. Instalándolo..."
-    sudo pacman -S tmux --noconfirm --needed
-fi
+# Verificar si zenity, wget y jq están instalados, si no, instalarlos
+for cmd in zenity wget jq; do
+    if ! command -v "$cmd" &> /dev/null; then
+        echo "$PASSWORD" | sudo -S pacman -S "$cmd" --noconfirm --needed
+    fi
+done
 
 # Mostrar bienvenida
 mostrar_bienvenida
 
+# Pedir contraseña sudo
+mostrar_contrasena
+
 # Listar scripts y seleccionar uno
 listar_scripts
 
-# Ejecutar el script seleccionado con barra de progreso y caja de diálogo
+# Ejecutar el script seleccionado y mostrar el progreso
 ejecutar_script
 
 # Mensaje final
-whiptail --title "Finalizado" --msgbox "\n\n      ❤️ Gracias por usar InstallArch\n\n      🌐 https://www.github.com/mxhectorvega/installarch\n\n" 15 60
+zenity --info --title="Finalizado" --text="\n\n❤️ Gracias por usar InstallArch\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n" --width=400 --height=200
 
 # Limpiar archivos temporales si existen
 [ -f /tmp/menuopt ] && rm /tmp/menuopt
