@@ -13,10 +13,8 @@ imprimir_mensaje() {
     sleep 3
 }
 
-
-
-
-
+# Actualizar y sincronizar repositorios
+sudo pacman -Sy --noconfirm
 
 # Mensaje final
 imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
