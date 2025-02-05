@@ -7,7 +7,6 @@ set -e
 LOG_DIR="$HOME/installarch_logs"
 LOG_FILE="$LOG_DIR/installation.log"
 REPO_DIR="$HOME/installarch"
-PROGRESS=0
 
 # Crear directorio de logs si no existe
 mkdir -p "$LOG_DIR"
@@ -61,18 +60,30 @@ seleccionar_script() {
     fi
 }
 
-# Función para ejecutar script seleccionado
+# Función para ejecutar script seleccionado con salida verbosa
 ejecutar_script() {
-    TOTAL_PASOS=$(grep -c "^" "$REPO_DIR/$SCRIPT_SELECCIONADO")
+    FIFO_FILE=$(mktemp -u)
+    EXIT_FILE=$(mktemp)
+    mkfifo "$FIFO_FILE"
+
+    # Ejecutar el script y capturar salida
     (
-    STEP=0
-    bash "$REPO_DIR/$SCRIPT_SELECCIONADO" 2>&1 | while read -r line; do
-        echo "$line" >> "$LOG_FILE"
-        ((STEP++))
-        PROGRESS=$(( STEP * 100 / TOTAL_PASOS ))
-        echo $PROGRESS
-    done
-    ) | whiptail --title "Instalando" --gauge "Instalando el script seleccionado..." 6 60 0
+        stdbuf -oL bash "$REPO_DIR/$SCRIPT_SELECCIONADO" 2>&1
+        echo $? > "$EXIT_FILE"
+    ) | stdbuf -oL tee -a "$LOG_FILE" > "$FIFO_FILE" &
+    INSTALL_PID=$!
+
+    # Mostrar salida en tiempo real
+    whiptail --title "Progreso de la Instalación" --textbox "$FIFO_FILE" 20 80
+
+    # Esperar a que termine la instalación
+    wait $INSTALL_PID
+    INSTALL_EXIT=$(cat "$EXIT_FILE")
+
+    # Limpiar archivos temporales
+    rm -f "$FIFO_FILE" "$EXIT_FILE"
+
+    return $INSTALL_EXIT
 }
 
 # Pantalla final
@@ -87,8 +98,7 @@ main() {
     seleccionar_script
     pedir_contraseña
     ejecutar_script || {
-        mostrar_error "La instalación ha fallado. Iniciando rollback..."
-        # Aquí puedes agregar tu lógica de rollback
+        mostrar_error "La instalación ha fallado. Revisa el log en: $LOG_FILE"
         exit 1
     }
     pantalla_final
