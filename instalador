@@ -2,12 +2,12 @@
 
 # Solicitar la contraseña al inicio con puntos por cada carácter
 mostrar_contrasena() {
-    PASSWORD=$(zenity --password --title="Contraseña de sudo" --text="Ingrese su contraseña de sudo:")
+    PASSWORD=$(zenity --password --title="Contraseña de sudo" --text="Ingrese su contraseña de sudo:\n\n🗒️ Log: /tmp/installarch.log")
 }
 
 # Función para mostrar la bienvenida
 mostrar_bienvenida() {
-    zenity --info --title="Bienvenido a InstallArch" --text="\n\n💻 Bienvenido a InstallArch\n\nTu gestor para la instalación y configuración de Arch Linux\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ El log de la instalación se guardará en /tmp/installarch.log\n\n" --width=400 --height=200
+    zenity --info --title="Bienvenido a InstallArch" --text="\n\n💻 Bienvenido a InstallArch\n\nTu gestor para la instalación y configuración de Arch Linux\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ El log de la instalación se guardará en /tmp/installarch.log\n" --width=400 --height=200
 }
 
 # Función para listar y seleccionar scripts del repositorio
@@ -23,18 +23,18 @@ listar_scripts() {
     done
 
     if [ ${#lista[@]} -eq 0 ]; then
-        zenity --error --text="No se encontraron scripts en el repositorio." --width=300 --height=100
+        zenity --error --text="No se encontraron scripts en el repositorio.\n\n🗒️ Log: /tmp/installarch.log" --width=300 --height=100
         exit 1
     fi
 
-    seleccion=$(zenity --list --title="Seleccione un script para ejecutar" --column="Scripts" "${lista[@]}" --width=400 --height=300)
+    seleccion=$(zenity --list --title="Seleccione un script para ejecutar" --text="🗒️ Log: /tmp/installarch.log" --column="Scripts" "${lista[@]}" --width=400 --height=300)
     echo "$seleccion" > /tmp/menuopt
 }
 
 # Función para ejecutar el script seleccionado y mostrar el progreso
 ejecutar_script() {
     script_url="https://raw.githubusercontent.com/mxhectorvega/installarch/main/$seleccion"
-    zenity --info --title="Instalación de $seleccion" --text="Descargando y ejecutando $seleccion..." --width=300 --height=100
+    zenity --info --title="Instalación de $seleccion" --text="Descargando y ejecutando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" --width=300 --height=100
 
     # Crear archivo de registro con permisos adecuados
     sudo touch /tmp/installarch.log
@@ -43,10 +43,10 @@ ejecutar_script() {
     # Ejecutar el script seleccionado y mostrar el progreso en un cuadro de diálogo
     (
         echo "$PASSWORD" | sudo -S bash -c "wget -q -O - \"$script_url\" | bash 2>&1 | tee /tmp/installarch.log"
-    ) | zenity --progress --title="Progreso de instalación" --text="Instalando $seleccion..." --percentage=0 --width=400 --height=100 --auto-close
+    ) | zenity --progress --title="Progreso de instalación" --text="Instalando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" --percentage=0 --width=400 --height=100 --auto-close
 
     # Mostrar el contenido del archivo de registro en tiempo real
-    zenity --text-info --title="Progreso de instalación" --filename="/tmp/installarch.log" --width=600 --height=400
+    zenity --text-info --title="Progreso de instalación" --filename="/tmp/installarch.log" --width=600 --height=400 --text="🗒️ Log: /tmp/installarch.log"
 }
 
 # Verificar si zenity, wget y jq están instalados, si no, instalarlos
@@ -69,7 +69,7 @@ listar_scripts
 ejecutar_script
 
 # Mensaje final
-zenity --info --title="Finalizado" --text="\n\n❤️ Gracias por usar InstallArch\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n" --width=400 --height=200
+zenity --info --title="Finalizado" --text="\n\n❤️ Gracias por usar InstallArch\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ Log: /tmp/installarch.log" --width=400 --height=200
 
 # Limpiar archivos temporales si existen
 [ -f /tmp/menuopt ] && rm /tmp/menuopt
