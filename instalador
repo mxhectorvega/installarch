@@ -3,107 +3,100 @@
 # Variables
 LOG_FILE="/tmp/installer.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-CLONE_DIR="/tmp/installarch"
-SCRIPT_DIR="$CLONE_DIR"
+REPO_DIR="/tmp/installarch"
+SELECTED_SCRIPT=""
 
-# Función para mostrar mensajes de error y salir
-error() {
-    echo "ERROR: $1" >> "$LOG_FILE"
-    whiptail --title "Error" --msgbox "Ocurrió un error: $1" 8 50
+# Función para limpiar residuos
+cleanup() {
+    rm -rf "$REPO_DIR"
+    echo "Limpieza completada." >> "$LOG_FILE"
+}
+
+# Función para manejar errores
+handle_error() {
+    echo "Error: $1" >> "$LOG_FILE"
+    whiptail --title "Error" --msgbox "Ocurrió un error: $1\nConsulta el archivo de registros en $LOG_FILE para más detalles." 10 60
+    cleanup
     exit 1
 }
 
-# Verificar dependencias
-check_dependencies() {
+# Función para satisfacer dependencias
+install_dependencies() {
     if ! command -v whiptail >/dev/null 2>&1; then
-        echo "Instalando whiptail..."
-        sudo pacman -S --noconfirm libnewt >/dev/null 2>&1 || error "No se pudo instalar whiptail."
-    fi
-    if ! command -v git >/dev/null 2>&1; then
-        echo "Instalando git..."
-        sudo pacman -S --noconfirm git >/dev/null 2>&1 || error "No se pudo instalar git."
-    fi
-    if ! command -v makepkg >/dev/null 2>&1; then
-        echo "Instalando makepkg..."
-        sudo pacman -S --noconfirm pacman >/dev/null 2>&1 || error "No se pudo instalar makepkg."
+        echo "Instalando whiptail..." >> "$LOG_FILE"
+        sudo pacman -S --noconfirm libnewt >> "$LOG_FILE" 2>&1 || handle_error "No se pudo instalar whiptail."
     fi
 }
 
-# Pantalla de Bienvenida
+# Función para mostrar la pantalla de bienvenida
 welcome_screen() {
-    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl registro de errores se almacenará en:\n$LOG_FILE\n\n¿Desea continuar?" 12 50 \
-    --yes-button "Iniciar" --no-button "Cancelar" \
-    || exit 0
-}
-
-# Clonar repositorio y listar scripts
-clone_and_list_scripts() {
-    if [ -d "$CLONE_DIR" ]; then
-        rm -rf "$CLONE_DIR"
-    fi
-    git clone "$REPO_URL" "$CLONE_DIR" >/dev/null 2>&1 || error "No se pudo clonar el repositorio."
-
-    SCRIPTS=$(find "$SCRIPT_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print $NF}')
-    if [ -z "$SCRIPTS" ]; then
-        error "No se encontraron scripts ejecutables en el repositorio."
-    fi
-
-    SCRIPT=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 15 50 5 \
-    $(echo "$SCRIPTS" | awk '{print $1, "Script"}') \
-    3>&1 1>&2 2>&3) || return 1
-
-    whiptail --title "Confirmación" --yesno "¿Desea ejecutar el script '$SCRIPT'?" 8 50 \
-    --yes-button "Siguiente" --no-button "Atrás" \
-    || clone_and_list_scripts
-}
-
-# Ejecutar script seleccionado con barra de progreso y salida verbosa
-run_script() {
-    whiptail --title "Instalación" --msgbox "Iniciando la instalación del script '$SCRIPT'..." 8 50
-
-    # Crear un archivo temporal para la salida verbosa
-    TEMP_LOG=$(mktemp)
-
-    if grep -q "sudo" "$SCRIPT_DIR/$SCRIPT"; then
-        PASSWORD=$(whiptail --title "Contraseña" --passwordbox "El script requiere permisos de root. Ingrese su contraseña:" 8 50 3>&1 1>&2 2>&3) || return 1
-        echo "$PASSWORD" | sudo -S "$SCRIPT_DIR/$SCRIPT" >> "$TEMP_LOG" 2>&1 &
+    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE\n\n¿Desea continuar?" 12 60
+    if [ $? -eq 0 ]; then
+        install_dependencies
+        list_scripts_screen
     else
-        "$SCRIPT_DIR/$SCRIPT" >> "$TEMP_LOG" 2>&1 &
+        cleanup
+        exit 0
     fi
-
-    PID=$!
-    while ps -p $PID > /dev/null; do
-        sleep 1
-        echo "50"
-    done | whiptail --gauge "Instalando el script '$SCRIPT'..." 6 50 0
-
-    wait $PID
-    if [ $? -ne 0 ]; then
-        cat "$TEMP_LOG" >> "$LOG_FILE"
-        error "La instalación falló. Consulte el registro de errores en $LOG_FILE."
-    fi
-
-    cat "$TEMP_LOG" >> "$LOG_FILE"
-    rm -f "$TEMP_LOG"
-
-    whiptail --title "Instalación Completada" --msgbox "La instalación del script '$SCRIPT' ha finalizado." 8 50
 }
 
-# Pantalla final
-final_screen() {
-    whiptail --title "Finalizado" --yesno "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\n¿Desea revisar el registro de errores?" 10 50 \
-    --yes-button "Mostrar LOG" --no-button "Finalizar" \
-    && whiptail --title "Registro de Errores" --textbox "$LOG_FILE" 20 80
-}
+# Función para clonar el repositorio y listar los scripts en una sola columna
+list_scripts_screen() {
+    echo "Clonando repositorio..." >> "$LOG_FILE"
+    git clone "$REPO_URL" "$REPO_DIR" >> "$LOG_FILE" 2>&1 || handle_error "No se pudo clonar el repositorio."
 
-# Main
-main() {
-    check_dependencies
-    welcome_screen
-    while true; do
-        clone_and_list_scripts && run_script && break
+    # Obtener la lista de scripts ejecutables sin extensión
+    SCRIPTS=$(find "$REPO_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print $NF}')
+
+    # Formatear la lista para whiptail (una columna vertical)
+    SCRIPT_LIST=""
+    for script in $SCRIPTS; do
+        SCRIPT_LIST="$SCRIPT_LIST $script \"\""
     done
+
+    # Mostrar la lista en una sola columna
+    SELECTED_SCRIPT=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 60 10 $SCRIPT_LIST 3>&1 1>&2 2>&3)
+
+    if [ $? -eq 0 ]; then
+        installation_screen
+    else
+        cleanup
+        exit 0
+    fi
+}
+
+# Función para mostrar la pantalla de instalación
+installation_screen() {
+    whiptail --title "Instalación" --msgbox "El script seleccionado es: $SELECTED_SCRIPT\n\nPresione OK para continuar." 10 60
+
+    # Simulación de barra de progreso
+    {
+        for i in {1..10}; do
+            echo $((i * 10))
+            sleep 1
+        done
+    } | whiptail --gauge "Instalando $SELECTED_SCRIPT..." 6 60 0
+
+    # Solicitar contraseña si es necesario
+    if grep -q "sudo" "$REPO_DIR/$SELECTED_SCRIPT"; then
+        PASSWORD=$(whiptail --title "Contraseña Root" --passwordbox "Ingrese la contraseña de root:" 10 60 3>&1 1>&2 2>&3)
+        echo "$PASSWORD" | sudo -S "$REPO_DIR/$SELECTED_SCRIPT" >> "$LOG_FILE" 2>&1 || handle_error "Error al ejecutar el script."
+    else
+        "$REPO_DIR/$SELECTED_SCRIPT" >> "$LOG_FILE" 2>&1 || handle_error "Error al ejecutar el script."
+    fi
+
     final_screen
 }
 
-main
+# Función para mostrar la pantalla final
+final_screen() {
+    whiptail --title "Finalizado" --yesno "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\n¿Desea ver el archivo de registros?" 12 60
+    if [ $? -eq 0 ]; then
+        whiptail --title "Archivo de Registros" --textbox "$LOG_FILE" 20 60
+    fi
+    cleanup
+    exit 0
+}
+
+# Iniciar el instalador
+welcome_screen
