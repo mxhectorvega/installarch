@@ -1,65 +1,68 @@
 #!/usr/bin/env bash
 
-# Descripcion: Instalacion de paquetes flatpak.
-# Fecha de actualizacion: 16/01/2025
-# Nota: Requiere del paquete flatpak para poderse instalar.
+# Instalacion paquetes flatpak para el usuario domestico.
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecucion: bash <(curl -L is.gd/mxflatpak)
+# Fecha de actualización 04/02/2025
+# Versión: 5.0
 
-# Actualziacion
-#sudo pacman -Syyu --noconfirm
+# Definir las listas de paquetes
+lista_gnome=("fr.handbrake.ghb" "app.drey.Dialect" "page.tesk.Refine" "org.gnome.Showtime" "net.davidotek.pupgui2" \
+"net.minetest.Minetest" "net.supertuxkart.SuperTuxKart" "com.github.KRTirtho.Spotube" "com.github.gabutakut.gabutdm" \
+"com.github.iwalton3.jellyfin-media-player" "com.github.tchx84.Flatseal" "com.github.neithern.g4music" "com.spotify.Client" \
+"com.mattjakeman.ExtensionManager" "com.obsproject.Studio" "com.rustdesk.RustDesk" "com.valvesoftware.Steam" "com.brave.Browser" \
+"io.github.peazip.PeaZip" "io.gitlab.adhami3310.Impression" "io.missioncenter.MissionCenter" "io.itch.itch" "io.mrarm.mcpelauncher" \
+"org.gnome.Evolution" "org.gnome.Calculator" "org.gnome.Connections" "org.gnome.Evince" "org.gnome.Loupe" "org.gnome.TextEditor" \
+"org.gnome.gitlab.YaLTeR.VideoTrimmer" "org.gnome.gitlab.somas.Apostrophe" "org.audacityteam.Audacity" "org.gimp.GIMP" \
+"org.inkscape.Inkscape" "org.jdownloader.JDownloader" "org.kde.kdenlive" "org.kde.krita" "org.libreoffice.LibreOffice" \
+"org.pipewire.Helvum" "org.signal.Signal" "org.soundconverter.SoundConverter" "org.supertuxproject.SuperTux" "org.telegram.desktop")
 
-#sudo pacman -S flatpak --noconfirm --needed
+lista_kde=("fr.handbrake.ghb" "net.davidotek.pupgui2" "net.minetest.Minetest" "net.supertuxkart.SuperTuxKart" \
+"com.github.KRTirtho.Spotube" "com.github.iwalton3.jellyfin-media-player" "com.spotify.Client" "com.obsproject.Studio" \
+"com.rustdesk.RustDesk" "com.valvesoftware.Steam" "com.brave.Browser" "io.github.peazip.PeaZip" "io.itch.itch" "io.mrarm.mcpelauncher" \
+"org.kde.klevernotes" "org.kde.isoimagewriter" "org.kde.CrowTranslate" "org.rncbc.qpwgraph" "org.kde.gwenview" "org.kde.okular" \
+"org.kde.kcalc" "org.kde.ktorrent" "org.kde.kontact" "org.audacityteam.Audacity" "org.gimp.GIMP" "org.inkscape.Inkscape" \
+"org.jdownloader.JDownloader" "org.kde.kdenlive" "org.kde.krita" "org.libreoffice.LibreOffice" "org.signal.Signal" \
+"org.supertuxproject.SuperTux" "org.telegram.desktop")
 
-# Software personal en flatpak
-flatpak install -y \
-fr.handbrake.ghb \
-app.drey.Dialect \
-page.tesk.Refine \
-org.gnome.Showtime \
-net.davidotek.pupgui2 \
-net.minetest.Minetest \
-net.supertuxkart.SuperTuxKart \
-com.github.KRTirtho.Spotube \
-com.github.gabutakut.gabutdm \
-com.github.iwalton3.jellyfin-media-player \
-com.github.tchx84.Flatseal \
-com.github.neithern.g4music \
-com.spotify.Client \
-com.mattjakeman.ExtensionManager \
-com.obsproject.Studio \
-com.rustdesk.RustDesk \
-com.valvesoftware.Steam \
-com.brave.Browser \
-io.github.peazip.PeaZip \
-io.gitlab.adhami3310.Impression \
-io.missioncenter.MissionCenter \
-io.itch.itch \
-io.mrarm.mcpelauncher \
-org.gnome.Evolution \
-org.gnome.Calculator \
-org.gnome.Connections \
-org.gnome.Evince \
-org.gnome.Loupe \
-org.gnome.TextEditor \
-org.gnome.gitlab.YaLTeR.VideoTrimmer \
-org.gnome.gitlab.somas.Apostrophe \
-org.audacityteam.Audacity \
-org.gimp.GIMP \
-org.inkscape.Inkscape \
-org.jdownloader.JDownloader \
-org.kde.kdenlive \
-org.kde.krita \
-org.libreoffice.LibreOffice \
-org.pipewire.Helvum \
-org.signal.Signal \
-org.soundconverter.SoundConverter \
-org.supertuxproject.SuperTux \
-org.telegram.desktop
+# Paquete adicional
+paquete_adicional="https://sober.vinegarhq.org/sober.flatpakref"
 
-# roblox en Linux
-sudo flatpak install -y https://sober.vinegarhq.org/sober.flatpakref
+# Bucle para preguntar al usuario hasta que seleccione una opción válida
+while true; do
+    echo "¿Qué lista de paquetes deseas instalar?"
+    echo "1) Paquetes flatpak para entorno de escritorio GNOME (instalado con script minimal)"
+    echo "2) Paquetes flatpak para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
+    read -p "Selecciona una opción (1 o 2): " opcion
 
-# para sacar la lista de apps:
-# flatpak list --app --columns=application
+    # Validar la opción seleccionada y proceder con la instalación
+    if [ "$opcion" -eq 1 ]; then
+        echo "Instalando paquetes de la Lista GNOME..."
+        for paquete in "${lista_gnome[@]}"; do
+            flatpak install --user -y "$paquete"
+        done
+        flatpak install --user -y "$paquete_adicional"
+        break
+    elif [ "$opcion" -eq 2 ]; then
+        echo "Instalando paquetes de la Lista KDE..."
+        for paquete in "${lista_kde[@]}"; do
+            flatpak install --user -y "$paquete"
+        done
+        flatpak install --user -y "$paquete_adicional"
+        echo "Instalando paquetes adicionales para permisos flatpak, screenshoter y gestor de particiones GUI..."
+        sudo pacman -S flatpak-kcm spectacle partitionmanager --noconfirm --needed
+        break
+    else
+        echo "Opción no válida. Por favor, selecciona una opción válida."
+    fi
+done
 
 # Mensaje final
-printf '\n\n\tContribuye:\n\tmxhectorvega.vercel.app\n\n\n'
+sleep 0.1
+clear
+sleep 0.1
+printf '\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega\n\n\n\n\n\n\n\n\n\n'
+sleep 3
+
+# Para sacar la lista de apps:
+# flatpak list --app --columns=application

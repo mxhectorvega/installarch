@@ -1,29 +1,26 @@
 #!/usr/bin/env bash
 
-# Descripcion: Instalacion de drivers para MacbookAIR 2013 y MacbookPRO 2011 en Archlinux
-# Fecha de actualizacion: 26/11/2023
-# Nota: Requiere de Paru AUR helper para poderse instalar.
+# Instalacion de drivers para MacBookPro 2011-2015 y MacBookAIR 2011-2017 en Archlinux
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecucion: bash <(curl -L is.gd/mxmacbook)
+# Fecha de actualización 04/02/2025
+# Versión: 1.9
 
 # Actualziacion
-sudo pacman -Syyu --noconfirm
+sudo pacman -Sy --noconfirm
 
-# Paquetes de compatibilidad WIFI/WEBCAM MacBookPro 2011-2015 y MacBookAIR 2011-2017
+# Paquetes de compatibilidad WIFI MacBookPro 2011-2015 y MacBookAIR 2011-2017
 sudo pacman -S dkms linux-headers broadcom-wl-dkms --noconfirm --needed
-
-# Firmware de webcam (facetime apple)
-paru -S facetimehd-firmware --noconfirm --needed
 
 # Drivers para bluetooth
 sudo pacman -S bluez{,-utils} --needed --noconfirm
 
-# Actualziacion
-sudo pacman -Syyu --noconfirm
-
 # habilitando bluetooth
 sudo systemctl enable --now bluetooth.service
 
-# Activando SSH para acceso remoto
-sudo systemctl enable --now sshd
-
 # Mensaje final
-printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
+sleep 0.1
+clear
+sleep 0.1
+printf '\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega\n\n\n\n\n\n\n\n\n\n'
+sleep 3

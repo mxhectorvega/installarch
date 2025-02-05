@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
-# Descripcion: Instalacion de repositorio CHAOTIC (paquetes precompilados) y Paru AUR helper en Archlinux.
-# Fecha de actualizacion: 26/11/2023
-# Nota: Requiere paquete GIT para poderse instalar.
+# Instalacion de repositorio CHAOTIC (paquetes precompilados) y Paru AUR helper en Archlinux.
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecucion: bash <(curl -L is.gd/mxrepos)
+# Fecha de actualización 04/02/2025
+# Versión: 2.3
 
 # Actualziacion
-sudo pacman -Syyu --noconfirm
+sudo pacman -Sy --noconfirm
 
-# Paquete GIT (dependencia para instalar AUR helper)
+# Instalar git
 sudo pacman -S git --noconfirm --needed
 
 # Paru AUR Helper
@@ -15,20 +17,28 @@ cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -s
 sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
 
 # Actualziacion
-sudo pacman -Syyu --noconfirm
+sudo pacman -Sy --noconfirm
 
 # Chaotic-AUR - Automated building repo for AUR packages
 sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
 sudo pacman-key --lsign-key 3056513887B78AEB
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
+sudo pacman -U chaotic-keyring.pkg.tar.zst  --noconfirm
+sudo pacman -U chaotic-mirrorlist.pkg.tar.zst  --noconfirm
 sudo tee -a /etc/pacman.conf <<EOF
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist
 EOF
+cd $HOME
+rm -rf $HOME/*.zst
 
 # Actualziacion
-sudo pacman -Syyu --noconfirm
+sudo pacman -Sy --noconfirm
 
 # Mensaje final
-printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
+sleep 0.1
+clear
+sleep 0.1
+printf '\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega\n\n\n\n\n\n\n\n\n\n'
+sleep 3

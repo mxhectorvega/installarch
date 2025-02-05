@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 
-# Titulo: Instalación mínima del entorno de escritorio Gnome 4x.x consumiendo 400mb al inicio.
-# Autor: Héctor Iván Vega Zamudio
-# Correo: mxhectorvega@gmail.com
+# Instalación del entorno de escritorio Gnome 4.1.x minimal
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Versión: 7.20
-# Fecha de actualización 16/01/2025
-# Nota: El sistema de preferencia debe haber sido instalado con la
-# herramienta archinstall del liveUSB, seleccionando el perfil mínimal.
+# Ejecucion: bash <(curl -L is.gd/mxignome)
+# Fecha de actualización 04/02/2025
+# Versión: 7.3
+
+# Notas: El sistema debio haberse instalado de preferencia con la herramienta ArchInstall desde ArchISO seleccionado el perfil minimal (sin entorno de escritorio).
 
 # Actualización
 sudo pacman -Sy --noconfirm
@@ -18,22 +17,18 @@ sudo pacman -S openssh seahorse acpi plocate usbutils ntfs-3g dosfstools flatpak
 # Para ejecutar desde la terminal
 sudo pacman -S fastfetch git curl wget nvtop htop vim less man speedtest-cli --noconfirm --needed 
 
-# Paru
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
-sudo pacman -Sy --noconfirm
-
 # Paquetes mínimos para que Gnome funcione
 sudo pacman -S gdm gnome-shell nautilus gnome-control-center gnome-software gnome-console gnome-disk-utility polkit-gnome --noconfirm --needed
 sudo pacman -S xdg-desktop-portal xdg-desktop-portal-gnome --noconfirm --needed
 
+# Tema GTK3 de libadwaita
 sudo pacman -S adw-gtk-theme --noconfirm --needed
 flatpak install org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
 
-# crear directorios de usuario
+# Crear directorios de usuario en español
 xdg-user-dirs-update
 
-# Compatibilidad con impresoras
+# Instalar administrador de impresoras y establecer permisos en el sistema
 sudo pacman -S system-config-printer cups --noconfirm --needed
 sudo gpasswd -a $(whoami) sys
 sudo gpasswd -a $(whoami) wheel
@@ -64,38 +59,45 @@ rm -rf $HOME/tipografias
 rm -rf $HOME/tipografiaswin
 
 # Driver bluetooth
-sudo pacman -S bluez bluez-utils --noconfirm --needed
+sudo pacman -S bluez{,-utils} --needed --noconfirm
 
-# habilitando bluetooth
+# Habilitando servicio de bluetooth
 sudo systemctl enable --now bluetooth.service
 
-# Chaotic-AUR - Automated building repo for AUR packages
-sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key 3056513887B78AEB
-wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
-wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
-sudo pacman -U chaotic-keyring.pkg.tar.zst  --noconfirm
-sudo pacman -U chaotic-mirrorlist.pkg.tar.zst  --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-cd $HOME
-rm -rf $HOME/*.zst
-sudo pacman -Sy --noconfirm
-
-# gestor de maquinas virtuales
-#sudo pacman -S virt-manager --noconfirm --needed
-
-# Java para los estudiambres
+# Instalacion de Java por si acaso lo requiere el usuario domestico
 sudo pacman -S jre8-openjdk --noconfirm --needed
 
 # Mensaje final
-sleep 1
-printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
-sleep 1
+sleep 0.1
+clear
+sleep 0.1
+printf '\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega\n\n\n\n\n\n\n\n\n\n'
+sleep 3
 
 # Habilitando servicio de pantalla de inicio de sesión
-printf '\n \nActivando display manager...\n'
+clear
+printf 'Activando display manager.'
+sleep 0.1
+clear
+printf 'Activando display manager..'
+sleep 0.1
+clear
+printf 'Activando display manager...'
+sleep 0.1
+clear
+printf 'Activando display manager....'
+sleep 0.1
+clear
+printf 'Activando display manager.....'
+sleep 0.1
+clear
+printf 'Activando display manager......'
+sleep 0.1
+clear
+printf 'Activando display manager.......'
+sleep 0.1
+clear
+printf 'Activando display manager........'
 sleep 1
 sudo systemctl enable --now gdm
+

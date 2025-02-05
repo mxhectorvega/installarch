@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Titulo: Instalación automática de Drivers AMD Privativo
-# Link: https://github.com/mxhectorvega/installarch
+# Instalación automática de Drivers AMD Privativo
+# https://github.com/mxhectorvega/installarch
 # Versión: 6.0 06/05/2023
 # Nota: El sistema de preferencia debe haber sido instalado con la
 # herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
