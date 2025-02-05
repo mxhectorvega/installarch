@@ -1,70 +1,22 @@
 #!/usr/bin/env bash
 
 # Descripcion: Instalacion de software de uso personal en Archlinux.
-# Fecha de actualizacion: 26/11/2023
-# Nota: Inlcuye paquetes flatpak.
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: curl -L is.gd/mxsoftware | bash
+# Fecha de actualización: 05/02/2025
+# Versión: 1.0
 
-# Actualziacion
-sudo pacman -Syyu --noconfirm
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
 
-# Paquetes basicos
-sudo pacman -S qt5ct qt6ct seahorse unrar openssh acpi plocate usbutils ntfs-3g exfatprogs dosfstools pacman-contrib git curl wget vim nano fastfetch htop flatpak less man --noconfirm --needed
 
-# Fuentes y paquetes para descopresion dakata
-sudo pacman -S unicode-character-database gnu-free-fonts wqy-microhei noto-fonts-emoji ttf-{inconsolata,dejavu,hack,roboto,liberation,fira-{sans,code},cascadia-code,nerd-fonts-symbols} hunspell-es_mx zip un{zip,rar,arj} arj cpio p{7zip,bzip2,igz} l{zop,zip,rzip,ha} --needed --noconfirm
 
-# Compatibilidad con impresoras
-sudo pacman -S system-config-printer --noconfirm --needed
-sudo pacman -S cups --noconfirm --needed
-sudo gpasswd -a $(whoami) sys
-sudo gpasswd -a $(whoami) wheel
-sudo gpasswd -a $(whoami) root
-sudo gpasswd -a $(whoami) lp
-sudo systemctl enable --now cups
 
-# Actualziacion
-sudo pacman -Syyu --noconfirm
 
-# Spotify sin publicidad (Chaotic REPO)
-sudo pacman -S spotify-adblock-git --noconfirm --needed
-
-# Gestor de software APPIMAGE
-sudo pacman -S appimagelauncher --noconfirm --needed
-
-# Preparador de USB booteable
-sudo pacman -S ventoy-bin --noconfirm --needed
-
-# Administrador de temas KDE para entornos GTK
-sudo pacman -S kvantum --noconfirm --needed
-
-# Descargar Minecraft Bedrock
-wget https://github.com/minecraft-linux/appimage-builder/releases/download/v0.12.1-763/Minecraft_Bedrock_Launcher-x86_64-v0.12.1.763.AppImage
-
-# Rustdesk visor de escritorio remoto escrito en RUST
-wget https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-0-x86_64.pkg.tar.zst
-sudo pacman -U rustdesk-1.2.3-0-x86_64.pkg.tar.zst --noconfirm
-
-# Creando enlaces simbolicos para askpass package
-sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
-
-# habilitando bluetooth
-sudo systemctl enable --now bluetooth.service
-
-# Fuentes mxhectorvega
-cd $HOME
-mkdir -p $HOME/.local/share/fonts
-cd $HOME
-git clone https://github.com/mxhectorvega/tipografias
-git clone https://github.com/mxhectorvega/tipografiaswin
-cp -R $HOME/tipografias "$HOME"/.local/share/fonts
-cp -R $HOME/tipografiaswin "$HOME"/.local/share/fonts
-sleep 1
-cd $HOME
-rm -rf $HOME/tipografias
-rm -rf $HOME/tipografiaswin
-
-# Activando SSH para acceso remoto
-sudo systemctl enable --now sshd
 
 # Mensaje final
-printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"

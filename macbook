@@ -2,7 +2,7 @@
 
 # Configuración de hardware y paquetes específicos para MacBook en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxmacbook)
+# Ejecución: curl -L is.gd/mxmacbook | bash
 # Fecha de actualización: 04/02/2025
 # Versión: 5.0
 

@@ -2,7 +2,7 @@
 
 # Instalación del entorno de escritorio Gnome 4.1.x minimal
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxignome)
+# Ejecución: curl -L is.gd/mxignome | bash
 # Fecha de actualización: 04/02/2025
 # Versión: 7.3
 

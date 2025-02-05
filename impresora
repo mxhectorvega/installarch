@@ -2,7 +2,7 @@
 
 # Instalación y configuración de impresoras en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mximpresora)
+# Ejecución: curl -L is.gd/mximpresora | bash
 # Fecha de actualización: 04/02/2025
 # Versión: 5.0
 

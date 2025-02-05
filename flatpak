@@ -2,7 +2,7 @@
 
 # Instalación de paquetes flatpak para el usuario doméstico.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxflatpak)
+# Ejecución: curl -L is.gd/mxflatpak | bash
 # Fecha de actualización: 04/02/2025
 # Versión: 5.0
 

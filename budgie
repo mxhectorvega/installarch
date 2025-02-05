@@ -1,66 +1,122 @@
 #!/usr/bin/env bash
 
-# Titulo: Instalación mínima del entorno de escritorio mínimo Budgie (similar a gnome pero sin shell).
-# Autor: Héctor Iván Vega Zamudio
-# Correo: mxhectorvega@gmail.com
-# Link: https://github.com/mxhectorvega
+# Instalación de Budgie Minimal en Arch Linux.
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: curl -L is.gd/mxbudgie | bash
+# Fecha de actualización: 05/02/2025
 # Versión: 1.0
-# Fecha de actualización 19/03/2023
-# Nota: El sistema de preferencia debe haber sido instalado con la
-# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
-# Actualización
-sudo pacman -Syyu --noconfirm
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
 
-# Internos para el SO
-sudo pacman -S usbutils ntfs-3g flatpak pacman-contrib xdg-user-dirs --noconfirm --needed
-# Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget nvtop htop vim fuse less man --noconfirm --needed 
+# Actualizar y sincronizar repositorios
+sudo pacman -Sy --noconfirm
 
-# Repo chaotic
-sudo pacman -Syyu --noconfirm
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
+# Instalar paquetes esenciales para el sistema operativo
+paquetes_esenciales=(
+    "openssh"
+    "seahorse"
+    "acpi"
+    "plocate"
+    "usbutils"
+    "ntfs-3g"
+    "dosfstools"
+    "flatpak"
+    "pacman-contrib"
+    "fuse"
+    "xdg-user-dirs"
+    "rsync"
+    "nano"
+)
+
+sudo pacman -S "${paquetes_esenciales[@]}" --noconfirm --needed
+
+# Instalar herramientas de terminal
+herramientas_terminal=(
+    "fastfetch"
+    "git"
+    "curl"
+    "wget"
+    "nvtop"
+    "htop"
+    "vim"
+    "less"
+    "man"
+    "speedtest-cli"
+)
+
+sudo pacman -S "${herramientas_terminal[@]}" --noconfirm --needed
+
+# Instalar paquetes para el escritorio BUDGIE
+sudo pacman -S gnome-terminal budgie-desktop budgie-extras gnome-screenshot --noconfirm --needed
+
+# Instalar el gestor de pantalla (Display manager)
+sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm --needed
+
+# Instalar paquetes adicionales para el usuario
+sudo pacman -S clipit --noconfirm --needed
+
+# Instalar el tema GTK3 de libadwaita
+sudo pacman -S adw-gtk-theme --noconfirm --needed
+flatpak install --user -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
+
+# Crear directorios de usuario en español
+xdg-user-dirs-update
+
+# Instalar administrador de impresoras y configurar permisos
+sudo pacman -S system-config-printer cups --noconfirm --needed
+sudo gpasswd -a "$(whoami)" sys
+sudo gpasswd -a "$(whoami)" wheel
+sudo gpasswd -a "$(whoami)" root
+sudo gpasswd -a "$(whoami)" lp
+
+# Iniciar el servicio de impresión
+sudo systemctl enable --now cups
+
+# Crear enlace simbólico para el paquete ssh-askpass
+sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
+
+# Configurar ZRAM
+sudo tee -a /etc/systemd/zram-generator.conf <<EOF
+zram-size = ram
+compression-algorithm = zstd
 EOF
 
-# Paru
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+# Crear directorios de fuentes antes de clonar los repositorios
+mkdir -p "$HOME/.local/share/fonts/tipografias"
+mkdir -p "$HOME/.local/share/fonts/tipografiaswin"
 
-# Actualización
-sudo pacman -Syyu --noconfirm
+# Clonar repositorios directamente en los directorios creados
+git clone https://github.com/mxhectorvega/tipografias "$HOME/.local/share/fonts/tipografias"
+git clone https://github.com/mxhectorvega/tipografiaswin "$HOME/.local/share/fonts/tipografiaswin"
 
-# Instalando paquetes para escritorio BUDGIE
-sudo pacman -S gnome-terminal budgie-desktop budgie-extras gnome-screenshot --noconfirm
+# Limpiar archivos .git y .md
+find "$HOME/.local/share/fonts/" -name ".git" -exec rm -rf {} +
+find "$HOME/.local/share/fonts/" -name "*.md" -exec rm -f {} +
 
-# Display manager (pantalla de inicio de sesión)
-sudo pacman -S lightdm lightdm-gtk-greeter --noconfirm
-
-# Thunar extras
-sudo pacman -S gvfs thunar thunar-archive-plugin thunar-volman thunar-archive-plugin tumbler ffmpegthumbnailer xarchiver zip unzip unrar unarj p7zip lzop lzip lrzip lha cpio arj --noconfirm --needed
-
-
-# Instalando paquetes adicionales para el usuario
-sudo pacman -S clipit --noconfirm
-
-# habilitando bluetooth
+# Instalar y configurar el controlador de Bluetooth
+sudo pacman -S bluez bluez-utils --needed --noconfirm
 sudo systemctl enable --now bluetooth.service
 
-# Habilitando servicio de pantalla de inicio de sesión
-sudo systemctl enable --now lightdm
+# Instalar Java (por si acaso se requiere)
+sudo pacman -S jre8-openjdk --noconfirm --needed
 
 # Mensaje final
-sleep 1
-printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
-sleep 1
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
 
-# Habilitando servicio de pantalla de inicio de sesión
-clear
-printf '\n \nActivando display manager...\n'
-sleep 1
+# Activar el servicio de pantalla de inicio de sesión (GDM)
+for i in {1..8}; do
+    clear
+    printf 'Activando display manager'$(printf '.%.0s' $(seq 1 $i))
+    sleep 0.1
+done
+
 sudo systemctl enable --now lightdm
 
+# Comandos opcionales para verificar el estado de los servicios
+# sudo systemctl status bluetooth.service
+# sudo systemctl status lightdm

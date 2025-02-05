@@ -1,95 +1,22 @@
 #!/usr/bin/env bash
 
-# Descripcion: Post instalacion para HYPRLAND (compositor wayland).
-# Fecha de actualización: 12/05/2024
+# Instalación mis configuraciones hyprland
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: curl -L is.gd/mxhyprland | bash
+# Fecha de actualización: 05/02/2025
+# Versión: 1.0
 
-# Actualización
-sudo pacman -Syyu --noconfirm
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
 
-# Internos para el SO
-sudo pacman -S flatpak usbutils ntfs-3g pacman-contrib plocate --noconfirm --needed
 
-# Para ejecutar desde la terminal
-sudo pacman -S git make gcc curl wget fuse less man unrar --noconfirm --needed 
 
-# Thunar administrador de archivos
-sudo pacman -S thunar{,-{volman,{archive,media-tags}-plugin}} ffmpegthumbnailer tumbler --needed --noconfirm
 
-# Hyprland, dependencias y demas paquetes para su buen funcionamiento
-sudo pacman -S cliphist hyprland hyprpaper hyprlock sway foot waybar wofi mako xdg-desktop-portal-hyprland xdg-desktop-portal xdg-user-dirs xdg-utils pulsemixer wf-recorder gammastep grim slurp blueberry brightnessctl qt6-wayland qt5-wayland qt5ct qt6ct iwd smartmontools wireless_tools wpa_supplicant htop nano vim fastfetch networkmanager gsettings-desktop-schemas dconf --noconfirm --needed
 
-# Visores de archivos
-sudo pacman -S imv zathura-pdf-mupdf mpv --noconfirm --needed
-
-# Utilidad para gestion de contraseñas
-sudo pacman -S gnome-keyring libsecret libgnome-keyring --noconfirm --needed
-
-# Básicos
-sudo pacman -S gvfs blueberry acpi speedtest-cli --needed --noconfirm
-
-# Habilitando servicio de bluetooth
-sudo pacman -S bluez{,-utils} --needed --noconfirm
-sudo systemctl enable --now bluetooth.service
-
-# Paru
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
-
-# Repo chaotic
-#sudo pacman -Syyu --noconfirm
-#sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-#sudo  pacman-key --lsign-key 3056513887B78AEB
-#wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
-#wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
-#sudo pacman -U chaotic-keyring.pkg.tar.zst chaotic-mirrorlist.pkg.tar.zst --noconfirm
-#sudo tee -a /etc/pacman.conf <<EOF
-#[chaotic-aur]
-#Include = /etc/pacman.d/chaotic-mirrorlist
-#EOF
-#cd $HOME
-#rm -rf $HOME/*.zst
-#sudo pacman -Syyu --noconfirm
-
-# Temas y fuentes mxhectorvega
-git clone https://github.com/mxhectorvega/temas
-git clone https://github.com/mxhectorvega/tipografias
-git clone https://github.com/mxhectorvega/hyprland
-mkdir -p $HOME/.local/share/fonts
-cp -R $HOME/temas/.{icons,themes}/ $HOME
-cp -R $HOME/tipografias/ $HOME/.local/share/fonts/
-cp -R $HOME/hyprland/.config/ $HOME
-rm -rf $HOME/{tipografias,temas,hyprland}/
-
-# ajustando VIM, HTOP y NVTOP para que los lanzadores.desktop funcionen con foot
-sudo sed -i "s/Exec=vim %F/Exec=foot -e vim/g" /usr/share/applications/vim.desktop
-sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/vim.desktop
-sudo sed -i "s/Exec=htop/Exec=foot -e htop/g" /usr/share/applications/htop.desktop
-sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/htop.desktop
-sudo sed -i "s/Exec=nvtop/Exec=foot -e nvtop/g" /usr/share/applications/nvtop.desktop
-sudo sed -i "s/Terminal=true/Terminal=false/g" /usr/share/applications/nvtop.desktop
-
-# ZRAM configuracion
-#sudo tee -a /etc/systemd/zram-generator.conf <<EOF
-#zram-size= ram
-#compression-algorithm = zsthd
-#EOF
-
-# Gestor de paquetes AUR GUI
-#sudo pacman -S pamac-aur --noconfirm --needed
-#paru -S pamac-aur-git --noconfirm --needed
-
-# WINDECOR - decoraciones para ventanas wayfireWM (opcional)
-#sudo pacman -S pkg-config cmake glm --noconfirm
-#git clone https://gitlab.com/wayfireplugins/windecor
-#cd windecor
-#meson build --prefix=/usr --buildtype=release
-#ninja -C build -k 0 -j $(nproc) && sudo ninja -C build install
-#cd $HOME
-#rm -rf $HOME/windecor
-
-# CLIPBOARD 2.0 fix wayfire compatible
-#paru -S wl-clipboard --noconfirm
 
 # Mensaje final
-sleep 1
-printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"

@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 
-# Descripción: Implementación de temas uniformes para flatpak y host en Archlinux.
-# Fecha de actualización: 20/12/2023
-# Nota: Requiere de Paru AUR helper para poderse instalar.
+# Instalación de temas Colloid (MacOS) para ArchLIinux
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: curl -L is.gd/mxtemas | bash
+# Fecha de actualización: 05/02/2025
+# Versión: 1.0
 
-# Instalación de los paquetes Colloid gtk, icons e kde (kvantum).
-#paru -S colloid-cursors-git colloid-gtk-theme-git colloid-icon-theme-git plasma5-themes-colloid-git --noconfirm --needed
+# Nota: Los paquetes Colloid gtk, icons e kde (kvantum) puedes instalarlos de manera nativa con "paru -S colloid-cursors-git colloid-gtk-theme-git colloid-icon-theme-git plasma5-themes-colloid-git --noconfirm --needed"
+
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
 
 # Eliminar rastros de otros temas para evitar conflictos
 rm -rf $HOME/.{themes,icons}
@@ -55,4 +63,4 @@ rm -rf $HOME/temas
 rm -rf Colloid-kde
 
 # Mensaje final
-printf '\n\n\tContribuye:\n\tmxhectorvega.com\n\n\n'
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"

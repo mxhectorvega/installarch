@@ -1,34 +1,26 @@
 #!/usr/bin/env bash
 
-# Instalación automática de Drivers AMD Privativo
-# https://github.com/mxhectorvega/installarch
-# Versión: 6.0 06/05/2023
-# Nota: El sistema de preferencia debe haber sido instalado con la
-# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
+# Instalación drivers para computadoras AMD y WIFI USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano]).
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: curl -L is.gd/mxdrivers | bash
+# Fecha de actualización: 05/02/2025
+# Versión: 1.0
+
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
 
 # Actualización
-sudo pacman -Syyu --noconfirm
-
-# Utilidades para desarollo
-#sudo pacman -Syu --needed base-devel git dkms linux-headers --noconfirm --needed
-sudo pacman -Syu --needed git --noconfirm --needed
-
-# Repo chaotic
-sudo pacman -Syyu --noconfirm
-sudo pacman-key --recv-key FBA220DFC880C036 --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key FBA220DFC880C036
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' --noconfirm
-sudo tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-
-# Paru
-cd ; git clone https://aur.archlinux.org/paru-bin.git ; cd paru-bin ; makepkg -si --noconfirm ; cd ; rm -rf paru-bin
-sudo sed -i "s/#BottomUp/BottomUp/g" /etc/paru.conf
+sudo pacman -Sy --noconfirm
 
 # Driver bluetooth
 sudo pacman -S bluez bluez-utils --noconfirm --needed
+
+# habilitando bluetooth
+sudo systemctl enable --now bluetooth.service
 
 # DRIVER AMDGPU 
 sudo pacman -S xf86-video-amdgpu --noconfirm --needed
@@ -43,12 +35,7 @@ sudo pacman -S opencl-mesa --noconfirm --needed
 sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau --noconfirm --needed
 
 # Instalando driver USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano])
-#paru -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
-
-# habilitando bluetooth
-sudo systemctl enable --now bluetooth.service
+paru -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
 
 # Mensaje final
-sleep 1
-printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
-
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"

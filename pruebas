@@ -1,5 +1,19 @@
-# Desinstalar software no usado Gnome
+#!/usr/bin/env bash
 
+# Configuración de hardware y paquetes específicos para MacBook en Arch Linux.
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: curl -L is.gd/mxmacbook | bash
+# Fecha de actualización: 04/02/2025
+# Versión: 5.0
+
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
+
+# Desinstalar software no usado Gnome
 sudo pacman -R totem \
 epiphany \
 gnome-system-monitor \
@@ -13,8 +27,13 @@ gnome-calendar \
 gnome-weather \
 gnome-software
 
+
+# Limpoeza del gestor de paquetes pacman
 sudo pacman -Rns $(pacman -Qdtq)
 du -sh /var/cache/pacman/pkg/
 du -sh ~/.cache/paru
 sudo pacman -Scc --noconfirm
 paru -Scc --noconfirm
+
+# Mensaje final
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"

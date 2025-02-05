@@ -1,32 +1,22 @@
 #!/usr/bin/env bash
 
-# Titulo: Script automatizado que copia mis configuraciones personales frescas.
-# Autor: Héctor Iván Vega Zamudio
-# Correo: mxhectorvega@gmail.com
-# Link: https://github.com/mxhectorvega/installarch
+# Instalación mis configuraciones personales para compositores wayland
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: curl -L is.gd/mxdots | bash
+# Fecha de actualización: 05/02/2025
 # Versión: 1.0
-# Fecha de actualización 19/03/2023
-# Nota: El sistema de preferencia debe haber sido instalado con la
-# herramienta archinstall del liveUSB, seleccionando el perfil mínimo.
 
-clear
-echo -e "Clonando dotfiles..."
-sleep 1
-rm -rf ~/.zshrc
-rm -rf ~/.p10k.zsh
-mkdir ~/.local/bin
-mkdir ~/.local/share/fonts
-git clone https://github.com/mxhectorvega/dotfilesarchlinux /tmp/dots
-git clone https://github.com/mxhectorvega/tipografias /tmp/fonts
-cp -R /tmp/dots/.config/* ~/.config
-cp -R /tmp/fonts/* ~/.local/share/fonts/
-cp /tmp/dots/.zshrc ~/.zshrc
-cp /tmp/dots/.p10k.zsh ~/.p10k.zsh
-git clone https://github.com/ekistece/GetExtensions.git
+# Función para mostrar mensajes con formato
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
+    sleep 3
+}
 
-clear
-chsh -s /bin/zsh
+
+
+
+
 
 # Mensaje final
-sleep 1
-printf '\n\n\tContribuye:\n\tmxhectorvega.ml\n\n\n'
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
