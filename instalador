@@ -31,7 +31,7 @@ listar_scripts() {
     echo "$seleccion" > /tmp/menuopt
 }
 
-# Función para ejecutar el script seleccionado y mostrar el progreso
+# Función para ejecutar el script seleccionado y asegurarse de que makepkg se ejecute como usuario
 ejecutar_script() {
     script_url="https://raw.githubusercontent.com/mxhectorvega/installarch/main/$seleccion"
     zenity --info --title="Instalación de $seleccion" --text="Descargando y ejecutando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" --width=300 --height=100
@@ -40,9 +40,18 @@ ejecutar_script() {
     sudo touch /tmp/installarch.log
     sudo chmod 666 /tmp/installarch.log
 
-    # Ejecutar el script seleccionado y mostrar el progreso en un cuadro de diálogo
+    # Descargar el script y ejecutarlo con makepkg como usuario
+    script_content=$(curl -s "$script_url")
+
+    # Crear un script temporal para ejecutarlo
+    temp_script="/tmp/$(basename "$seleccion")"
+    echo "$script_content" > "$temp_script"
+    chmod +x "$temp_script"
+
+    # Ejecutar el script temporal y asegurar que makepkg se ejecute como usuario
     (
-        echo "$PASSWORD" | sudo -S bash -c "wget -q -O - \"$script_url\" | bash 2>&1 | tee /tmp/installarch.log"
+        echo "$PASSWORD" | sudo -S bash -c "bash $temp_script | tee /tmp/installarch.log"
+        sudo -u $USER makepkg -s >> /tmp/installarch.log 2>&1
     ) | zenity --progress --title="Progreso de instalación" --text="Instalando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" --percentage=0 --width=400 --height=100 --auto-close
 
     # Mostrar el contenido del archivo de registro en tiempo real
@@ -65,7 +74,7 @@ mostrar_contrasena
 # Listar scripts y seleccionar uno
 listar_scripts
 
-# Ejecutar el script seleccionado y mostrar el progreso
+# Ejecutar el script seleccionado y asegurarse de que makepkg se ejecute como usuario
 ejecutar_script
 
 # Mensaje final
