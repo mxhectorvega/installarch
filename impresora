@@ -34,8 +34,8 @@ paquetes_impresora=(
 sudo pacman -S "${paquetes_impresora[@]}" --noconfirm --needed
 
 # Agregar el usuario al grupo de impresoras y otros grupos necesarios
-sudo gpasswd -a "$(whoami)" sys
-sudo gpasswd -a "$(whoami)" lp
+sudo gpasswd -a "$USER" sys
+sudo gpasswd -a "$USER" lp
 
 # Iniciar y habilitar el servicio CUPS
 sudo systemctl enable --now cups
