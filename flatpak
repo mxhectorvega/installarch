@@ -62,7 +62,7 @@ while true; do
         done
         flatpak install --user -y "$paquete_adicional"
         echo "Instalando paquetes adicionales para permisos flatpak, screenshoter y gestor de particiones GUI..."
-        sudo pacman -S flatpak-kcm spectacle partitionmanager --noconfirm --needed
+        sudo pacman -Sy flatpak-kcm spectacle partitionmanager --noconfirm --needed
         break
     else
         echo "Opción no válida. Por favor, selecciona una opción válida."
