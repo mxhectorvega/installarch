@@ -6,6 +6,18 @@
 # Fecha de actualización 04/02/2025
 # Versión: 5.0
 
+# Verificar si flatpak está instalado, si no, instalarlo
+if ! command -v flatpak &> /dev/null; then
+    echo "Flatpak no está instalado. Instalándolo..."
+    sudo pacman -S flatpak --noconfirm --needed
+fi
+
+# Agregar el repositorio flathub
+if ! flatpak remote-list | grep -q flathub; then
+    echo "Agregando el repositorio flathub..."
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+fi
+
 # Definir las listas de paquetes
 lista_gnome=("fr.handbrake.ghb" "app.drey.Dialect" "page.tesk.Refine" "org.gnome.Showtime" "net.davidotek.pupgui2" \
 "net.minetest.Minetest" "net.supertuxkart.SuperTuxKart" "com.github.KRTirtho.Spotube" "com.github.gabutakut.gabutdm" \
@@ -31,8 +43,8 @@ paquete_adicional="https://sober.vinegarhq.org/sober.flatpakref"
 # Bucle para preguntar al usuario hasta que seleccione una opción válida
 while true; do
     echo "¿Qué lista de paquetes deseas instalar?"
-    echo "1) Paquetes flatpak para entorno de escritorio GNOME (instalado con script minimal)"
-    echo "2) Paquetes flatpak para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
+    echo "1) Para entorno de escritorio GNOME (instalado con script minimal by mxhectorvega)"
+    echo "2) Para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
     read -p "Selecciona una opción (1 o 2): " opcion
 
     # Validar la opción seleccionada y proceder con la instalación
