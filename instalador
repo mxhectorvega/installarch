@@ -50,7 +50,7 @@ listar_scripts() {
 
 Verifica tu conexión a Internet o el estado del repositorio.
 
-🗒️ Log: /tmp/installarch.log" 10 60
+📝 Log: /tmp/installarch.log" 10 60
         exit 1
     fi
 
@@ -68,13 +68,13 @@ Verifica tu conexión a Internet o el estado del repositorio.
 
 Verifica el contenido del repositorio.
 
-🗒️ Log: /tmp/installarch.log" 10 60
+📝 Log: /tmp/installarch.log" 10 60
         exit 1
     fi
 
     seleccion=$(whiptail --title "Seleccione un script para ejecutar" --menu "Elija el script a ejecutar:
 
-🗒️ Log: /tmp/installarch.log" 20 60 15 $lista 3>&1 1>&2 2>&3)
+📝 Log: /tmp/installarch.log" 20 60 15 $lista 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
         whiptail --title "Cancelado" --msgbox "Operación cancelada por el usuario." 10 50
         exit 1
@@ -94,7 +94,7 @@ ejecutar_script() {
 
 Verifica tu conexión a Internet o el estado del repositorio.
 
-🗒️ Log: /tmp/installarch.log" 10 60
+📝 Log: /tmp/installarch.log" 10 60
         exit 1
     fi
 
@@ -125,14 +125,14 @@ Verifica tu conexión a Internet o el estado del repositorio.
             paso_actual=$((paso_actual + 1))
             progreso=$((paso_actual * 100 / total_pasos))
 
-            # Mostrar la salida verbosa y el progreso en tiempo real
+            # Mostrar el progreso en la parte superior y la salida verbosa debajo
             clear
+            echo "Progreso: $progreso%"
             echo "+-------------------------------------------------------------+"
             echo "| Instalación verbosa:                                        |"
             echo "+-------------------------------------------------------------+"
             tail -n 10 /tmp/installarch.log
             echo "+-------------------------------------------------------------+"
-            echo "Progreso: $progreso%"
             sleep 0.5
         done < "$temp_script"
     ) | whiptail --title "Progreso de instalación" --textbox /tmp/installarch.log 20 70
@@ -149,7 +149,7 @@ instalar_dependencias() {
 
 Verifica tu conexión a Internet o los permisos de sudo.
 
-🗒️ Log: /tmp/installarch.log" 10 60
+📝 Log: /tmp/installarch.log" 10 60
                 exit 1
             fi
         fi
@@ -170,7 +170,7 @@ whiptail --title "Finalizado" --msgbox "
 
 🌐 https://github.com/mxhectorvega/installarch
 
-🗒️ Log: /tmp/installarch.log" 15 60
+📝 Log: /tmp/installarch.log" 15 60
 
 # Limpiar archivos temporales si existen
 rm -f /tmp/menuopt /tmp/$(basename "$seleccion") 2>/dev/null
