@@ -1,85 +1,139 @@
 #!/usr/bin/env bash
 
-# Función para solicitar la contraseña al inicio con puntos por cada carácter
+# Configuración de colores en ~/.dialogrc para alto contraste (negro y blanco)
+cat << EOF > ~/.dialogrc
+# Configuración de colores para dialog
+use_shadow = OFF
+use_colors = ON
+
+screen_color = (BLACK,BLACK,ON)
+
+dialog_color = (BLACK,BLACK,ON)
+title_color = (WHITE,BLACK,ON)
+border_color = (WHITE,BLACK,ON)
+button_color = (WHITE,BLACK,ON)
+EOF
+
+# Función para solicitar la contraseña al inicio con asteriscos
 mostrar_contrasena() {
-    PASSWORD=$(whiptail --passwordbox "Ingrese su contraseña de sudo:\n\n🗒️ Log: /tmp/installarch.log" 10 60 3>&1 1>&2 2>&3)
-    echo "$PASSWORD" | sudo -S echo "Contraseña ingresada correctamente." > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        whiptail --title "Error" --msgbox "Contraseña incorrecta. Intente de nuevo.\n\n🗒️ Log: /tmp/installarch.log" 10 60
-        mostrar_contrasena
-    fi
+    PASSWORD=""
+    while true; do
+        # Solicitar contraseña con asteriscos
+        PASSWORD=$(dialog --insecure --passwordbox "Ingrese su contraseña de sudo:\n\n🗒️ Log: /tmp/installarch.log" 10 60 3>&1 1>&2 2>&3)
+        # Verificar si se presionó Cancelar
+        if [ $? -ne 0 ]; then
+            dialog --title "Cancelado" --msgbox "Operación cancelada por el usuario." 10 50
+            exit 1
+        fi
+        # Verificar contraseña
+        echo "$PASSWORD" | sudo -S echo "" > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            break
+        else
+            dialog --title "Error" --msgbox "Contraseña incorrecta. Intente de nuevo.\n\n🗒️ Log: /tmp/installarch.log" 10 60
+        fi
+    done
 }
 
 # Función para mostrar la bienvenida
 mostrar_bienvenida() {
-    whiptail --title "Bienvenido a InstallArch" --msgbox "\n\n💻 Bienvenido a InstallArch\n\nTu gestor para la instalación y configuración de Arch Linux\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ El log de la instalación se guardará en /tmp/installarch.log\n" 15 60
+    dialog --title "Bienvenido a InstallArch" --msgbox "\n\n💻 Bienvenido a InstallArch\n\nTu gestor para la instalación y configuración de Arch Linux\n\n🌐 https://github.com/mxhectorvega/installarch\n\n🗒️ El log de la instalación se guardará en /tmp/installarch.log\n" 15 60
 }
 
 # Función para listar y seleccionar scripts del repositorio
 listar_scripts() {
-    # Obtener la lista de archivos desde el repositorio y buscar aquellos que comienzan con #!/usr/bin/env bash
+    # Obtener la lista de archivos desde el repositorio
     scripts=$(curl -s https://api.github.com/repos/mxhectorvega/installarch/contents | jq -r '.[] | select(.type=="file") | .name')
     lista=()
     for script in $scripts; do
+        # Verificar si el archivo es ejecutable y comienza con #!/usr/bin/env bash
         content=$(curl -s https://raw.githubusercontent.com/mxhectorvega/installarch/main/$script)
-        if echo "$content" | grep -q '^#!/usr/bin/env bash'; then
+        if [[ "$content" =~ ^#!/usr/bin/env\ bash ]]; then
             lista+=("$script" "")
         fi
     done
 
     if [ ${#lista[@]} -eq 0 ]; then
-        whiptail --title "Error" --msgbox "No se encontraron scripts en el repositorio.\n\n🗒️ Log: /tmp/installarch.log" 10 50
+        dialog --title "Error" --msgbox "No se encontraron scripts en el repositorio.\n\n🗒️ Log: /tmp/installarch.log" 10 50
         exit 1
     fi
 
-    seleccion=$(whiptail --title "Seleccione un script para ejecutar" --menu "Elige el script a ejecutar:\n\n🗒️ Log: /tmp/installarch.log" 20 60 15 "${lista[@]}" 3>&1 1>&2 2>&3)
+    seleccion=$(dialog --title "Seleccione un script para ejecutar" --menu "Elija el script a ejecutar:\n\n🗒️ Log: /tmp/installarch.log" 20 60 15 "${lista[@]}" 3>&1 1>&2 2>&3)
+    # Verificar si se presionó Cancelar
+    if [ $? -ne 0 ]; then
+        dialog --title "Cancelado" --msgbox "Operación cancelada por el usuario." 10 50
+        exit 1
+    fi
+
     echo "$seleccion" > /tmp/menuopt
 }
 
-# Función para ejecutar el script seleccionado y asegurarse de que makepkg se ejecute como usuario
+# Función para ejecutar el script seleccionado y mostrar el progreso
 ejecutar_script() {
     script_url="https://raw.githubusercontent.com/mxhectorvega/installarch/main/$seleccion"
-    whiptail --title "Instalación de $seleccion" --infobox "Descargando y ejecutando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" 10 70
 
     # Crear archivo de registro con permisos adecuados
-    sudo touch /tmp/installarch.log
-    sudo chmod 666 /tmp/installarch.log
+    echo "$PASSWORD" | sudo -S touch /tmp/installarch.log
+    echo "$PASSWORD" | sudo -S chmod 666 /tmp/installarch.log
 
     # Descargar el script y guardarlo en un archivo temporal
     temp_script="/tmp/$(basename "$seleccion")"
     wget -q -O "$temp_script" "$script_url"
     chmod +x "$temp_script"
 
-    # Ejecutar el script temporal y asegurar que makepkg se ejecute como usuario
-    (
-        sudo -u $USER bash "$temp_script" | tee /tmp/installarch.log
-    ) | whiptail --title "Progreso de instalación" --gauge "Instalando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" 10 70 0
+    # Contar el número de comandos (pasos) en el script
+    total_pasos=$(grep -c '^[^#]' "$temp_script")
 
-    # Mostrar el contenido del archivo de registro en tiempo real
-    whiptail --title "Progreso de instalación" --textbox /tmp/installarch.log 20 70
+    # Ejecutar el script temporal y mostrar el progreso
+    paso_actual=0
+    (
+        while IFS= read -r linea; do
+            # Omitir líneas en blanco y comentarios
+            if [[ -z "$linea" || "$linea" =~ ^\# ]]; then
+                continue
+            fi
+            # Mostrar el comando actual en el log
+            echo "\$ $linea" >> /tmp/installarch.log
+            # Ejecutar el comando y redirigir la salida al log
+            echo "$PASSWORD" | sudo -S bash -c "$linea" >> /tmp/installarch.log 2>&1
+            paso_actual=$((paso_actual + 1))
+            # Calcular y mostrar el progreso
+            progreso=$((paso_actual * 100 / total_pasos))
+            echo $progreso
+            sleep 0.5
+        done < "$temp_script"
+    ) | dialog --title "Progreso de instalación" --gauge "Instalando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" 10 70 0
+
+    # Mostrar el contenido del archivo de registro
+    dialog --title "Instalación completada" --msgbox "La instalación ha finalizado. Puedes revisar el log en /tmp/installarch.log" 10 60
+    dialog --title "Log de instalación" --textbox /tmp/installarch.log 20 70
 }
 
-# Verificar si whiptail, wget y jq están instalados, si no, instalarlos
-for cmd in whiptail wget jq; do
-    if ! command -v "$cmd" &> /dev/null; then
-        echo "$PASSWORD" | sudo -S pacman -S "$cmd" --noconfirm --needed
-    fi
-done
+# Función para verificar e instalar dependencias necesarias
+instalar_dependencias() {
+    echo "$PASSWORD" | sudo -S pacman -Sy --noconfirm
+    for cmd in dialog wget jq; do
+        if ! command -v "$cmd" &>/dev/null; then
+            echo "$PASSWORD" | sudo -S pacman -S "$cmd" --noconfirm --needed
+        fi
+    done
+}
 
 # Mostrar bienvenida
 mostrar_bienvenida
 
-# Pedir contraseña sudo
+# Instalar dependencias
 mostrar_contrasena
+instalar_dependencias
 
 # Listar scripts y seleccionar uno
 listar_scripts
 
-# Ejecutar el script seleccionado y asegurarse de que makepkg se ejecute como usuario
+# Ejecutar el script seleccionado y mostrar el progreso
 ejecutar_script
 
 # Mensaje final
-whiptail --title "Finalizado" --msgbox "\n\n❤️ Gracias por usar InstallArch\n\n🌐 https://www.github.com/mxhectorvega/installarch\n\n🗒️ Log: /tmp/installarch.log" 15 60
+dialog --title "Finalizado" --msgbox "\n\n❤️ Gracias por usar InstallArch\n\n🌐 https://github.com/mxhectorvega/installarch\n\n🗒️ Log: /tmp/installarch.log" 15 60
 
 # Limpiar archivos temporales si existen
-[ -f /tmp/menuopt ] && rm /tmp/menuopt
+rm -f /tmp/menuopt /tmp/$(basename "$seleccion") 2>/dev/null
