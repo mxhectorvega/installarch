@@ -59,7 +59,7 @@ Verifica tu conexión a Internet o el estado del repositorio.
         # Verificar si el archivo es ejecutable y comienza con #!/usr/bin/env bash
         content=$(curl -s https://raw.githubusercontent.com/mxhectorvega/installarch/main/$script)
         if echo "$content" | grep -q '^#!/usr/bin/env bash'; then
-            lista="$lista $script"
+            lista="$lista $script ''"
         fi
     done
 
@@ -82,7 +82,7 @@ Verifica el contenido del repositorio.
     echo "$seleccion" > /tmp/menuopt
 }
 
-# Función para ejecutar el script seleccionado y mostrar el progreso
+# Función para ejecutar el script seleccionado y mostrar la instalación verbosa
 ejecutar_script() {
     script_url="https://raw.githubusercontent.com/mxhectorvega/installarch/main/$seleccion"
     temp_script="/tmp/$(basename "$seleccion")"
@@ -121,18 +121,21 @@ Verifica tu conexión a Internet o el estado del repositorio.
             # Ejecutar el comando y redirigir la salida al log
             echo "$PASSWORD" | sudo -S sh -c "$linea" >> /tmp/installarch.log 2>&1
 
+            # Calcular el progreso
             paso_actual=$((paso_actual + 1))
             progreso=$((paso_actual * 100 / total_pasos))
-            echo "$progreso"
+
+            # Mostrar la salida verbosa y el progreso en tiempo real
+            clear
+            echo "+-------------------------------------------------------------+"
+            echo "| Instalación verbosa:                                        |"
+            echo "+-------------------------------------------------------------+"
+            tail -n 10 /tmp/installarch.log
+            echo "+-------------------------------------------------------------+"
+            echo "Progreso: $progreso%"
             sleep 0.5
         done < "$temp_script"
-    ) | whiptail --title "Progreso de instalación" --gauge "Instalando $seleccion...
-
-🗒️ Log: /tmp/installarch.log" 10 70 0
-
-    # Mostrar el contenido del archivo de registro
-    whiptail --title "Instalación completada" --msgbox "La instalación ha finalizado. Puedes revisar el log en /tmp/installarch.log" 10 60
-    whiptail --textbox /tmp/installarch.log 20 70
+    ) | whiptail --title "Progreso de instalación" --textbox /tmp/installarch.log 20 70
 }
 
 # Función para verificar e instalar dependencias necesarias
