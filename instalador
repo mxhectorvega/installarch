@@ -50,8 +50,7 @@ ejecutar_script() {
 
     # Ejecutar el script temporal y asegurar que makepkg se ejecute como usuario
     (
-        echo "$PASSWORD" | sudo -S bash -c "bash $temp_script | tee /tmp/installarch.log"
-        sudo -u $USER makepkg -s >> /tmp/installarch.log 2>&1
+        wget -q -O - "$script_url" | sudo -u $USER bash | tee /tmp/installarch.log
     ) | zenity --progress --title="Progreso de instalación" --text="Instalando $seleccion...\n\n🗒️ Log: /tmp/installarch.log" --percentage=0 --width=400 --height=100 --auto-close
 
     # Mostrar el contenido del archivo de registro en tiempo real
@@ -61,7 +60,7 @@ ejecutar_script() {
 # Verificar si zenity, wget y jq están instalados, si no, instalarlos
 for cmd in zenity wget jq; do
     if ! command -v "$cmd" &> /dev/null; then
-        echo "$PASSWORD" | sudo -S pacman -S "$cmd" --noconfirm --needed
+        sudo -S pacman -S "$cmd" --noconfirm --needed
     fi
 done
 
