@@ -2,7 +2,7 @@
 
 # Script principal TUI para seleccionar y ejecutar scripts del repositorio installarch.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxinstallarch)
+# Ejecución: bash <(curl -L https://is.gd/mxinstalador)
 # Fecha de actualización: 04/02/2025
 # Versión: 1.0
 
