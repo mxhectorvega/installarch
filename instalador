@@ -62,26 +62,27 @@ seleccionar_script() {
 
 # Función para ejecutar script seleccionado con salida verbosa
 ejecutar_script() {
-    FIFO_FILE=$(mktemp -u)
+    OUTPUT_FILE=$(mktemp)
     EXIT_FILE=$(mktemp)
-    mkfifo "$FIFO_FILE"
 
     # Ejecutar el script y capturar salida
     (
-        stdbuf -oL bash "$REPO_DIR/$SCRIPT_SELECCIONADO" 2>&1
-        echo $? > "$EXIT_FILE"
-    ) | stdbuf -oL tee -a "$LOG_FILE" > "$FIFO_FILE" &
+        script -qefc "bash '$REPO_DIR/$SCRIPT_SELECCIONADO' 2>&1; echo \$? > '$EXIT_FILE'" "$OUTPUT_FILE"
+    ) &
     INSTALL_PID=$!
 
     # Mostrar salida en tiempo real
-    whiptail --title "Progreso de la Instalación" --textbox "$FIFO_FILE" 20 80
+    whiptail --title "Progreso de la Instalación" --textbox "$OUTPUT_FILE" 20 80
 
     # Esperar a que termine la instalación
     wait $INSTALL_PID
     INSTALL_EXIT=$(cat "$EXIT_FILE")
 
+    # Añadir salida al log principal
+    cat "$OUTPUT_FILE" >> "$LOG_FILE"
+
     # Limpiar archivos temporales
-    rm -f "$FIFO_FILE" "$EXIT_FILE"
+    rm -f "$OUTPUT_FILE" "$EXIT_FILE"
 
     return $INSTALL_EXIT
 }
