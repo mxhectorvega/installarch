@@ -42,7 +42,7 @@ paquete_adicional="https://sober.vinegarhq.org/sober.flatpakref"
 
 # Bucle para preguntar al usuario hasta que seleccione una opción válida
 while true; do
-    echo "¿Qué lista de paquetes deseas instalar?"
+    echo "¿Qué lista de paquetes flatpak deseas instalar?"
     echo "1) Para entorno de escritorio GNOME (instalado con script minimal by mxhectorvega)"
     echo "2) Para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
     read -p "Selecciona una opción (1 o 2): " opcion
