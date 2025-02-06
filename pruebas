@@ -1,95 +1,142 @@
-#!/bin/bash
+#!/bin/sh
 
-# Constantes
+# Variables globales
+LOG_FILE="$HOME/installarch.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-REPO_DIR="$HOME/installarch"
-LOG_FILE="$HOME/installarch_install.log"
-ROOT_PASS_FILE="$HOME/.root_pass"
-USER_PASS_FILE="$HOME/.user_pass"
+INSTALL_DIR="/tmp/installarch"
+ROOT_PASS=""
+USER_PASS=""
+USER_NAME=""
 
-# Funciones
-log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+# Limpiar archivos previos
+cleanup() {
+    rm -rf "$INSTALL_DIR"
+    rm -f "$LOG_FILE"
 }
 
-clean_up() {
-    rm -rf "$REPO_DIR"
-    log "Clean up completed"
+# Crear archivo de registro
+create_log() {
+    echo "Registro de instalación - $(date)" > "$LOG_FILE"
+    echo "========================================" >> "$LOG_FILE"
 }
 
-trap 'whiptail --msgbox "Error: Something went wrong!" 8 78; log "Installation failed"; exit 1' ERR
-
-welcome_screen() {
-    if whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\nEl archivo de registros se almacenará en $LOG_FILE." 10 60; then
-        log "User accepted the welcome screen"
-    else
-        log "User canceled the installation"
+# Clonar repositorio
+clone_repo() {
+    if [ -d "$INSTALL_DIR" ]; then
+        rm -rf "$INSTALL_DIR"
+    fi
+    git clone "$REPO_URL" "$INSTALL_DIR" 2>>"$LOG_FILE"
+    if [ $? -ne 0 ]; then
+        whiptail --title "Error" --msgbox "No se pudo clonar el repositorio. Verifica tu conexión a internet." 10 60
         exit 1
     fi
 }
 
-list_scripts_screen() {
-    local scripts_list=$(find "$REPO_DIR" -maxdepth 1 -type f -executable | awk -F'/' '{print $NF}' | grep -v '\.')
-    local scripts=()
-    local index=1
-
-    while read -r script; do
-        scripts+=("$index" "$script")
-        ((index++))
-    done <<< "$scripts_list"
-
-    CHOICE=$(whiptail --title "Lista de scripts" --menu "Elige un script para ejecutar" 20 78 10 "${scripts[@]}" 3>&1 1>&2 2>&3)
-    SCRIPT_TO_RUN=$(echo "$scripts_list" | sed -n "${CHOICE}p")
+# Pantalla de Bienvenida
+welcome_screen() {
+    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE\n\n¿Deseas iniciar la instalación?" 15 60
+    if [ $? -ne 0 ]; then
+        exit 0
+    fi
 }
 
-install_screen() {
-    {
-        echo 0
-        log "Installation started"
+# Pantalla de Lista de Scripts
+list_scripts() {
+    cd "$INSTALL_DIR" || exit 1
+    SCRIPTS=$(find . -type f -executable ! -name "*.*" | awk '{print NR, $0}' | column -t)
+    if [ -z "$SCRIPTS" ]; then
+        whiptail --title "Error" --msgbox "No se encontraron scripts ejecutables en el repositorio." 10 60
+        exit 1
+    fi
 
-        cd "$REPO_DIR" || exit
+    CHOICE=$(whiptail --title "Lista de Scripts" --menu "Selecciona un script para ejecutar:" 20 60 10 $SCRIPTS 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
 
-        for ((i = 1; i <= 10; i++)); do
-            echo $((i * 10))
-            sleep 1
-        done
-
-        su -c "$SCRIPT_TO_RUN"
-
-        echo 100
-        log "Installation completed successfully"
-    } | whiptail --gauge "Installing..." 6 50 0
+    SELECTED_SCRIPT=$(echo "$SCRIPTS" | grep "^$CHOICE " | awk '{print $2}')
+    echo "Script seleccionado: $SELECTED_SCRIPT" >> "$LOG_FILE"
 }
 
+# Pantalla de Instalación
+install_script() {
+    TOTAL_STEPS=$(grep -c '^#' "$INSTALL_DIR/$SELECTED_SCRIPT")
+    STEP=0
+
+    (
+        while IFS= read -r LINE; do
+            STEP=$((STEP + 1))
+            PERCENTAGE=$((STEP * 100 / TOTAL_STEPS))
+            echo "$PERCENTAGE"
+            echo "# Ejecutando paso $STEP de $TOTAL_STEPS: $LINE"
+
+            # Ejecutar línea del script
+            if echo "$LINE" | grep -q 'makepkg'; then
+                su "$USER_NAME" -c "$LINE" 2>>"$LOG_FILE"
+            elif echo "$LINE" | grep -q 'git'; then
+                su "$USER_NAME" -c "$LINE" 2>>"$LOG_FILE"
+            else
+                eval "$LINE" 2>>"$LOG_FILE"
+            fi
+
+            if [ $? -ne 0 ]; then
+                echo "Error en el paso $STEP: $LINE" >> "$LOG_FILE"
+                exit 1
+            fi
+        done < "$INSTALL_DIR/$SELECTED_SCRIPT"
+    ) | whiptail --gauge "Instalando $SELECTED_SCRIPT..." 10 60 0
+
+    if [ $? -ne 0 ]; then
+        whiptail --title "Error" --msgbox "La instalación falló. Consulta el archivo de registros en $LOG_FILE" 10 60
+        return 1
+    fi
+}
+
+# Pantalla Final
 final_screen() {
-    whiptail --title "Instalación completa" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60
+    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60
+
+    if whiptail --title "Mostrar Log" --yesno "¿Deseas ver el archivo de registros?" 10 60; then
+        whiptail --textbox "$LOG_FILE" 20 60
+    fi
 }
 
-store_passwords() {
-    ROOT_PASS=$(whiptail --passwordbox "Introduce la contraseña root:" 8 78 --title "Contraseña root" 3>&1 1>&2 2>&3)
-    USER_PASS=$(whiptail --passwordbox "Introduce la contraseña de usuario:" 8 78 --title "Contraseña de usuario" 3>&1 1>&2 2>&3)
-    echo "$ROOT_PASS" > "$ROOT_PASS_FILE"
-    echo "$USER_PASS" > "$USER_PASS_FILE"
-    log "Passwords stored"
+# Validar dependencias
+validate_dependencies() {
+    MISSING_DEPS=""
+    for DEP in git whiptail makepkg; do
+        if ! command -v "$DEP" >/dev/null 2>&1; then
+            MISSING_DEPS="$MISSING_DEPS $DEP"
+        fi
+    done
+
+    if [ -n "$MISSING_DEPS" ]; then
+        whiptail --title "Error" --msgbox "Faltan las siguientes dependencias:$MISSING_DEPS" 10 60
+        exit 1
+    fi
 }
 
-# Main
-log "Installation script started"
-clean_up
-welcome_screen
+# Función principal
+main() {
+    cleanup
+    create_log
+    validate_dependencies
+    welcome_screen
+    clone_repo
 
-if [ ! -d "$REPO_DIR" ]; then
-    git clone "$REPO_URL" "$REPO_DIR"
-else
-    rm -rf "$REPO_DIR"
-    git clone "$REPO_URL" "$REPO_DIR"
-fi
-log "Repository cloned"
+    while true; do
+        if list_scripts; then
+            install_script
+            if [ $? -eq 0 ]; then
+                break
+            fi
+        else
+            exit 0
+        fi
+    done
 
-store_passwords
-list_scripts_screen
-install_screen
-final_screen
-clean_up
+    final_screen
+    cleanup
+}
 
-log "Installation script finished"
+main
