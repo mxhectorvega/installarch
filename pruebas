@@ -1,97 +1,95 @@
-#!/bin/sh
+#!/bin/bash
 
-# Variables globales
+# Constantes
 REPO_URL="https://github.com/mxhectorvega/installarch"
 REPO_DIR="$HOME/installarch"
-LOG_FILE="$HOME/installarch.log"
-ROOT_PASSWORD=""
+LOG_FILE="$HOME/installarch_install.log"
+ROOT_PASS_FILE="$HOME/.root_pass"
+USER_PASS_FILE="$HOME/.user_pass"
 
-# Función para limpiar residuos
-cleanup() {
+# Funciones
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+}
+
+clean_up() {
     rm -rf "$REPO_DIR"
-    rm -f "$LOG_FILE"
+    log "Clean up completed"
 }
 
-# Función para manejar errores
-handle_error() {
-    echo "Error: $1" >> "$LOG_FILE"
-    whiptail --title "Error" --msgbox "Ocurrió un error: $1" 8 78
-    cleanup
-    exit 1
-}
+trap 'whiptail --msgbox "Error: Something went wrong!" 8 78; log "Installation failed"; exit 1' ERR
 
-# Función para clonar el repositorio
-clone_repo() {
-    if [ -d "$REPO_DIR" ]; then
-        rm -rf "$REPO_DIR" || handle_error "No se pudo borrar el directorio existente."
-    fi
-    git clone "$REPO_URL" "$REPO_DIR" || handle_error "No se pudo clonar el repositorio."
-}
-
-# Función para satisfacer dependencias
-install_dependencies() {
-    for dep in whiptail git; do
-        if ! command -v "$dep" > /dev/null 2>&1; then
-            pacman -Sy --noconfirm "$dep" || handle_error "No se pudo instalar la dependencia: $dep"
-        fi
-    done
-}
-
-# Función para mostrar la pantalla de bienvenida
 welcome_screen() {
-    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE\n\n¿Desea continuar?" 12 78
-    if [ $? -eq 0 ]; then
-        install_dependencies
-        clone_repo
+    if whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\nEl archivo de registros se almacenará en $LOG_FILE." 10 60; then
+        log "User accepted the welcome screen"
     else
-        cleanup
-        exit 0
+        log "User canceled the installation"
+        exit 1
     fi
 }
 
-# Función para mostrar la lista de scripts
-list_scripts() {
-    scripts=$(find "$REPO_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print NR, $NF}')
-    selected_script=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 78 10 $scripts 3>&1 1>&2 2>&3)
-    if [ $? -eq 0 ]; then
-        execute_script "$selected_script"
-    else
-        welcome_screen
-    fi
+list_scripts_screen() {
+    local scripts_list=$(find "$REPO_DIR" -maxdepth 1 -type f -executable | awk -F'/' '{print $NF}' | grep -v '\.')
+    local scripts=()
+    local index=1
+
+    while read -r script; do
+        scripts+=("$index" "$script")
+        ((index++))
+    done <<< "$scripts_list"
+
+    CHOICE=$(whiptail --title "Lista de scripts" --menu "Elige un script para ejecutar" 20 78 10 "${scripts[@]}" 3>&1 1>&2 2>&3)
+    SCRIPT_TO_RUN=$(echo "$scripts_list" | sed -n "${CHOICE}p")
 }
 
-# Función para ejecutar un script
-execute_script() {
-    script_name=$(echo "$1" | awk '{print $2}')
-    script_path="$REPO_DIR/$script_name"
-    steps=$(grep -c '^step_' "$script_path")
-    progress=0
-
+install_screen() {
     {
-        while [ $progress -lt $steps ]; do
-            progress=$((progress + 1))
-            echo $((progress * 100 / steps))
+        echo 0
+        log "Installation started"
+
+        cd "$REPO_DIR" || exit
+
+        for ((i = 1; i <= 10; i++)); do
+            echo $((i * 10))
             sleep 1
         done
-    } | whiptail --gauge "Instalando $script_name..." 6 50 0
 
-    if [ $? -eq 0 ]; then
-        whiptail --title "Éxito" --msgbox "El script $script_name se ha ejecutado correctamente." 8 78
-    else
-        handle_error "La instalación del script $script_name falló."
-    fi
+        su -c "$SCRIPT_TO_RUN"
+
+        echo 100
+        log "Installation completed successfully"
+    } | whiptail --gauge "Installing..." 6 50 0
 }
 
-# Función para mostrar la pantalla final
 final_screen() {
-    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 8 78
-    if whiptail --title "Registros" --yesno "¿Desea ver el archivo de registros?" 8 78; then
-        whiptail --textbox "$LOG_FILE" 20 78 --scrolltext
-    fi
-    cleanup
+    whiptail --title "Instalación completa" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60
 }
 
-# Inicio del script
+store_passwords() {
+    ROOT_PASS=$(whiptail --passwordbox "Introduce la contraseña root:" 8 78 --title "Contraseña root" 3>&1 1>&2 2>&3)
+    USER_PASS=$(whiptail --passwordbox "Introduce la contraseña de usuario:" 8 78 --title "Contraseña de usuario" 3>&1 1>&2 2>&3)
+    echo "$ROOT_PASS" > "$ROOT_PASS_FILE"
+    echo "$USER_PASS" > "$USER_PASS_FILE"
+    log "Passwords stored"
+}
+
+# Main
+log "Installation script started"
+clean_up
 welcome_screen
-list_scripts
+
+if [ ! -d "$REPO_DIR" ]; then
+    git clone "$REPO_URL" "$REPO_DIR"
+else
+    rm -rf "$REPO_DIR"
+    git clone "$REPO_URL" "$REPO_DIR"
+fi
+log "Repository cloned"
+
+store_passwords
+list_scripts_screen
+install_screen
 final_screen
+clean_up
+
+log "Installation script finished"
