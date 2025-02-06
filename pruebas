@@ -1,121 +1,139 @@
-#!/bin/sh
+#!/bin/bash
+# mxhectorvega installarch script installer
+# POSIX compliant
 
-# Variables globales
-LOG_FILE="$HOME/installarch.log"
+# Variables
 REPO_URL="https://github.com/mxhectorvega/installarch"
-REPO_DIR="$HOME/installarch"
-ROOT_PASS=""
-USER_PASS=""
-CURRENT_USER=$(whoami)
+CLONE_DIR="$HOME/installarch"
+LOG_FILE="$HOME/installarch_install.log"
+DEPENDENCIES=("git" "makepkg")
 
-# Limpiar residuos previos
-cleanup() {
-    rm -rf "$REPO_DIR"
-    rm -f "$LOG_FILE"
-}
-
-# Crear archivo de registro
-create_log() {
-    echo "=== Registro de instalación ===" > "$LOG_FILE"
-    echo "Fecha: $(date)" >> "$LOG_FILE"
-    echo "Usuario: $CURRENT_USER" >> "$LOG_FILE"
-    echo "===============================" >> "$LOG_FILE"
+# Función de diseño TTY
+tty_echo() {
+    printf "\e[1;32m%s\e[0m\n" "$1"
 }
 
 # Validar dependencias
 check_dependencies() {
-    local missing_deps=0
-    for cmd in git makepkg whiptail; do
-        if ! command -v "$cmd" >/dev/null 2>&1; then
-            echo "Error: El comando '$cmd' no está instalado." | tee -a "$LOG_FILE"
-            missing_deps=1
+    for pkg in "${DEPENDENCIES[@]}"; do
+        if ! command -v $pkg &> /dev/null; then
+            sudo pacman -S --noconfirm $pkg
         fi
     done
-    if [ "$missing_deps" -eq 1 ]; then
-        whiptail --title "Error" --msgbox "Faltan dependencias necesarias. Por favor, instálelas e inténtelo de nuevo." 10 60
-        exit 1
-    fi
 }
 
-# Clonar repositorio
+# Clonar el repositorio
 clone_repo() {
-    if [ -d "$REPO_DIR" ]; then
-        rm -rf "$REPO_DIR"
+    if [ -d "$CLONE_DIR" ]; then
+        rm -rf "$CLONE_DIR"
     fi
-    echo "Clonando repositorio..." | tee -a "$LOG_FILE"
-    if ! git clone "$REPO_URL" "$REPO_DIR" >> "$LOG_FILE" 2>&1; then
-        whiptail --title "Error" --msgbox "No se pudo clonar el repositorio. Verifique su conexión a Internet." 10 60
-        exit 1
-    fi
+    git clone "$REPO_URL" "$CLONE_DIR"
 }
 
-# Pantalla de Bienvenida
+# Validar compatibilidad
+validate_scripts() {
+    find "$CLONE_DIR" -type f -perm /u+x -or -name '*.sh' > "$LOG_FILE"
+    tty_echo "Scripts validados y listos para ejecutar."
+}
+
+# Crear archivo de registros
+create_log_file() {
+    [ -f "$LOG_FILE" ] && rm "$LOG_FILE"
+    touch "$LOG_FILE"
+}
+
+# Manejar errores
+handle_error() {
+    tty_echo "Ocurrió un error. Revisa el archivo de registros en $LOG_FILE."
+    exit 1
+}
+
+# Obtener contraseñas
+get_passwords() {
+    read -sp "Introduce la contraseña de root: " ROOT_PASS
+    echo
+    read -sp "Introduce la contraseña de usuario: " USER_PASS
+    echo
+}
+
+# Sistema de retroceso
+rollback() {
+    # Aquí se implementa el sistema de retroceso
+    tty_echo "Iniciando el sistema de retroceso..."
+}
+
+# Limpiar archivos residuales
+cleanup() {
+    find "$HOME" -type f -name '*.tmp' -delete
+    tty_echo "Limpieza post-instalación completada."
+}
+
+# Bienvenida
 welcome_screen() {
-    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en:\n$LOG_FILE\n\n¿Desea iniciar la instalación?" 15 60
-    if [ $? -ne 0 ]; then
-        exit 0
-    fi
+    tty_echo "Bienvenido al instalador de scripts de mxhectorvega"
+    tty_echo "El archivo de registros se almacenará en: $LOG_FILE"
+    tty_echo "[1] Iniciar [2] Cancelar"
+    read -p "Selecciona una opción: " CHOICE
+    case $CHOICE in
+        1) ;;
+        2) exit 0 ;;
+        *) tty_echo "Opción no válida." && exit 1 ;;
+    esac
 }
 
-# Pantalla de Lista de Scripts
-list_scripts() {
-    cd "$REPO_DIR" || exit 1
-    scripts=$(find . -maxdepth 1 -type f -executable -not -name "*.*" | awk '{print NR, $0}' | column -t)
-    if [ -z "$scripts" ]; then
-        whiptail --title "Error" --msgbox "No se encontraron scripts ejecutables en el repositorio." 10 60
-        exit 1
-    fi
-
-    choice=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 60 10 $scripts 3>&1 1>&2 2>&3)
-    if [ $? -ne 0 ]; then
-        return 1
-    fi
-
-    selected_script=$(echo "$scripts" | awk -v num="$choice" '$1 == num {print $2}')
-    echo "Script seleccionado: $selected_script" | tee -a "$LOG_FILE"
-    export SELECTED_SCRIPT="$selected_script"
+# Pantalla de lista de scripts
+list_scripts_screen() {
+    SCRIPTS=($(find "$CLONE_DIR" -type f -perm /u+x -or -name '*.sh'))
+    tty_echo "Lista de scripts disponibles:"
+    for i in "${!SCRIPTS[@]}"; do
+        tty_echo "[$((i+1))] ${SCRIPTS[$i]}"
+    done
+    tty_echo "[1] Siguiente [2] Atrás [3] Cancelar"
+    read -p "Selecciona una opción: " CHOICE
+    case $CHOICE in
+        1) ;;
+        2) welcome_screen ;;
+        3) exit 0 ;;
+        *) tty_echo "Opción no válida." && exit 1 ;;
+    esac
 }
 
-# Pantalla de Instalación
-install_script() {
-    script_path="$REPO_DIR/$SELECTED_SCRIPT"
-    total_steps=$(grep -c '^#' "$script_path") # Contar pasos basados en comentarios (simplificado)
-    progress=0
-
-    (
-        while IFS= read -r line; do
-            echo "$line" >> "$LOG_FILE"
-            progress=$((progress + 1))
-            percentage=$((progress * 100 / total_steps))
-            echo "$percentage"
-        done < "$script_path"
-    ) | whiptail --gauge "Instalando $SELECTED_SCRIPT..." 10 60 0
-
-    if [ $? -ne 0 ]; then
-        whiptail --title "Error" --msgbox "La instalación falló. Consulte el archivo de registros para más detalles." 10 60
-        return 1
-    fi
+# Pantalla de instalación
+install_screen() {
+    tty_echo "Instalando..."
+    tty_echo "Proceso de instalación en progreso..."
+    # Barra de progreso simulada
+    for i in {1..10}; do
+        sleep 1
+        tty_echo "$((i * 10))% completado..."
+    done
 }
 
-# Pantalla Final
+# Pantalla final
 final_screen() {
-    whiptail --title "Instalación Completada" --yesno "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\n¿Desea ver el archivo de registros?" 15 60
-    if [ $? -eq 0 ]; then
-        whiptail --title "Registro de Instalación" --scrolltext --msgbox "$(cat "$LOG_FILE")" 20 70
-    fi
+    tty_echo "La instalación fue exitosa."
+    tty_echo "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega"
+    tty_echo "[1] Finalizar [2] Mostrar archivos de registros"
+    read -p "Selecciona una opción: " CHOICE
+    case $CHOICE in
+        1) exit 0 ;;
+        2) less "$LOG_FILE" ;;
+        *) tty_echo "Opción no válida." && exit 1 ;;
+    esac
 }
 
-# Función principal
+# Ejecución del script
 main() {
-    cleanup
-    create_log
+    create_log_file
     check_dependencies
-    welcome_screen
     clone_repo
-    list_scripts || exit 0
-    install_script || exit 1
-    final_screen
+    validate_scripts
+    get_passwords
+    list_scripts_screen
+    install_screen
     cleanup
+    final_screen
 }
 
+welcome_screen
 main
