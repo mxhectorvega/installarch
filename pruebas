@@ -8,14 +8,17 @@ ROOT_PASS=""
 USER_PASS=""
 USER_NAME=""
 
-# Limpiar archivos previos
+# Función para limpiar residuos
 cleanup() {
     rm -rf "$INSTALL_DIR"
-    rm -f "$LOG_FILE"
+    if [ -f "$LOG_FILE" ]; then
+        rm -f "$LOG_FILE"
+    fi
 }
 
 # Crear archivo de registro
 create_log() {
+    cleanup
     echo "Registro de instalación - $(date)" > "$LOG_FILE"
     echo "========================================" >> "$LOG_FILE"
 }
@@ -25,9 +28,24 @@ clone_repo() {
     if [ -d "$INSTALL_DIR" ]; then
         rm -rf "$INSTALL_DIR"
     fi
-    git clone "$REPO_URL" "$INSTALL_DIR" 2>>"$LOG_FILE"
+    git clone "$REPO_URL" "$INSTALL_DIR" >> "$LOG_FILE" 2>&1
     if [ $? -ne 0 ]; then
         whiptail --title "Error" --msgbox "No se pudo clonar el repositorio. Verifica tu conexión a internet." 10 60
+        exit 1
+    fi
+}
+
+# Validar dependencias
+validate_dependencies() {
+    MISSING_DEPS=""
+    for DEP in git whiptail makepkg; do
+        if ! command -v "$DEP" >/dev/null 2>&1; then
+            MISSING_DEPS="$MISSING_DEPS $DEP"
+        fi
+    done
+
+    if [ -n "$MISSING_DEPS" ]; then
+        whiptail --title "Error" --msgbox "Faltan las siguientes dependencias:$MISSING_DEPS" 10 60
         exit 1
     fi
 }
@@ -70,13 +88,13 @@ install_script() {
             echo "$PERCENTAGE"
             echo "# Ejecutando paso $STEP de $TOTAL_STEPS: $LINE"
 
-            # Ejecutar línea del script
+            # Cambiar al usuario sin privilegios si es necesario
             if echo "$LINE" | grep -q 'makepkg'; then
-                su "$USER_NAME" -c "$LINE" 2>>"$LOG_FILE"
+                su "$USER_NAME" -c "$LINE" >> "$LOG_FILE" 2>&1
             elif echo "$LINE" | grep -q 'git'; then
-                su "$USER_NAME" -c "$LINE" 2>>"$LOG_FILE"
+                su "$USER_NAME" -c "$LINE" >> "$LOG_FILE" 2>&1
             else
-                eval "$LINE" 2>>"$LOG_FILE"
+                eval "$LINE" >> "$LOG_FILE" 2>&1
             fi
 
             if [ $? -ne 0 ]; then
@@ -101,27 +119,20 @@ final_screen() {
     fi
 }
 
-# Validar dependencias
-validate_dependencies() {
-    MISSING_DEPS=""
-    for DEP in git whiptail makepkg; do
-        if ! command -v "$DEP" >/dev/null 2>&1; then
-            MISSING_DEPS="$MISSING_DEPS $DEP"
-        fi
-    done
-
-    if [ -n "$MISSING_DEPS" ]; then
-        whiptail --title "Error" --msgbox "Faltan las siguientes dependencias:$MISSING_DEPS" 10 60
-        exit 1
-    fi
+# Almacenar contraseñas
+store_credentials() {
+    ROOT_PASS=$(whiptail --passwordbox "Ingresa la contraseña de root:" 10 60 3>&1 1>&2 2>&3)
+    USER_PASS=$(whiptail --passwordbox "Ingresa la contraseña del usuario $USER_NAME:" 10 60 3>&1 1>&2 2>&3)
+    echo "Contraseña root almacenada." >> "$LOG_FILE"
+    echo "Contraseña usuario almacenada." >> "$LOG_FILE"
 }
 
 # Función principal
 main() {
-    cleanup
     create_log
     validate_dependencies
     welcome_screen
+    store_credentials
     clone_repo
 
     while true; do
