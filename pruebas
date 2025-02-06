@@ -1,173 +1,149 @@
 #!/bin/sh
 
-# Variables esenciales
+# Variables
 LOG_FILE="/var/log/install_mxhectorvega.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-DEPENDENCIES="whiptail git curl"
-TMP_DIR="/tmp/installarch"
+DEPENDENCIES="whiptail git"
+SCRIPTS_DIR="/tmp/installarch"
 USER=$(logname)
 ROOT_PASS=""
-CURRENT_STEP=1
-TERM=linux
-export LOG_FILE USER
+BACKUP_DIR="/tmp/install_backup"
 
-# Configuración de estilo para TTY
-set_color() {
-    printf "\033[0;37;44m"  # Fondo azul, texto blanco
-    clear
-}
-
-# Sistema de logging
+# Funciones de ayuda
 log() {
-    printf "%s - %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$1" | tee -a "$LOG_FILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
 }
 
-# Manejo de errores
-trap 'error_handling "Error en línea $LINENO"' EXIT
-
-error_handling() {
-    log "ERROR: $1"
-    whiptail --title "Error crítico" --msgbox "Ocurrió un error: $1\nVer $LOG_FILE" 10 60
-    cleanup
-    exit 1
-}
-
-# Validación inicial
 check_root() {
     if [ "$(id -u)" -ne 0 ]; then
-        log "Este script debe ejecutarse como root"
+        whiptail --title "Error" --msgbox "Este script debe ejecutarse como root." 8 40
         exit 1
     fi
 }
 
-check_dependencies() {
+install_dependencies() {
     for dep in $DEPENDENCIES; do
         if ! command -v "$dep" >/dev/null 2>&1; then
-            log "Instalando dependencia faltante: $dep"
-            pacman -Sy --noconfirm "$dep" || error_handling "Fallo instalación $dep"
+            log "Instalando dependencia: $dep"
+            pacman -S --noconfirm "$dep" || { log "Error al instalar $dep"; exit 1; }
         fi
     done
 }
 
-# Sistema de retroceso
-cleanup() {
-    log "Realizando limpieza..."
-    rm -rf "$TMP_DIR"
-    log "Limpieza completada"
-}
-
-# Gestión de usuario no privilegiado
-run_as_user() {
-    su - "$USER" -c "$1" || error_handling "Fallo al ejecutar como $USER: $1"
-}
-
-# Validación de scripts remotos
-validate_scripts() {
-    log "Validando compatibilidad..."
-    for script in flatpak gnome repos impresora mackbook; do
-        if ! curl -sSf "https://raw.githubusercontent.com/mxhectorvega/installarch/main/$script" >/dev/null; then
-            error_handling "Script $script no disponible"
+validate_compatibility() {
+    local script_urls="
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/mackbook
+    "
+    for url in $script_urls; do
+        if ! curl -sSf "$url" >/dev/null; then
+            log "Error: No se pudo validar la compatibilidad con $url"
+            whiptail --title "Error" --msgbox "No se pudo validar la compatibilidad con $url" 8 60
+            exit 1
         fi
     done
 }
 
-# Flujo de instalación
-welcome_screen() {
-    set_color
-    if ! whiptail --title "Instalador de scripts de mxhectorvega" \
-        --yesno "Bienvenido al instalador\n\nLogs: $LOG_FILE" \
-        --yes-button "Iniciar" --no-button "Cancelar" 12 60; then
-        log "Instalación cancelada por usuario"
-        cleanup
-        exit 0
+save_root_password() {
+    if [ -z "$ROOT_PASS" ]; then
+        ROOT_PASS=$(whiptail --passwordbox "Introduce la contraseña de root:" 8 60 3>&1 1>&2 2>&3)
+        if [ -z "$ROOT_PASS" ]; then
+            whiptail --title "Error" --msgbox "La contraseña de root no puede estar vacía." 8 40
+            exit 1
+        fi
     fi
 }
 
 clone_repository() {
-    log "Clonando repositorio..."
-    if [ -d "$TMP_DIR" ]; then
-        rm -rf "$TMP_DIR"
-    fi
-    run_as_user "git clone $REPO_URL $TMP_DIR" || error_handling "Fallo al clonar repo"
+    rm -rf "$SCRIPTS_DIR"
+    mkdir -p "$SCRIPTS_DIR"
+    su - "$USER" -c "git clone '$REPO_URL' '$SCRIPTS_DIR'" || { log "Error al clonar el repositorio"; exit 1; }
 }
 
-select_script() {
-    while true; do
-        SCRIPTS=$(find "$TMP_DIR" -type f -executable -exec basename {} \; | grep -v '\.' | awk '{print NR, $0, " "}')
-
-        SELECTED=$(whiptail --title "Selección de script" \
-            --menu "Seleccione un script:\n(Ctrl+C para salir)" \
-            --cancel-button "Atrás" 20 60 10 $SCRIPTS 3>&1 1>&2 2>&3)
-
-        case $? in
-            0) break;;
-            1) CURRENT_STEP=$((CURRENT_STEP-1)); return 1;;
-            *) error_handling "Selección cancelada";;
-        esac
-    done
-
-    SCRIPT_NAME=$(echo "$SCRIPTS" | awk -v sel="$SELECTED" '$1==sel {print $2}')
-    log "Script seleccionado: $SCRIPT_NAME"
+list_scripts() {
+    find "$SCRIPTS_DIR" -type f -executable -exec basename {} \; | grep -v '\.' | awk '{print NR, $0}'
 }
 
-get_root_password() {
-    while true; do
-        ROOT_PASS=$(whiptail --title "Autenticación requerida" \
-            --passwordbox "Contraseña de root:" 8 60 3>&1 1>&2 2>&3)
-
-        [ -n "$ROOT_PASS" ] && break
-    done
-    log "Contraseña root almacenada"
-}
-
-install_progress() {
-    log "Iniciando instalación de $SCRIPT_NAME"
-    {
-        echo 20
-        echo "# Preparando entorno..."
-
-        echo 40
-        echo "# Ejecutando script..."
-        run_as_user "echo '$ROOT_PASS' | sudo -S bash $TMP_DIR/$SCRIPT_NAME" || error_handling "Fallo en script"
-
-        echo 100
-        echo "# Instalación completada"
+install_script() {
+    local script_name="$1"
+    (
+        echo "10"
+        echo "# Preparando la instalación..."
         sleep 1
-    } | whiptail --gauge "Progreso de instalación:" 8 60 0
+
+        # Crear copia de seguridad
+        mkdir -p "$BACKUP_DIR"
+        cp -r "$SCRIPTS_DIR/$script_name" "$BACKUP_DIR/"
+
+        # Ejecutar script
+        su - "$USER" -c "bash '$SCRIPTS_DIR/$script_name'" || {
+            log "Error al ejecutar el script: $script_name"
+            whiptail --title "Error" --msgbox "Error al ejecutar el script: $script_name. Revisa el archivo de registro para más detalles." 10 60
+            return 1
+        }
+
+        echo "100"
+        echo "# Instalación completada"
+    ) | whiptail --gauge "Instalando $script_name..." 6 60 0
+}
+
+welcome_screen() {
+    whiptail --title "Bienvenido" --yesno "\
+Bienvenido al instalador de scripts de mxhectorvega.
+
+Los registros se almacenarán en: $LOG_FILE
+
+¿Deseas continuar con la instalación?" 12 80
+    if [ $? -ne 0 ]; then
+        whiptail --title "Instalación cancelada" --msgbox "Instalación cancelada." 8 40
+        exit 0
+    fi
+
+    install_dependencies
+}
+
+select_script_screen() {
+    clone_repository
+    SCRIPT_LIST=$(list_scripts)
+    SELECTED_SCRIPT=$(whiptail --title "Lista de scripts" --menu "Selecciona un script para ejecutar:" 20 80 10 $SCRIPT_LIST 3>&1 1>&2 2>&3)
+    if [ -z "$SELECTED_SCRIPT" ]; then
+        whiptail --title "Instalación cancelada" --msgbox "Instalación cancelada." 8 40
+        exit 0
+    fi
+}
+
+installation_progress_screen() {
+    save_root_password
+    if ! install_script "$SELECTED_SCRIPT"; then
+        whiptail --title "Error" --msgbox "La instalación falló. Consulta el archivo de registro para más detalles." 8 60
+        exit 1
+    fi
 }
 
 final_screen() {
-    while true; do
-        if whiptail --title "Instalación completada" \
-            --yesno "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" \
-            --yes-button "Mostrar .log" --no-button "Finalizar" 12 60; then
-            whiptail --title "Registro de instalación" --textbox "$LOG_FILE" 20 60
-        else
-            break
-        fi
-    done
+    whiptail --title "Instalación completada" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 8 80
+
+    if whiptail --title "Registro de instalación" --yesno "¿Deseas revisar el archivo de registro?" 8 60; then
+        whiptail --title "Registro de instalación" --textbox "$LOG_FILE" 20 80
+    fi
 }
 
-# Flujo principal
+cleanup() {
+    rm -rf "$SCRIPTS_DIR" "$BACKUP_DIR"
+    log "Limpieza completada"
+}
+
 main() {
     check_root
-    exec > >(tee -a "$LOG_FILE") 2>&1
-    check_dependencies
-    validate_scripts
     welcome_screen
-
-    while true; do
-        case $CURRENT_STEP in
-            1) clone_repository; CURRENT_STEP=2;;
-            2) select_script && CURRENT_STEP=3 || CURRENT_STEP=1;;
-            3) get_root_password; install_progress; final_screen; break;;
-            *) error_handling "Flujo inválido";;
-        esac
-    done
-
+    validate_compatibility
+    select_script_screen
+    installation_progress_screen
+    final_screen
     cleanup
-    log "Instalación finalizada correctamente"
-    exit 0
 }
 
 main
