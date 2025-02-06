@@ -1,98 +1,125 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# Script de instalación para Arch Linux
+# Autor: mxhectorvega
+# Fecha: $(date +%Y-%m-%d)
+# Registro de acciones en: /var/log/mxhectorvega_install.log
 
-# Variables
-LOG_FILE="/var/log/installarch.log"
+# Variables globales
+LOGFILE="/var/log/mxhectorvega_install.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-REPO_DIR="/tmp/installarch"
-SCRIPTS_DIR="$REPO_DIR"
-SELECTED_SCRIPT=""
+SCRIPTS_DIR="$HOME/installarch"
+DEPENDENCIAS=(whiptail git awk grep find)
 ROOT_PASSWORD=""
+USER_NON_ROOT="$(logname)"
 
-# Función para limpiar residuos
-cleanup() {
-    rm -rf "$REPO_DIR"
-    rm -f /tmp/installarch.log
+# Función para registrar acciones
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
 }
 
-# Función para manejar errores
-handle_error() {
-    echo "Error: $1" >> "$LOG_FILE"
-    whiptail --title "Error" --msgbox "Ocurrió un error: $1" 8 78
-    cleanup
-    exit 1
-}
-
-# Función para verificar dependencias
-check_dependencies() {
-    for dep in whiptail git find awk grep; do
-        if ! command -v "$dep" > /dev/null 2>&1; then
-            handle_error "La dependencia '$dep' no está instalada."
+# Función para comprobar e instalar dependencias
+instalar_dependencias() {
+    for pkg in "${DEPENDENCIAS[@]}"; do
+        if ! command -v "$pkg" >/dev/null 2>&1; then
+            log "Instalando dependencia: $pkg"
+            pacman -Sy --noconfirm "$pkg"
         fi
     done
 }
 
 # Función para clonar el repositorio
-clone_repo() {
-    if ! git clone "$REPO_URL" "$REPO_DIR" >> "$LOG_FILE" 2>&1; then
-        handle_error "No se pudo clonar el repositorio."
+clonar_repo() {
+    if [ ! -d "$SCRIPTS_DIR" ]; then
+        log "Clonando el repositorio..."
+        sudo -u "$USER_NON_ROOT" git clone "$REPO_URL" "$SCRIPTS_DIR"
+    else
+        log "Actualizando el repositorio..."
+        (cd "$SCRIPTS_DIR" && sudo -u "$USER_NON_ROOT" git pull)
+    fi
+}
+
+# Función de manejo de errores
+manejar_error() {
+    whiptail --title "Error de Instalación" --msgbox "La instalación ha fallado.\nRevisa el archivo de registro en $LOGFILE para más detalles." 10 60
+    log "Error: $1"
+    exit 1
+}
+
+# Función para solicitar la contraseña de root
+solicitar_contraseña_root() {
+    ROOT_PASSWORD=$(whiptail --passwordbox "Por favor, ingresa tu contraseña de root:" 8 60 --title "Contraseña de Root" 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        manejar_error "El usuario canceló la entrada de contraseña."
     fi
 }
 
 # Función para mostrar la pantalla de bienvenida
-welcome_screen() {
-    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE" 10 78
-    if ! whiptail --title "Dependencias" --yesno "¿Desea instalar las dependencias necesarias?" 8 78; then
-        handle_error "Se requieren dependencias para continuar."
+pantalla_bienvenida() {
+    whiptail --title "Bienvenido al instalador de scripts de mxhectorvega" \
+    --yes-button "Iniciar" --no-button "Cancelar" \
+    --yesno "El archivo de registro se almacenará en $LOGFILE\n\nSe instalarán las dependencias necesarias para la correcta visualización." 10 60
+    if [ $? -ne 0 ]; then
+        manejar_error "El usuario canceló la instalación."
     fi
-    check_dependencies
 }
 
-# Función para mostrar la lista de scripts
-list_scripts() {
-    clone_repo
-    SCRIPTS=$(find "$SCRIPTS_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print NR, $NF}')
-    SELECTED_SCRIPT=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 78 10 $SCRIPTS 3>&1 1>&2 2>&3)
+# Función para listar y seleccionar scripts
+seleccionar_script() {
+    local opciones=()
+    local index=1
+    for script in $(find "$SCRIPTS_DIR" -type f -executable ! -name "*.*"); do
+        nombre_script=$(basename "$script")
+        opciones+=("$index" "$nombre_script")
+        ((index++))
+    done
+
+    SCRIPT_SELECCIONADO=$(whiptail --title "Lista de Scripts" --menu "Selecciona un script para ejecutar:" 20 60 10 "${opciones[@]}" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
-        handle_error "No se seleccionó ningún script."
+        manejar_error "El usuario canceló la selección de script."
     fi
+
+    NOMBRE_SCRIPT="${opciones[((SCRIPT_SELECCIONADO*2-1))]}"
+    RUTA_SCRIPT="$SCRIPTS_DIR/$NOMBRE_SCRIPT"
 }
 
 # Función para ejecutar el script seleccionado
-run_script() {
-    SCRIPT_PATH="$SCRIPTS_DIR/$(find "$SCRIPTS_DIR" -type f -executable ! -name "*.*" | sed -n "${SELECTED_SCRIPT}p")"
-    if [ -z "$SCRIPT_PATH" ]; then
-        handle_error "No se pudo encontrar el script seleccionado."
-    fi
+ejecutar_script() {
+    log "Ejecutando el script: $NOMBRE_SCRIPT"
+    TOTAL_PASOS=$(grep -c "^#" "$RUTA_SCRIPT")
+    PASO_ACTUAL=0
 
-    # Solicitar contraseña root si es necesario
-    if grep -q "sudo" "$SCRIPT_PATH"; then
-        ROOT_PASSWORD=$(whiptail --title "Contraseña Root" --passwordbox "Ingrese la contraseña de root:" 8 78 3>&1 1>&2 2>&3)
-        if [ -z "$ROOT_PASSWORD" ]; then
-            handle_error "Se requiere la contraseña de root para continuar."
-        fi
-    fi
-
-    # Ejecutar el script con barra de progreso
-    {
-        echo "Ejecutando script: $SCRIPT_PATH" >> "$LOG_FILE"
-        if echo "$ROOT_PASSWORD" | sudo -S bash "$SCRIPT_PATH" >> "$LOG_FILE" 2>&1; then
-            echo "Script ejecutado con éxito." >> "$LOG_FILE"
+    (
+    while IFS= read -r linea; do
+        if [[ $linea == "#"* ]]; then
+            ((PASO_ACTUAL++))
+            PERCENT=$((PASO_ACTUAL * 100 / TOTAL_PASOS))
+            echo $PERCENT
+            echo "# $linea"
+            sleep 0.5
         else
-            handle_error "El script falló durante la ejecución."
+            sudo -u "$USER_NON_ROOT" bash -c "$linea" >>"$LOGFILE" 2>&1 || manejar_error "Error al ejecutar: $linea"
         fi
-    } | whiptail --title "Instalación" --gauge "Instalando..." 6 60 0
+    done < "$RUTA_SCRIPT"
+    ) | whiptail --gauge "Instalando $NOMBRE_SCRIPT..." 6 60 0
 }
 
 # Función para mostrar la pantalla final
-final_screen() {
-    if whiptail --title "Finalizado" --yesno "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\n¿Desea ver el archivo de registros?" 10 78; then
-        whiptail --title "Archivo de Registros" --textbox "$LOG_FILE" 20 78 --scrolltext
+pantalla_final() {
+    if whiptail --title "Instalación Completa" --yes-button "Mostrar .log" --no-button "Finalizar" --yesno "❤️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60; then
+        whiptail --title "Registro de Instalación" --textbox "$LOGFILE" 20 80
     fi
-    cleanup
 }
 
-# Main
-welcome_screen
-list_scripts
-run_script
-final_screen
+# Inicio del Script
+{
+    instalar_dependencias
+    solicitar_contraseña_root
+    pantalla_bienvenida
+    clonar_repo
+    seleccionar_script
+    ejecutar_script
+    pantalla_final
+    log "Limpieza de archivos temporales."
+    rm -rf "$SCRIPTS_DIR"
+    log "Instalación finalizada con éxito."
+}
