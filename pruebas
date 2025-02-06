@@ -1,64 +1,109 @@
-#!/bin/bash
-# Instalador para ArchLinux
-# Clona el repositorio https://github.com/mxhectorvega/installarch
+#!/bin/sh
 
-# Pantalla de bienvenida
-whiptail --title "Bienvenido al Instalador" --msgbox "Bienvenido al instalador de scripts de mxhectorvega\nEl archivo de registro se almacenará en \$HOME/installarch.log" 10 60
+# Variables globales
+LOG_FILE="$HOME/installarch.log"
+REPO_URL="https://github.com/mxhectorvega/installarch"
+CLONE_DIR="/tmp/installarch"
+DEPENDENCIES="git whiptail makepkg sudo"
 
-# Función para registrar mensajes
-log() {
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >> "$HOME/installarch.log"
+# Función para registrar mensajes en el archivo de logs
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# Limpiar archivo de registro anterior
-rm -f "$HOME/installarch.log"
-log "Iniciando instalador"
-
-# Clonar repositorio
-if git clone https://github.com/mxhectorvega/installarch "$HOME/installarch" 2>&1 | tee -a "$HOME/installarch.log"; then
-    log "Repositorio clonado exitosamente"
-else
-    log "Error al clonar el repositorio"
-    whiptail --title "Error" --msgbox "Error al clonar el repositorio. Revisa el archivo de registro para más detalles." 10 60
-    exit 1
-fi
-
-# Validar y verificar compatibilidad
-log "Validando compatibilidad de paquetes"
-# Aquí iría tu lógica de validación de compatibilidad
-
-# Función de retroceso en caso de fallo
-rollback() {
-    log "Iniciando rollback por error"
-    # Aquí iría tu lógica de retroceso
-    whiptail --title "Rollback" --msgbox "Se produjo un error. Realizando rollback..." 10 60
+# Función para limpiar residuos anteriores
+clean_previous_installation() {
+    rm -rf "$CLONE_DIR"
+    rm -f "$LOG_FILE"
+    log_message "Residuos y logs anteriores eliminados."
 }
 
-# Almacenar contraseña root
-root_password=$(whiptail --title "Contraseña Root" --passwordbox "Introduce la contraseña root:" 10 60 3>&1 1>&2 2>&3)
-log "Contraseña root almacenada"
-
-# Pantalla de selección de script
-scripts=$(find "$HOME/installarch" -maxdepth 1 -type f -executable -exec basename {} \; | awk '{print NR " " $0}')
-selected_script=$(whiptail --title "Lista de Scripts" --menu "Selecciona un script para ejecutar" 20 78 12 $(echo "$scripts") 3>&1 1>&2 2>&3)
-
-# Pantalla de instalación
-{
-    for step in $(seq 1 10); do
-        sleep 1
-        echo $((step * 10))
+# Función para verificar dependencias
+check_dependencies() {
+    for dep in $DEPENDENCIES; do
+        if ! command -v "$dep" >/dev/null 2>&1; then
+            log_message "Dependencia no encontrada: $dep"
+            whiptail --title "Error" --msgbox "La dependencia '$dep' no está instalada. Por favor, instálela manualmente." 8 78
+            exit 1
+        fi
     done
-} | whiptail --gauge "Instalando $selected_script..." 6 60 0
+}
 
-# Aquí iría la lógica de ejecución del script seleccionado
-log "Ejecutando script seleccionado: $selected_script"
+# Función para clonar el repositorio
+clone_repository() {
+    git clone "$REPO_URL" "$CLONE_DIR" 2>>"$LOG_FILE"
+    if [ $? -ne 0 ]; then
+        log_message "Error al clonar el repositorio."
+        whiptail --title "Error" --msgbox "No se pudo clonar el repositorio. Verifique su conexión a Internet." 8 78
+        exit 1
+    fi
+}
 
-# Limpiar residuos y temporales
-log "Limpiando residuos y temporales"
-# Aquí iría tu lógica de limpieza
+# Función para listar scripts ejecutables
+list_executable_scripts() {
+    find "$CLONE_DIR" -type f -executable ! -name "*.*" | awk '{print NR, $0}' | column -t
+}
 
-# Pantalla final
-whiptail --title "Finalizar" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60
+# Pantalla de Bienvenida
+welcome_screen() {
+    clean_previous_installation
+    check_dependencies
+    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE" 10 78
+}
 
-# Mostrar archivo de registro
-whiptail --title "Registro" --textbox "$HOME/installarch.log" 20 80
+# Pantalla de Lista de Scripts
+script_list_screen() {
+    SCRIPT_LIST=$(list_executable_scripts)
+    if [ -z "$SCRIPT_LIST" ]; then
+        whiptail --title "Error" --msgbox "No se encontraron scripts ejecutables en el repositorio." 8 78
+        exit 1
+    fi
+
+    SELECTED_SCRIPT=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 78 10 $(echo "$SCRIPT_LIST") 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        exit 0
+    fi
+
+    SELECTED_SCRIPT_PATH=$(echo "$SCRIPT_LIST" | grep "^$SELECTED_SCRIPT " | awk '{print $2}')
+}
+
+# Pantalla de Instalación
+installation_screen() {
+    PROGRESS=0
+    TOTAL_STEPS=$(grep -c '^#' "$SELECTED_SCRIPT_PATH")
+    (
+        while IFS= read -r line; do
+            if echo "$line" | grep -q '^#'; then
+                PROGRESS=$((PROGRESS + 1))
+                echo "$PROGRESS"
+            fi
+            if echo "$line" | grep -q 'makepkg'; then
+                su -c "$line" "$USER" 2>>"$LOG_FILE"
+            elif echo "$line" | grep -q 'git'; then
+                su -c "$line" "$USER" 2>>"$LOG_FILE"
+            else
+                eval "$line" 2>>"$LOG_FILE"
+            fi
+        done < "$SELECTED_SCRIPT_PATH"
+    ) | whiptail --gauge "Instalando script..." 8 78 0
+}
+
+# Pantalla Final
+final_screen() {
+    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 8 78
+    if whiptail --yesno "¿Desea ver el archivo de registros?" 8 78; then
+        whiptail --textbox "$LOG_FILE" 20 78
+    fi
+}
+
+# Función principal
+main() {
+    welcome_screen
+    clone_repository
+    script_list_screen
+    installation_screen
+    final_screen
+}
+
+# Ejecución del script
+main
