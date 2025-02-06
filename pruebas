@@ -2,19 +2,18 @@
 # Script de instalación para Arch Linux
 # Autor: mxhectorvega
 # Fecha: $(date +%Y-%m-%d)
-# Registro de acciones en: $LOGFILE
+# Registro de acciones en: /var/log/mxhectorvega_install.log
 
 # Variables globales
-USER_NON_ROOT="$(who am i | awk '{print $1}')"
-SCRIPTS_DIR="/home/$USER_NON_ROOT/installarch"
-LOGFILE="/home/$USER_NON_ROOT/mxhectorvega_install.log"
+LOGFILE="/var/log/mxhectorvega_install.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
+SCRIPTS_DIR="/home/$(whoami)/installarch"
 DEPENDENCIAS=(whiptail git awk grep find)
 ROOT_PASSWORD=""
+USER_NON_ROOT="$(logname)"
 
 # Función para registrar acciones
 log() {
-    mkdir -p "$(dirname "$LOGFILE")"
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
 }
 
@@ -23,7 +22,7 @@ instalar_dependencias() {
     for pkg in "${DEPENDENCIAS[@]}"; do
         if ! command -v "$pkg" >/dev/null 2>&1; then
             log "Instalando dependencia: $pkg"
-            pacman -Sy --noconfirm "$pkg" || manejar_error "No se pudo instalar $pkg"
+            pacman -Sy --noconfirm "$pkg"
         fi
     done
 }
@@ -31,22 +30,89 @@ instalar_dependencias() {
 # Función para clonar el repositorio
 clonar_repo() {
     if [ ! -d "$SCRIPTS_DIR" ]; then
-        log "Clonando el repositorio en $SCRIPTS_DIR..."
-        sudo -u "$USER_NON_ROOT" git clone "$REPO_URL" "$SCRIPTS_DIR" >>"$LOGFILE" 2>&1 || manejar_error "No se pudo clonar el repositorio."
+        log "Clonando el repositorio..."
+        sudo -u "$USER_NON_ROOT" git clone "$REPO_URL" "$SCRIPTS_DIR" || manejar_error "No se pudo clonar el repositorio."
     else
-        log "Actualizando el repositorio en $SCRIPTS_DIR..."
-        (cd "$SCRIPTS_DIR" && sudo -u "$USER_NON_ROOT" git pull >>"$LOGFILE" 2>&1) || manejar_error "No se pudo actualizar el repositorio."
+        log "Actualizando el repositorio..."
+        (cd "$SCRIPTS_DIR" && sudo -u "$USER_NON_ROOT" git pull) || manejar_error "No se pudo actualizar el repositorio."
     fi
 }
 
 # Función de manejo de errores
 manejar_error() {
-    whiptail --title "Error de Instalación" --msgbox "La instalación ha fallado.\n$1\nRevisa el archivo de registro en $LOGFILE para más detalles." 10 60
+    whiptail --title "Error de Instalación" --msgbox "La instalación ha fallado.\nRevisa el archivo de registro en $LOGFILE para más detalles." 10 60
     log "Error: $1"
     exit 1
 }
 
-# Resto del script permanece igual...
+# Función para solicitar la contraseña de root
+solicitar_contraseña_root() {
+    ROOT_PASSWORD=$(whiptail --passwordbox "Por favor, ingresa tu contraseña de root:" 8 60 --title "Contraseña de Root" 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        manejar_error "El usuario canceló la entrada de contraseña."
+    fi
+}
+
+# Función para mostrar la pantalla de bienvenida
+pantalla_bienvenida() {
+    whiptail --title "Bienvenido al instalador de scripts de mxhectorvega" \
+    --yes-button "Iniciar" --no-button "Cancelar" \
+    --yesno "El archivo de registro se almacenará en $LOGFILE\n\nSe instalarán las dependencias necesarias para la correcta visualización." 10 60
+    if [ $? -ne 0 ]; then
+        manejar_error "El usuario canceló la instalación."
+    fi
+}
+
+# Función para listar y seleccionar scripts
+seleccionar_script() {
+    local opciones=()
+    local index=1
+    for script in $(find "$SCRIPTS_DIR" -type f -executable ! -name "*.*"); do
+        nombre_script=$(basename "$script")
+        opciones+=("$index" "$nombre_script")
+        ((index++))
+    done
+
+    SCRIPT_SELECCIONADO=$(whiptail --title "Lista de Scripts" --menu "Selecciona un script para ejecutar:" 20 60 10 "${opciones[@]}" 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        manejar_error "El usuario canceló la selección de script."
+    fi
+
+    NOMBRE_SCRIPT="${opciones[((SCRIPT_SELECCIONADO*2-1))]}"
+    RUTA_SCRIPT="$SCRIPTS_DIR/$NOMBRE_SCRIPT"
+}
+
+# Función para ejecutar el script seleccionado
+ejecutar_script() {
+    log "Ejecutando el script: $NOMBRE_SCRIPT"
+    TOTAL_PASOS=$(grep -c "^#" "$RUTA_SCRIPT")
+    PASO_ACTUAL=0
+
+    (
+    while IFS= read -r linea; do
+        if [[ $linea == "#"* ]]; then
+            ((PASO_ACTUAL++))
+            PERCENT=$((PASO_ACTUAL * 100 / TOTAL_PASOS))
+            echo $PERCENT
+            echo "# $linea"
+            sleep 0.5
+        else
+            if [[ $linea == *"makepkg"* && $EUID -eq 0 ]]; then
+                sudo -u "$USER_NON_ROOT" bash -c "$linea" >>"$LOGFILE" 2>&1 || manejar_error "Error al ejecutar makepkg: $linea"
+            else
+                sudo -u "$USER_NON_ROOT" bash -c "$linea" >>"$LOGFILE" 2>&1 || manejar_error "Error al ejecutar: $linea"
+            fi
+        fi
+    done < "$RUTA_SCRIPT"
+    ) | whiptail --gauge "Instalando $NOMBRE_SCRIPT..." 6 60 0
+}
+
+# Función para mostrar la pantalla final
+pantalla_final() {
+    if whiptail --title "Instalación Completa" --yes-button "Mostrar .log" --no-button "Finalizar" --yesno "❤️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60; then
+        whiptail --title "Registro de Instalación" --textbox "$LOGFILE" 20 80
+    fi
+}
 
 # Inicio del Script
 {
