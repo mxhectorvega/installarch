@@ -1,103 +1,121 @@
 #!/bin/sh
-# POSIX compliant
 
 # Variables globales
-REPO_URL="https://github.com/mxhectorvega/installarch"
 LOG_FILE="$HOME/installarch.log"
-BACKUP_LOG="$HOME/installarch_backup.log"
-SCRIPTS_DIR="$HOME/installarch_scripts"
+REPO_URL="https://github.com/mxhectorvega/installarch"
+REPO_DIR="$HOME/installarch"
+ROOT_PASS=""
+USER_PASS=""
+CURRENT_USER=$(whoami)
 
-# Función para mostrar mensaje de error y salir
-error_exit() {
-    echo "$1" | tee -a "$LOG_FILE"
-    exit 1
-}
-
-# Función para clonar el repositorio
-clone_repo() {
-    [ -d "$SCRIPTS_DIR" ] && rm -rf "$SCRIPTS_DIR"
-    git clone "$REPO_URL" "$SCRIPTS_DIR" || error_exit "Error al clonar el repositorio"
-}
-
-# Función para validar y aplicar compatibilidad de paquetes y sintaxis
-validate_compatibility() {
-    # Aquí agregar las validaciones y compatibilidades necesarias
-    echo "Validando compatibilidad..."
-}
-
-# Función para implementar sistema de retroceso
-implement_rollback() {
-    cp "$LOG_FILE" "$BACKUP_LOG"
-}
-
-# Función para almacenar contraseñas
-store_passwords() {
-    echo "Almacenando contraseñas..."
-    echo "root: $ROOT_PASSWORD" >> "$LOG_FILE"
-    echo "user: $USER_PASSWORD" >> "$LOG_FILE"
-}
-
-# Función para ejecutar el script seleccionado
-execute_script() {
-    local script="$1"
-    echo "Ejecutando script: $script"
-    sh "$script" || error_exit "Error al ejecutar el script $script"
-}
-
-# Función para limpiar residuos y temporales
+# Limpiar residuos previos
 cleanup() {
-    echo "Limpiando residuos..."
-    rm -rf "$SCRIPTS_DIR"
+    rm -rf "$REPO_DIR"
+    rm -f "$LOG_FILE"
 }
 
-# Función para validar y satisfacer dependencias
-validate_dependencies() {
-    # Aquí agregar la validación de dependencias necesarias
-    echo "Validando dependencias..."
+# Crear archivo de registro
+create_log() {
+    echo "=== Registro de instalación ===" > "$LOG_FILE"
+    echo "Fecha: $(date)" >> "$LOG_FILE"
+    echo "Usuario: $CURRENT_USER" >> "$LOG_FILE"
+    echo "===============================" >> "$LOG_FILE"
 }
 
-# Función para tomar información de variables de usuario y globales
-load_variables() {
-    echo "Cargando variables de usuario y globales..."
-    source /etc/profile
+# Validar dependencias
+check_dependencies() {
+    local missing_deps=0
+    for cmd in git makepkg whiptail; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            echo "Error: El comando '$cmd' no está instalado." | tee -a "$LOG_FILE"
+            missing_deps=1
+        fi
+    done
+    if [ "$missing_deps" -eq 1 ]; then
+        whiptail --title "Error" --msgbox "Faltan dependencias necesarias. Por favor, instálelas e inténtelo de nuevo." 10 60
+        exit 1
+    fi
+}
+
+# Clonar repositorio
+clone_repo() {
+    if [ -d "$REPO_DIR" ]; then
+        rm -rf "$REPO_DIR"
+    fi
+    echo "Clonando repositorio..." | tee -a "$LOG_FILE"
+    if ! git clone "$REPO_URL" "$REPO_DIR" >> "$LOG_FILE" 2>&1; then
+        whiptail --title "Error" --msgbox "No se pudo clonar el repositorio. Verifique su conexión a Internet." 10 60
+        exit 1
+    fi
 }
 
 # Pantalla de Bienvenida
 welcome_screen() {
-    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega\nLos registros se almacenarán en $LOG_FILE" 10 60
+    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en:\n$LOG_FILE\n\n¿Desea iniciar la instalación?" 15 60
+    if [ $? -ne 0 ]; then
+        exit 0
+    fi
 }
 
-# Pantalla de Lista de scripts
-list_scripts_screen() {
-    local scripts_list
-    scripts_list=$(find "$SCRIPTS_DIR" -type f -executable -print | awk -F'/' '{print NR, $NF}')
-    SELECTED_SCRIPT=$(whiptail --title "Lista de scripts" --menu "Seleccione un script para ejecutar" 20 78 10 $scripts_list 3>&1 1>&2 2>&3)
+# Pantalla de Lista de Scripts
+list_scripts() {
+    cd "$REPO_DIR" || exit 1
+    scripts=$(find . -maxdepth 1 -type f -executable -not -name "*.*" | awk '{print NR, $0}' | column -t)
+    if [ -z "$scripts" ]; then
+        whiptail --title "Error" --msgbox "No se encontraron scripts ejecutables en el repositorio." 10 60
+        exit 1
+    fi
+
+    choice=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 60 10 $scripts 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    selected_script=$(echo "$scripts" | awk -v num="$choice" '$1 == num {print $2}')
+    echo "Script seleccionado: $selected_script" | tee -a "$LOG_FILE"
+    export SELECTED_SCRIPT="$selected_script"
 }
 
 # Pantalla de Instalación
-installation_screen() {
-    whiptail --title "Instalación" --gauge "Instalando el script seleccionado..." 10 70 0
+install_script() {
+    script_path="$REPO_DIR/$SELECTED_SCRIPT"
+    total_steps=$(grep -c '^#' "$script_path") # Contar pasos basados en comentarios (simplificado)
+    progress=0
+
+    (
+        while IFS= read -r line; do
+            echo "$line" >> "$LOG_FILE"
+            progress=$((progress + 1))
+            percentage=$((progress * 100 / total_steps))
+            echo "$percentage"
+        done < "$script_path"
+    ) | whiptail --gauge "Instalando $SELECTED_SCRIPT..." 10 60 0
+
+    if [ $? -ne 0 ]; then
+        whiptail --title "Error" --msgbox "La instalación falló. Consulte el archivo de registros para más detalles." 10 60
+        return 1
+    fi
 }
 
-# Pantalla final
+# Pantalla Final
 final_screen() {
-    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\nPara consultar el archivo de registros, revisa $LOG_FILE" 10 60
+    whiptail --title "Instalación Completada" --yesno "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\n¿Desea ver el archivo de registros?" 15 60
+    if [ $? -eq 0 ]; then
+        whiptail --title "Registro de Instalación" --scrolltext --msgbox "$(cat "$LOG_FILE")" 20 70
+    fi
 }
 
-# Ejecución del script
+# Función principal
 main() {
-    welcome_screen || error_exit "Cancelado por el usuario."
-    load_variables
-    validate_dependencies
-    clone_repo
-    validate_compatibility
-    implement_rollback
-    list_scripts_screen || error_exit "Cancelado por el usuario."
-    installation_screen
-    execute_script "$SELECTED_SCRIPT"
-    store_passwords
     cleanup
+    create_log
+    check_dependencies
+    welcome_screen
+    clone_repo
+    list_scripts || exit 0
+    install_script || exit 1
     final_screen
+    cleanup
 }
 
-main "$@"
+main
