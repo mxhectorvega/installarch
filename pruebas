@@ -2,11 +2,10 @@
 # Script de instalación para Arch Linux
 
 # Variables globales
-LOG_FILE="/var/log/installarch.log"
+LOG_FILE="$HOME/installarch.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
 CLONE_DIR="/tmp/installarch"
 ROOT_PASSWORD=""
-USER=$USER  # Cambiar por el usuario sin privilegios
 
 # Funciones de utilidad
 log() {
@@ -122,7 +121,7 @@ execute_script() {
 
     # Ejecutar el script
     if [ "$(id -u)" -eq 0 ]; then
-        sudo -u "$USER" "$script_path" || fail "Error al ejecutar el script."
+        sudo -u $USER "$script_path" || fail "Error al ejecutar el script."
     else
         "$script_path" || fail "Error al ejecutar el script."
     fi
