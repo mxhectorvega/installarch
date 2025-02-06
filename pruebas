@@ -1,180 +1,162 @@
 #!/bin/sh
 
 # Variables globales
+INSTALL_DIR="$HOME/installarch"
 LOG_FILE="$HOME/installarch.log"
 REPO_URL="https://github.com/mxhectorvega/installarch.git"
-TEMP_DIR="/tmp/installarch"
-ROOT_PASS=""
-SCRIPTS_DIR="$TEMP_DIR"
+TEMP_DIR=$(mktemp -d)
+ROOT_PASSWORD=""
+NON_PRIV_USER=$(whoami)
 
 # Función para limpiar residuos
 cleanup() {
+    echo "Limpiando residuos temporales..."
     rm -rf "$TEMP_DIR"
 }
 
+# Función para registrar mensajes
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+}
+
 # Función para manejar errores
-error_handler() {
-    local error_msg="$1"
-    echo "ERROR: $error_msg" | tee -a "$LOG_FILE"
-    echo "Consulte el archivo de registro: $LOG_FILE"
+handle_error() {
+    log_message "ERROR: $1"
+    echo "Error: $1"
     cleanup
     exit 1
 }
 
-# Función para verificar si estamos en root
-check_root() {
-    if [ "$(id -u)" -ne 0 ]; then
-        echo "Este script debe ejecutarse como root."
-        cleanup
-        exit 1
-    fi
-}
-
-# Función para almacenar la contraseña root
-store_root_password() {
-    echo "Ingrese la contraseña de root:"
-    read -s ROOT_PASS
-    echo
-}
-
-# Función para ejecutar comandos como root o cambiar al usuario sin privilegios
-run_command() {
-    local command="$1"
-    if echo "$command" | grep -qE "makepkg|git"; then
-        su -c "$command" -s /bin/sh "$(logname)" >> "$LOG_FILE" 2>&1
-    else
-        echo "$ROOT_PASS" | sudo -S sh -c "$command" >> "$LOG_FILE" 2>&1
-    fi
-    if [ $? -ne 0 ]; then
-        error_handler "El comando '$command' falló."
-    fi
-}
-
-# Función para mostrar la pantalla de bienvenida
+# Pantalla de Bienvenida
 welcome_screen() {
     clear
     echo "Bienvenido al instalador de scripts de mxhectorvega"
     echo "--------------------------------------------------"
-    echo "Este instalador creará un archivo de registro en: $LOG_FILE"
-    echo
-    echo "Dependencias requeridas: git, sudo"
-    echo "Presione 'i' para iniciar o 'c' para cancelar."
+    echo "El archivo de registros se almacenará en: $LOG_FILE"
+    echo ""
+    echo "Dependencias necesarias: git, awk, grep, column"
+    echo ""
 
-    while true; do
-        read -n1 -r choice
-        case "$choice" in
-            i|I) break ;;
-            c|C) cleanup; exit 0 ;;
-            *) echo "Opción inválida. Presione 'i' para iniciar o 'c' para cancelar." ;;
-        esac
+    # Verificar dependencias
+    for dep in git awk grep column; do
+        if ! command -v "$dep" >/dev/null 2>&1; then
+            echo "Instalando dependencia: $dep"
+            sudo pacman -Sy --noconfirm "$dep" || handle_error "No se pudo instalar $dep"
+        fi
     done
+
+    echo ""
+    echo "1. Iniciar"
+    echo "2. Cancelar"
+    read -r choice
+    case "$choice" in
+        1) ;;
+        2) cleanup && exit 0 ;;
+        *) handle_error "Opción inválida" ;;
+    esac
 }
 
-# Función para clonar el repositorio y listar scripts
-list_scripts() {
-    mkdir -p "$TEMP_DIR"
-    run_command "git clone $REPO_URL $TEMP_DIR"
-    if [ $? -ne 0 ]; then
-        error_handler "No se pudo clonar el repositorio."
+# Clonar repositorio
+clone_repo() {
+    log_message "Clonando repositorio desde $REPO_URL"
+    if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
+        handle_error "No se pudo clonar el repositorio"
     fi
+}
 
-    # Encontrar scripts ejecutables sin extensión
-    SCRIPT_LIST=$(find "$SCRIPTS_DIR" -maxdepth 1 -type f -executable ! -name "*.*" -exec basename {} \; | sort)
-
-    # Mostrar lista de scripts
+# Pantalla de Lista de Scripts
+list_scripts_screen() {
     clear
     echo "Lista de scripts disponibles:"
-    echo "----------------------------"
-    i=1
-    for script in $SCRIPT_LIST; do
-        printf "%2d. %s\n" "$i" "$script"
-        i=$((i + 1))
-    done
-    echo
-    echo "Seleccione un número para instalar un script, 'a' para atrás o 'c' para cancelar."
+    echo "-----------------------------"
 
-    while true; do
-        read -n1 -r choice
-        case "$choice" in
-            [0-9])
-                SELECTED_SCRIPT=$(echo "$SCRIPT_LIST" | sed -n "${choice}p")
-                if [ -z "$SELECTED_SCRIPT" ]; then
-                    echo "Selección inválida. Intente de nuevo."
-                else
-                    break
-                fi
-                ;;
-            a|A) welcome_screen; return ;;
-            c|C) cleanup; exit 0 ;;
-            *) echo "Opción inválida. Seleccione un número, 'a' para atrás o 'c' para cancelar." ;;
-        esac
-    done
+    # Encontrar scripts ejecutables sin extensión
+    find "$INSTALL_DIR" -maxdepth 1 -type f -executable | awk -F/ '{print $NF}' | grep -v '\.' > "$TEMP_DIR/scripts.txt"
+    cat -n "$TEMP_DIR/scripts.txt" | column -t
+
+    echo ""
+    echo "Seleccione un número para ejecutar el script:"
+    read -r script_num
+
+    # Validar selección
+    selected_script=$(sed -n "${script_num}p" "$TEMP_DIR/scripts.txt")
+    if [ -z "$selected_script" ]; then
+        handle_error "Selección inválida"
+    fi
+
+    echo "Script seleccionado: $selected_script"
+    echo ""
+    echo "1. Siguiente"
+    echo "2. Atrás"
+    echo "3. Cancelar"
+    read -r choice
+    case "$choice" in
+        1) install_screen "$selected_script" ;;
+        2) list_scripts_screen ;;
+        3) cleanup && exit 0 ;;
+        *) handle_error "Opción inválida" ;;
+    esac
 }
 
-# Función para mostrar la barra de progreso durante la instalación
-installation_progress() {
-    local script_path="$SCRIPTS_DIR/$SELECTED_SCRIPT"
-    total_steps=$(grep -oP '^# STEP' "$script_path" | wc -l)
+# Pantalla de Instalación
+install_screen() {
+    script_name="$1"
+    script_path="$INSTALL_DIR/$script_name"
+    total_steps=$(grep -c '^#' "$script_path") # Contar pasos basados en comentarios
     current_step=0
 
     clear
-    echo "Instalando $SELECTED_SCRIPT..."
-    echo "--------------------------------"
+    echo "Instalando script: $script_name"
+    echo "Progreso: [$(printf "%-${total_steps}s" | tr ' ' '=')]"
 
+    # Ejecutar script paso a paso
     while IFS= read -r line; do
-        echo "$line" >> "$LOG_FILE" 2>&1
-        if echo "$line" | grep -q "# STEP"; then
+        if echo "$line" | grep -q '^#'; then
             current_step=$((current_step + 1))
-            progress=$((current_step * 100 / total_steps))
-            printf "\rProgreso: [%-50s] %d%%" "$(printf '#%.0s' $(seq 1 $((progress / 2))))" "$progress"
+            progress=$(printf "%-${current_step}s" | tr ' ' '=')
+            echo -ne "\rProgreso: [$progress]"
+        else
+            eval "$line" || handle_error "Error al ejecutar línea: $line"
         fi
-    done < <(bash "$script_path" 2>&1)
+    done < "$script_path"
 
-    echo
-    if [ $? -ne 0 ]; then
-        error_handler "La instalación falló."
-    fi
+    echo ""
+    echo "Instalación completada."
+    echo ""
+    echo "1. Siguiente"
+    echo "2. Atrás"
+    echo "3. Cancelar"
+    read -r choice
+    case "$choice" in
+        1) final_screen ;;
+        2) list_scripts_screen ;;
+        3) cleanup && exit 0 ;;
+        *) handle_error "Opción inválida" ;;
+    esac
 }
 
-# Función para mostrar la pantalla final
+# Pantalla Final
 final_screen() {
     clear
-    echo "¡Gracias por usar el instalador!"
     echo "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega"
-    echo
-    echo "Presione 'f' para finalizar o 'm' para mostrar el archivo de registro."
-
-    while true; do
-        read -n1 -r choice
-        case "$choice" in
-            f|F) break ;;
-            m|M) less "$LOG_FILE"; break ;;
-            *) echo "Opción inválida. Presione 'f' para finalizar o 'm' para mostrar el archivo de registro." ;;
-        esac
-    done
+    echo ""
+    echo "1. Finalizar"
+    echo "2. Mostrar .log"
+    read -r choice
+    case "$choice" in
+        1) cleanup && exit 0 ;;
+        2) less "$LOG_FILE" ;;
+        *) handle_error "Opción inválida" ;;
+    esac
 }
 
-# Main script execution
+# Función principal
 main() {
-    check_root
-    store_root_password
-
-    # Verificar dependencias
-    DEPENDENCIES="git sudo"
-    for dep in $DEPENDENCIES; do
-        if ! command -v "$dep" > /dev/null 2>&1; then
-            error_handler "Se requiere la dependencia '$dep'. Por favor, instálela primero."
-        fi
-    done
-
+    trap cleanup EXIT
     welcome_screen
-    list_scripts
-    installation_progress
-    final_screen
-
-    cleanup
-    exit 0
+    clone_repo
+    list_scripts_screen
 }
 
-# Ejecución del script principal
+# Ejecutar script
 main
