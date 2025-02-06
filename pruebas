@@ -1,109 +1,97 @@
 #!/bin/sh
 
 # Variables globales
-LOG_FILE="$HOME/installarch.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-CLONE_DIR="/tmp/installarch"
-DEPENDENCIES="git whiptail makepkg sudo"
+REPO_DIR="$HOME/installarch"
+LOG_FILE="$HOME/installarch.log"
+ROOT_PASSWORD=""
 
-# Función para registrar mensajes en el archivo de logs
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
-}
-
-# Función para limpiar residuos anteriores
-clean_previous_installation() {
-    rm -rf "$CLONE_DIR"
+# Función para limpiar residuos
+cleanup() {
+    rm -rf "$REPO_DIR"
     rm -f "$LOG_FILE"
-    log_message "Residuos y logs anteriores eliminados."
 }
 
-# Función para verificar dependencias
-check_dependencies() {
-    for dep in $DEPENDENCIES; do
-        if ! command -v "$dep" >/dev/null 2>&1; then
-            log_message "Dependencia no encontrada: $dep"
-            whiptail --title "Error" --msgbox "La dependencia '$dep' no está instalada. Por favor, instálela manualmente." 8 78
-            exit 1
+# Función para manejar errores
+handle_error() {
+    echo "Error: $1" >> "$LOG_FILE"
+    whiptail --title "Error" --msgbox "Ocurrió un error: $1" 8 78
+    cleanup
+    exit 1
+}
+
+# Función para clonar el repositorio
+clone_repo() {
+    if [ -d "$REPO_DIR" ]; then
+        rm -rf "$REPO_DIR" || handle_error "No se pudo borrar el directorio existente."
+    fi
+    git clone "$REPO_URL" "$REPO_DIR" || handle_error "No se pudo clonar el repositorio."
+}
+
+# Función para satisfacer dependencias
+install_dependencies() {
+    for dep in whiptail git; do
+        if ! command -v "$dep" > /dev/null 2>&1; then
+            pacman -Sy --noconfirm "$dep" || handle_error "No se pudo instalar la dependencia: $dep"
         fi
     done
 }
 
-# Función para clonar el repositorio
-clone_repository() {
-    git clone "$REPO_URL" "$CLONE_DIR" 2>>"$LOG_FILE"
-    if [ $? -ne 0 ]; then
-        log_message "Error al clonar el repositorio."
-        whiptail --title "Error" --msgbox "No se pudo clonar el repositorio. Verifique su conexión a Internet." 8 78
-        exit 1
-    fi
-}
-
-# Función para listar scripts ejecutables
-list_executable_scripts() {
-    find "$CLONE_DIR" -type f -executable ! -name "*.*" | awk '{print NR, $0}' | column -t
-}
-
-# Pantalla de Bienvenida
+# Función para mostrar la pantalla de bienvenida
 welcome_screen() {
-    clean_previous_installation
-    check_dependencies
-    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE" 10 78
-}
-
-# Pantalla de Lista de Scripts
-script_list_screen() {
-    SCRIPT_LIST=$(list_executable_scripts)
-    if [ -z "$SCRIPT_LIST" ]; then
-        whiptail --title "Error" --msgbox "No se encontraron scripts ejecutables en el repositorio." 8 78
-        exit 1
-    fi
-
-    SELECTED_SCRIPT=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 78 10 $(echo "$SCRIPT_LIST") 3>&1 1>&2 2>&3)
-    if [ $? -ne 0 ]; then
+    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE\n\n¿Desea continuar?" 12 78
+    if [ $? -eq 0 ]; then
+        install_dependencies
+        clone_repo
+    else
+        cleanup
         exit 0
     fi
-
-    SELECTED_SCRIPT_PATH=$(echo "$SCRIPT_LIST" | grep "^$SELECTED_SCRIPT " | awk '{print $2}')
 }
 
-# Pantalla de Instalación
-installation_screen() {
-    PROGRESS=0
-    TOTAL_STEPS=$(grep -c '^#' "$SELECTED_SCRIPT_PATH")
-    (
-        while IFS= read -r line; do
-            if echo "$line" | grep -q '^#'; then
-                PROGRESS=$((PROGRESS + 1))
-                echo "$PROGRESS"
-            fi
-            if echo "$line" | grep -q 'makepkg'; then
-                su -c "$line" "$USER" 2>>"$LOG_FILE"
-            elif echo "$line" | grep -q 'git'; then
-                su -c "$line" "$USER" 2>>"$LOG_FILE"
-            else
-                eval "$line" 2>>"$LOG_FILE"
-            fi
-        done < "$SELECTED_SCRIPT_PATH"
-    ) | whiptail --gauge "Instalando script..." 8 78 0
-}
-
-# Pantalla Final
-final_screen() {
-    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 8 78
-    if whiptail --yesno "¿Desea ver el archivo de registros?" 8 78; then
-        whiptail --textbox "$LOG_FILE" 20 78
+# Función para mostrar la lista de scripts
+list_scripts() {
+    scripts=$(find "$REPO_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print NR, $NF}')
+    selected_script=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 78 10 $scripts 3>&1 1>&2 2>&3)
+    if [ $? -eq 0 ]; then
+        execute_script "$selected_script"
+    else
+        welcome_screen
     fi
 }
 
-# Función principal
-main() {
-    welcome_screen
-    clone_repository
-    script_list_screen
-    installation_screen
-    final_screen
+# Función para ejecutar un script
+execute_script() {
+    script_name=$(echo "$1" | awk '{print $2}')
+    script_path="$REPO_DIR/$script_name"
+    steps=$(grep -c '^step_' "$script_path")
+    progress=0
+
+    {
+        while [ $progress -lt $steps ]; do
+            progress=$((progress + 1))
+            echo $((progress * 100 / steps))
+            sleep 1
+        done
+    } | whiptail --gauge "Instalando $script_name..." 6 50 0
+
+    if [ $? -eq 0 ]; then
+        whiptail --title "Éxito" --msgbox "El script $script_name se ha ejecutado correctamente." 8 78
+    else
+        handle_error "La instalación del script $script_name falló."
+    fi
 }
 
-# Ejecución del script
-main
+# Función para mostrar la pantalla final
+final_screen() {
+    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 8 78
+    if whiptail --title "Registros" --yesno "¿Desea ver el archivo de registros?" 8 78; then
+        whiptail --textbox "$LOG_FILE" 20 78 --scrolltext
+    fi
+    cleanup
+}
+
+# Inicio del script
+welcome_screen
+list_scripts
+final_screen
