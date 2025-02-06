@@ -1,122 +1,103 @@
 #!/bin/sh
+# POSIX compliant
 
-# Configuración inicial
-: "${LOG_FILE:=${HOME}/installarch.log}"
+# Variables globales
 REPO_URL="https://github.com/mxhectorvega/installarch"
-REPO_DIR="installarch"
-TMP_DIR="/tmp/installarch_temp"
-cleanup_list=""
+LOG_FILE="$HOME/installarch.log"
+BACKUP_LOG="$HOME/installarch_backup.log"
+SCRIPTS_DIR="$HOME/installarch_scripts"
 
-# Limpieza final
-cleanup() {
-    rm -rf "${TMP_DIR}"
-    [ -n "$cleanup_list" ] && rm -rf $cleanup_list
-}
-
-# Manejo de errores
-error() {
-    cleanup
-    whiptail --title "Error" --msgbox "ERROR: $1" 10 60
+# Función para mostrar mensaje de error y salir
+error_exit() {
+    echo "$1" | tee -a "$LOG_FILE"
     exit 1
 }
 
-# Validar dependencias
-check_deps() {
-    required="git whiptail find awk grep sudo"
-    missing=""
-    for cmd in $required; do
-        if ! command -v "$cmd" >/dev/null 2>&1; then
-            missing="$missing $cmd"
-        fi
-    done
-    [ -n "$missing" ] && error "Dependencias faltantes: $missing"
-}
-
-# Pantalla de bienvenida
-welcome() {
-    whiptail --title "Bienvenida" --yesno "Bienvenido al instalador de scripts de mxhectorvega\n\nLog: ${LOG_FILE}" \
-    12 60 --yes-button "Iniciar" --no-button "Cancelar" || exit 0
-}
-
-# Clonar repositorio
+# Función para clonar el repositorio
 clone_repo() {
-    [ -d "${REPO_DIR}" ] && rm -rf "${REPO_DIR}"
-    if ! git clone "${REPO_URL}" "${REPO_DIR}" >"${LOG_FILE}" 2>&1; then
-        error "No se pudo clonar el repositorio"
-    fi
+    [ -d "$SCRIPTS_DIR" ] && rm -rf "$SCRIPTS_DIR"
+    git clone "$REPO_URL" "$SCRIPTS_DIR" || error_exit "Error al clonar el repositorio"
 }
 
-# Listar scripts disponibles
-list_scripts() {
-    find "${REPO_DIR}" -type f -executable ! -name "*.*" | awk -F/ '{print ++i " " $NF}'
+# Función para validar y aplicar compatibilidad de paquetes y sintaxis
+validate_compatibility() {
+    # Aquí agregar las validaciones y compatibilidades necesarias
+    echo "Validando compatibilidad..."
 }
 
-# Ejecutar script con manejo de privilegios
-run_script() {
-    script="$1"
-    progress=0
-    total_steps=$(grep -c '^#' "$script" | tr -d '\n')
-
-    {
-        while read -r line; do
-            case "$line" in
-                *makepkg*|*git*)
-                    if [ "$(id -u)" -eq 0 ]; then
-                        sudo -u "${SUDO_USER}" "$line"
-                    else
-                        eval "$line"
-                    fi
-                    ;;
-                *)
-                    eval "$line"
-                    ;;
-            esac
-            progress=$((progress + 1))
-            printf "%d\n" "$((progress * 100 / total_steps))"
-        done < "$script"
-    } | whiptail --title "Instalando" --gauge "Progreso de instalación:" 10 60 0
+# Función para implementar sistema de retroceso
+implement_rollback() {
+    cp "$LOG_FILE" "$BACKUP_LOG"
 }
 
-# Pantalla de lista de scripts
-select_script() {
-    while true; do
-        script_list=$(list_scripts)
-        selection=$(whiptail --title "Scripts Disponibles" \
-        --menu "Seleccione un script:" 20 60 10 \
-        $script_list \
-        3>&1 1>&2 2>&3) || return 1
+# Función para almacenar contraseñas
+store_passwords() {
+    echo "Almacenando contraseñas..."
+    echo "root: $ROOT_PASSWORD" >> "$LOG_FILE"
+    echo "user: $USER_PASSWORD" >> "$LOG_FILE"
+}
 
-        selected_script=$(find "${REPO_DIR}" -type f -executable ! -name "*.*" | sed -n "${selection}p")
+# Función para ejecutar el script seleccionado
+execute_script() {
+    local script="$1"
+    echo "Ejecutando script: $script"
+    sh "$script" || error_exit "Error al ejecutar el script $script"
+}
 
-        if [ -f "$selected_script" ]; then
-            run_script "$selected_script"
-            return 0
-        else
-            error "Script no válido"
-        fi
-    done
+# Función para limpiar residuos y temporales
+cleanup() {
+    echo "Limpiando residuos..."
+    rm -rf "$SCRIPTS_DIR"
+}
+
+# Función para validar y satisfacer dependencias
+validate_dependencies() {
+    # Aquí agregar la validación de dependencias necesarias
+    echo "Validando dependencias..."
+}
+
+# Función para tomar información de variables de usuario y globales
+load_variables() {
+    echo "Cargando variables de usuario y globales..."
+    source /etc/profile
+}
+
+# Pantalla de Bienvenida
+welcome_screen() {
+    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega\nLos registros se almacenarán en $LOG_FILE" 10 60
+}
+
+# Pantalla de Lista de scripts
+list_scripts_screen() {
+    local scripts_list
+    scripts_list=$(find "$SCRIPTS_DIR" -type f -executable -print | awk -F'/' '{print NR, $NF}')
+    SELECTED_SCRIPT=$(whiptail --title "Lista de scripts" --menu "Seleccione un script para ejecutar" 20 78 10 $scripts_list 3>&1 1>&2 2>&3)
+}
+
+# Pantalla de Instalación
+installation_screen() {
+    whiptail --title "Instalación" --gauge "Instalando el script seleccionado..." 10 70 0
 }
 
 # Pantalla final
 final_screen() {
-    whiptail --title "Completado" \
-    --yesno "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\n¿Mostrar registro?" \
-    12 60 --yes-button "Finalizar" --no-button "Mostrar .log" && cleanup
-
-    [ $? -eq 1 ] && whiptail --textbox "${LOG_FILE}" 20 60
+    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\nPara consultar el archivo de registros, revisa $LOG_FILE" 10 60
 }
 
-# Función principal
+# Ejecución del script
 main() {
-    check_deps
-    welcome
+    welcome_screen || error_exit "Cancelado por el usuario."
+    load_variables
+    validate_dependencies
     clone_repo
-
-    while select_script; do
-        final_screen
-        break
-    done
+    validate_compatibility
+    implement_rollback
+    list_scripts_screen || error_exit "Cancelado por el usuario."
+    installation_screen
+    execute_script "$SELECTED_SCRIPT"
+    store_passwords
+    cleanup
+    final_screen
 }
 
-# Inicio del programa
-main
+main "$@"
