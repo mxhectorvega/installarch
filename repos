@@ -3,8 +3,8 @@
 # Instalación de Paru y configuración del repositorio Chaotic AUR en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
 # Ejecución: curl -L is.gd/mxrepos | bash
-# Fecha de actualización: 05/02/2025
-# Versión: 5.2
+# Fecha de actualización: 04/02/2025
+# Versión: 5.0
 
 # Función para mostrar mensajes con formato
 imprimir_mensaje() {
@@ -35,11 +35,20 @@ done
 if ! command -v paru &> /dev/null; then
     echo "Instalando Paru, AUR helper..."
     sudo pacman -S --needed --noconfirm base-devel || { imprimir_mensaje "Error al instalar base-devel."; exit 1; }
-    git clone https://aur.archlinux.org/paru.git || { imprimir_mensaje "Error al clonar el repositorio de Paru."; exit 1; }
-    cd paru || exit
-    makepkg -si --noconfirm || { imprimir_mensaje "Error al compilar Paru."; exit 1; }
+
+    # Clonar paru-bin en lugar de paru
+    echo "Clonando paru-bin desde AUR..."
+    git clone https://aur.archlinux.org/paru-bin.git || { imprimir_mensaje "Error al clonar el repositorio de paru-bin."; exit 1; }
+
+    # Compilar e instalar paru-bin
+    echo "Compilando e instalando paru-bin..."
+    cd paru-bin || exit
+    makepkg -si --noconfirm || { imprimir_mensaje "Error al compilar paru-bin."; exit 1; }
     cd ..
-    rm -rf paru
+
+    # Eliminar el directorio clonado
+    echo "Limpiando archivos temporales..."
+    rm -rf paru-bin
 fi
 
 # Configurar repositorio Chaotic AUR
