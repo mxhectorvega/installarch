@@ -1,107 +1,89 @@
-#!/bin/sh
+#!/bin/bash
 
-# Variables globales
-LOG_FILE="$HOME/installarch.log"
+# Variables
 REPO_URL="https://github.com/mxhectorvega/installarch"
-CLONE_DIR="/tmp/installarch"
+LOG_FILE="$HOME/install.log"
+TEMP_DIR="/tmp/installarch"
 ROOT_PASSWORD=""
 
-# Función para mostrar mensajes de error y salir
-error_exit() {
-    echo "Error: $1" >> "$LOG_FILE"
-    whiptail --title "Error" --msgbox "$1" 8 50
+# Función para mostrar mensaje de error
+error() {
+    whiptail --title "Error" --msgbox "$1" 8 45
+    echo "Error: $1" | tee -a $LOG_FILE
     exit 1
 }
 
-# Función para verificar dependencias
-check_dependencies() {
-    local dependencies="whiptail git sudo"
-    for dep in $dependencies; do
-        if ! command -v "$dep" > /dev/null 2>&1; then
-            error_exit "Falta la dependencia: $dep"
+# Pantalla de bienvenida
+welcome_screen() {
+    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega\nEl archivo de registros se almacenará en: $LOG_FILE" 12 60
+    if ! command -v git &> /dev/null; then
+        whiptail --title "Dependencias faltantes" --msgbox "Instalando git..." 8 45
+        pacman -Sy --noconfirm git || error "Fallo al instalar git"
+    fi
+    mkdir -p $TEMP_DIR || error "No se pudo crear el directorio temporal"
+}
+
+# Pantalla para clonar el repositorio y listar scripts
+list_scripts() {
+    git clone $REPO_URL $TEMP_DIR || error "Fallo al clonar el repositorio"
+    SCRIPTS=$(find $TEMP_DIR -type f -executable -not -name "*.*" -printf "%f\n")
+    SCRIPT=$(whiptail --title "Lista de scripts" --menu "Selecciona un script para ejecutar" 20 60 10 $(echo $SCRIPTS | nl -w2 -s'. ') 3>&1 1>&2 2>&3)
+    [[ $? -ne 0 ]] && error "No se seleccionó ningún script"
+}
+
+# Función para validar paquetes y sintaxis
+validate_scripts() {
+    whiptail --title "Validando" --infobox "Validando scripts..." 8 45
+    shellcheck $TEMP_DIR/$SCRIPT || error "Errores en la sintaxis del script"
+    # Validar dependencias
+    DEPS=$(grep -Po '^# Dependencies: \K.*' $TEMP_DIR/$SCRIPT)
+    for DEP in $DEPS; do
+        if ! pacman -Q $DEP &> /dev/null; then
+            whiptail --title "Dependencias faltantes" --msgbox "Instalando $DEP..." 8 45
+            pacman -Sy --noconfirm $DEP || error "Fallo al instalar $DEP"
         fi
     done
 }
 
-# Función para clonar el repositorio
-clone_repository() {
-    if ! git clone "$REPO_URL" "$CLONE_DIR" >> "$LOG_FILE" 2>&1; then
-        error_exit "No se pudo clonar el repositorio."
-    fi
+# Solicitar contraseña de root
+request_root_password() {
+    ROOT_PASSWORD=$(whiptail --title "Contraseña de root" --passwordbox "Por favor, introduce la contraseña de root:" 8 60 3>&1 1>&2 2>&3)
+    [[ $? -ne 0 ]] && error "No se proporcionó la contraseña de root"
+    echo "root:$ROOT_PASSWORD" | chpasswd
 }
 
-# Función para mostrar la pantalla de bienvenida
-welcome_screen() {
-    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE.\n\n¿Desea continuar?" 12 50
-    if [ $? -ne 0 ]; then
-        exit 0
-    fi
-}
-
-# Función para mostrar la lista de scripts
-list_scripts() {
-    local scripts
-    scripts=$(find "$CLONE_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print NR, $NF}')
-    local selected_script
-    selected_script=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 50 10 $scripts 3>&1 1>&2 2>&3)
-    if [ $? -ne 0 ]; then
-        return 1
-    fi
-    echo "$selected_script"
-}
-
-# Función para ejecutar el script seleccionado
+# Ejecutar el script seleccionado
 execute_script() {
-    local script_name=$1
-    local script_path
-    script_path=$(find "$CLONE_DIR" -type f -executable ! -name "*.*" | sed -n "${script_name}p")
-
-    if [ -z "$script_path" ]; then
-        error_exit "No se pudo encontrar el script seleccionado."
-    fi
-
-    # Ejecutar el script y mostrar la barra de progreso
-    {
-        echo "0"
-        # Aquí deberías agregar los pasos del script y actualizar la barra de progreso
-        # Por ejemplo, si el script tiene 5 pasos, puedes dividir el progreso en 20% por paso.
-        # Esto es solo un ejemplo, debes adaptarlo a tu script real.
-        sleep 1; echo "20"
-        sleep 1; echo "40"
-        sleep 1; echo "60"
-        sleep 1; echo "80"
-        sleep 1; echo "100"
-    } | whiptail --gauge "Instalando $script_name..." 6 50 0
-
-    if [ $? -ne 0 ]; then
-        error_exit "La instalación del script falló."
-    fi
+    whiptail --title "Instalación" --gauge "Instalando $SCRIPT..." 8 45 0
+    echo "Ejecutando $SCRIPT..." | tee -a $LOG_FILE
+    echo $ROOT_PASSWORD | sudo -S -u $SUDO_USER bash $TEMP_DIR/$SCRIPT 2>&1 | tee -a $LOG_FILE || error "Fallo en la ejecución del script"
+    whiptail --title "Instalación" --msgbox "Instalación completada." 8 45
 }
 
-# Función para mostrar la pantalla final
+# Función de limpieza
+cleanup() {
+    rm -rf $TEMP_DIR
+    whiptail --title "Limpieza" --msgbox "Limpieza completada." 8 45
+}
+
+# Pantalla final
 final_screen() {
-    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 50
-    if whiptail --title "Registro" --yesno "¿Desea ver el archivo de registros?" 10 50; then
-        whiptail --textbox "$LOG_FILE" 20 80 --scrolltext
+    whiptail --title "Finalizar" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\nLa instalación ha finalizado correctamente." 12 60
+    if whiptail --title "Mostrar .log" --yesno "¿Deseas ver el archivo de registros?" 8 45; then
+        whiptail --title "Archivo de registros" --textbox $LOG_FILE 20 60
     fi
 }
 
 # Función principal
 main() {
-    check_dependencies
-    clone_repository
     welcome_screen
-    while true; do
-        selected_script=$(list_scripts)
-        if [ $? -ne 0 ]; then
-            break
-        fi
-        execute_script "$selected_script"
-    done
+    list_scripts
+    validate_scripts
+    request_root_password
+    execute_script
+    cleanup
     final_screen
-    # Limpieza de residuos
-    rm -rf "$CLONE_DIR"
 }
 
-# Ejecutar el script principal
+# Ejecutar la función principal
 main
