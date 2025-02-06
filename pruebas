@@ -6,7 +6,7 @@ LOG_FILE="/var/log/installarch.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
 CLONE_DIR="/tmp/installarch"
 ROOT_PASSWORD=""
-USER="user"  # Cambiar por el usuario sin privilegios
+USER=$USER  # Cambiar por el usuario sin privilegios
 
 # Funciones de utilidad
 log() {
