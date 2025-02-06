@@ -1,149 +1,138 @@
-#!/bin/sh
+#!/bin/bash
 
-# Variables
-LOG_FILE="/var/log/install_mxhectorvega.log"
-REPO_URL="https://github.com/mxhectorvega/installarch"
-DEPENDENCIES="whiptail git"
-SCRIPTS_DIR="/tmp/installarch"
-USER=$(logname)
+# Variables globales
+LOG_FILE="/var/log/installarch.log"
+REPO_URL="https://github.com/mxhectorvega/installarch.git"
+TEMP_DIR="/tmp/installarch"
 ROOT_PASS=""
-BACKUP_DIR="/tmp/install_backup"
+SCRIPTS_DIR="$TEMP_DIR/scripts"
 
-# Funciones de ayuda
-log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
-}
-
-check_root() {
-    if [ "$(id -u)" -ne 0 ]; then
-        whiptail --title "Error" --msgbox "Este script debe ejecutarse como root." 8 40
-        exit 1
-    fi
-}
-
-install_dependencies() {
-    for dep in $DEPENDENCIES; do
-        if ! command -v "$dep" >/dev/null 2>&1; then
-            log "Instalando dependencia: $dep"
-            pacman -S --noconfirm "$dep" || { log "Error al instalar $dep"; exit 1; }
-        fi
-    done
-}
-
-validate_compatibility() {
-    local script_urls="
-        https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak
-        https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome
-        https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos
-        https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora
-        https://raw.githubusercontent.com/mxhectorvega/installarch/main/mackbook
-    "
-    for url in $script_urls; do
-        if ! curl -sSf "$url" >/dev/null; then
-            log "Error: No se pudo validar la compatibilidad con $url"
-            whiptail --title "Error" --msgbox "No se pudo validar la compatibilidad con $url" 8 60
-            exit 1
-        fi
-    done
-}
-
-save_root_password() {
-    if [ -z "$ROOT_PASS" ]; then
-        ROOT_PASS=$(whiptail --passwordbox "Introduce la contraseña de root:" 8 60 3>&1 1>&2 2>&3)
-        if [ -z "$ROOT_PASS" ]; then
-            whiptail --title "Error" --msgbox "La contraseña de root no puede estar vacía." 8 40
-            exit 1
-        fi
-    fi
-}
-
-clone_repository() {
-    rm -rf "$SCRIPTS_DIR"
-    mkdir -p "$SCRIPTS_DIR"
-    su - "$USER" -c "git clone '$REPO_URL' '$SCRIPTS_DIR'" || { log "Error al clonar el repositorio"; exit 1; }
-}
-
-list_scripts() {
-    find "$SCRIPTS_DIR" -type f -executable -exec basename {} \; | grep -v '\.' | awk '{print NR, $0}'
-}
-
-install_script() {
-    local script_name="$1"
-    (
-        echo "10"
-        echo "# Preparando la instalación..."
-        sleep 1
-
-        # Crear copia de seguridad
-        mkdir -p "$BACKUP_DIR"
-        cp -r "$SCRIPTS_DIR/$script_name" "$BACKUP_DIR/"
-
-        # Ejecutar script
-        su - "$USER" -c "bash '$SCRIPTS_DIR/$script_name'" || {
-            log "Error al ejecutar el script: $script_name"
-            whiptail --title "Error" --msgbox "Error al ejecutar el script: $script_name. Revisa el archivo de registro para más detalles." 10 60
-            return 1
-        }
-
-        echo "100"
-        echo "# Instalación completada"
-    ) | whiptail --gauge "Instalando $script_name..." 6 60 0
-}
-
-welcome_screen() {
-    whiptail --title "Bienvenido" --yesno "\
-Bienvenido al instalador de scripts de mxhectorvega.
-
-Los registros se almacenarán en: $LOG_FILE
-
-¿Deseas continuar con la instalación?" 12 80
-    if [ $? -ne 0 ]; then
-        whiptail --title "Instalación cancelada" --msgbox "Instalación cancelada." 8 40
-        exit 0
-    fi
-
-    install_dependencies
-}
-
-select_script_screen() {
-    clone_repository
-    SCRIPT_LIST=$(list_scripts)
-    SELECTED_SCRIPT=$(whiptail --title "Lista de scripts" --menu "Selecciona un script para ejecutar:" 20 80 10 $SCRIPT_LIST 3>&1 1>&2 2>&3)
-    if [ -z "$SELECTED_SCRIPT" ]; then
-        whiptail --title "Instalación cancelada" --msgbox "Instalación cancelada." 8 40
-        exit 0
-    fi
-}
-
-installation_progress_screen() {
-    save_root_password
-    if ! install_script "$SELECTED_SCRIPT"; then
-        whiptail --title "Error" --msgbox "La instalación falló. Consulta el archivo de registro para más detalles." 8 60
-        exit 1
-    fi
-}
-
-final_screen() {
-    whiptail --title "Instalación completada" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 8 80
-
-    if whiptail --title "Registro de instalación" --yesno "¿Deseas revisar el archivo de registro?" 8 60; then
-        whiptail --title "Registro de instalación" --textbox "$LOG_FILE" 20 80
-    fi
-}
-
+# Función para limpiar residuos
 cleanup() {
-    rm -rf "$SCRIPTS_DIR" "$BACKUP_DIR"
-    log "Limpieza completada"
+    rm -rf "$TEMP_DIR"
 }
 
+# Función para manejar errores
+error_handler() {
+    local error_msg="$1"
+    whiptail --title "Error" --msgbox "$error_msg\nConsulte el archivo de registro: $LOG_FILE" 8 60
+    cleanup
+    exit 1
+}
+
+# Función para verificar si estamos en root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        whiptail --title "Permiso denegado" --msgbox "Este script debe ejecutarse como root." 8 40
+        cleanup
+        exit 1
+    fi
+}
+
+# Función para almacenar la contraseña root
+store_root_password() {
+    ROOT_PASS=$(whiptail --passwordbox "Ingrese la contraseña de root:" 8 40 --title "Contraseña de root" 3>&1 1>&2 2>&3)
+    if [[ $? -ne 0 ]]; then
+        error_handler "Operación cancelada por el usuario."
+    fi
+}
+
+# Función para ejecutar comandos como root o cambiar al usuario sin privilegios
+run_command() {
+    local command="$1"
+    if [[ "$command" == *"makepkg"* || "$command" == *"git"* ]]; then
+        su -c "$command" -s /bin/sh $(logname) >> "$LOG_FILE" 2>&1
+    else
+        echo "$ROOT_PASS" | sudo -S sh -c "$command" >> "$LOG_FILE" 2>&1
+    fi
+    if [[ $? -ne 0 ]]; then
+        error_handler "El comando '$command' falló."
+    fi
+}
+
+# Función para mostrar la pantalla de bienvenida
+welcome_screen() {
+    whiptail --title "Bienvenido al instalador de scripts de mxhectorvega" \
+        --yesno "Este instalador creará un archivo de registro en:\n$LOG_FILE\n¿Desea continuar?" 10 60
+    if [[ $? -ne 0 ]]; then
+        cleanup
+        exit 0
+    fi
+}
+
+# Función para clonar el repositorio y listar scripts
+list_scripts() {
+    mkdir -p "$TEMP_DIR"
+    git clone "$REPO_URL" "$TEMP_DIR" >> "$LOG_FILE" 2>&1
+    if [[ $? -ne 0 ]]; then
+        error_handler "No se pudo clonar el repositorio."
+    fi
+
+    SCRIPT_LIST=()
+    mapfile -t SCRIPT_LIST < <(find "$TEMP_DIR" -maxdepth 1 -type f -executable ! -name "*.*" -exec basename {} \; | sort)
+
+    CHOICE=$(whiptail --title "Lista de scripts" --menu "Seleccione un script para ejecutar:" 20 60 10 \
+        $(for i in "${!SCRIPT_LIST[@]}"; do echo "$((i+1))" "${SCRIPT_LIST[$i]}"; done) \
+        --cancel-button Cancelar --ok-button Siguiente 3>&1 1>&2 2>&3)
+    if [[ $? -ne 0 ]]; then
+        cleanup
+        exit 0
+    fi
+
+    SELECTED_SCRIPT="${SCRIPT_LIST[$((CHOICE-1))]}"
+}
+
+# Función para mostrar la barra de progreso durante la instalación
+installation_progress() {
+    local script_path="$TEMP_DIR/$SELECTED_SCRIPT"
+    total_steps=$(grep -oP '^# STEP' "$script_path" | wc -l)
+    current_step=0
+
+    (
+        while IFS= read -r line; do
+            echo "$line" >> "$LOG_FILE" 2>&1
+            if [[ "$line" == "# STEP"* ]]; then
+                ((current_step++))
+                echo "$current_step"
+            fi
+        done < <(bash "$script_path" 2>&1)
+    ) | whiptail --gauge "Instalando $SELECTED_SCRIPT..." 6 60 0
+
+    if [[ $? -ne 0 ]]; then
+        error_handler "La instalación falló."
+    fi
+}
+
+# Función para mostrar la pantalla final
+final_screen() {
+    whiptail --title "Finalizado" --msgbox "¡Gracias por usar el instalador!\n♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60
+
+    if whiptail --title "Mostrar registro" --yesno "¿Desea ver el archivo de registro?" 8 60; then
+        whiptail --scrolltext --title "Archivo de registro" --textbox "$LOG_FILE" 20 70
+    fi
+}
+
+# Main script execution
 main() {
     check_root
+    store_root_password
+
+    # Verificar dependencias
+    DEPENDENCIES=("whiptail" "git" "sudo")
+    for dep in "${DEPENDENCIES[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            error_handler "Se requiere la dependencia '$dep'. Por favor, instálela primero."
+        fi
+    done
+
     welcome_screen
-    validate_compatibility
-    select_script_screen
-    installation_progress_screen
+    list_scripts
+    installation_progress
     final_screen
+
     cleanup
+    exit 0
 }
 
+# Ejecución del script principal
 main
