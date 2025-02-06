@@ -1,11 +1,12 @@
 #!/bin/sh
-
 # Variables
 LOG_FILE="/var/log/install_mxhectorvega.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
 DEPENDENCIES="whiptail git"
 SCRIPTS_DIR="/tmp/installarch"
 USER=$(logname)
+ROOT_PASS=""
+BACKUP_DIR="/tmp/install_backup"
 
 # Funciones de ayuda
 log() {
@@ -14,7 +15,7 @@ log() {
 
 check_root() {
     if [ "$(id -u)" -ne 0 ]; then
-        echo "Este script debe ejecutarse como root" >&2
+        whiptail --title "Error" --msgbox "Este script debe ejecutarse como root." 8 40
         exit 1
     fi
 }
@@ -22,27 +23,43 @@ check_root() {
 install_dependencies() {
     for dep in $DEPENDENCIES; do
         if ! command -v "$dep" >/dev/null 2>&1; then
-            pacman -S --noconfirm "$dep"
+            log "Instalando dependencia: $dep"
+            pacman -S --noconfirm "$dep" || { log "Error al instalar $dep"; exit 1; }
         fi
     done
 }
 
 validate_compatibility() {
-    for url in "$@"; do
+    local script_urls="
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora
+        https://raw.githubusercontent.com/mxhectorvega/installarch/main/mackbook
+    "
+    for url in $script_urls; do
         if ! curl -sSf "$url" >/dev/null; then
             log "Error: No se pudo validar la compatibilidad con $url"
+            whiptail --title "Error" --msgbox "No se pudo validar la compatibilidad con $url" 8 60
             exit 1
         fi
     done
 }
 
 save_root_password() {
-    ROOT_PASS=$(whiptail --passwordbox "Introduce la contraseña de root:" 8 60 3>&1 1>&2 2>&3)
-    export ROOT_PASS
+    if [ -z "$ROOT_PASS" ]; then
+        ROOT_PASS=$(whiptail --passwordbox "Introduce la contraseña de root:" 8 60 3>&1 1>&2 2>&3)
+        if [ -z "$ROOT_PASS" ]; then
+            whiptail --title "Error" --msgbox "La contraseña de root no puede estar vacía." 8 40
+            exit 1
+        fi
+    fi
 }
 
 clone_repository() {
-    su - "$USER" -c "git clone $REPO_URL $SCRIPTS_DIR"
+    rm -rf "$SCRIPTS_DIR"
+    mkdir -p "$SCRIPTS_DIR"
+    su - "$USER" -c "git clone '$REPO_URL' '$SCRIPTS_DIR'" || { log "Error al clonar el repositorio"; exit 1; }
 }
 
 list_scripts() {
@@ -50,59 +67,76 @@ list_scripts() {
 }
 
 install_script() {
-    local script_name=$1
-    su - "$USER" -c "bash $SCRIPTS_DIR/$script_name"
+    local script_name="$1"
+    (
+        echo "10"
+        echo "# Preparando la instalación..."
+        sleep 1
+
+        # Crear copia de seguridad
+        mkdir -p "$BACKUP_DIR"
+        cp -r "$SCRIPTS_DIR/$script_name" "$BACKUP_DIR/"
+
+        # Ejecutar script
+        su - "$USER" -c "bash '$SCRIPTS_DIR/$script_name'" || {
+            log "Error al ejecutar el script: $script_name"
+            whiptail --title "Error" --msgbox "Error al ejecutar el script: $script_name. Revisa el archivo de registro para más detalles." 10 60
+            return 1
+        }
+
+        echo "100"
+        echo "# Instalación completada"
+    ) | whiptail --gauge "Instalando $script_name..." 6 60 0
 }
 
-rollback() {
-    log "Iniciando rollback de la instalación fallida..."
-    # Implementar el rollback según sea necesario
+# Pantalla de Bienvenida
+welcome_screen() {
+    whiptail --title "Bienvenido" --msgbox "\
+Bienvenido al instalador de scripts de mxhectorvega.
+
+Los registros se almacenarán en: $LOG_FILE
+
+Se verificarán y satisfarán las dependencias necesarias." 12 80
+
+    install_dependencies
 }
 
+# Pantalla de Lista de Scripts
+select_script_screen() {
+    clone_repository
+    SCRIPT_LIST=$(list_scripts)
+    SELECTED_SCRIPT=$(whiptail --title "Lista de scripts" --menu "Selecciona un script para ejecutar:" 20 80 10 $SCRIPT_LIST 3>&1 1>&2 2>&3)
+    if [ -z "$SELECTED_SCRIPT" ]; then
+        whiptail --title "Instalación cancelada" --msgbox "Instalación cancelada" 8 40
+        exit 0
+    fi
+}
+
+# Pantalla Final
+final_screen() {
+    whiptail --title "Instalación completada" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 8 80
+
+    if whiptail --title "Registro de instalación" --yesno "¿Deseas revisar el archivo de registro?" 8 60; then
+        whiptail --title "Registro de instalación" --textbox "$LOG_FILE" 20 80
+    fi
+}
+
+# Limpieza
 cleanup() {
-    rm -rf "$SCRIPTS_DIR"
+    rm -rf "$SCRIPTS_DIR" "$BACKUP_DIR"
     log "Limpieza completada"
 }
 
-# Bienvenida
-whiptail --title "Instalador de scripts de mxhectorvega" --msgbox "Bienvenido al instalador de scripts de mxhectorvega.\nLos registros se almacenarán en $LOG_FILE" 12 80
-
-# Satisfacer dependencias
-install_dependencies
-
-# Pantalla de lista de scripts
-clone_repository
-SCRIPT_LIST=$(list_scripts)
-SELECTED_SCRIPT=$(whiptail --title "Lista de scripts" --menu "Selecciona un script para ejecutar:" 20 80 10 $SCRIPT_LIST 3>&1 1>&2 2>&3)
-
-if [ -z "$SELECTED_SCRIPT" ]; then
-    whiptail --title "Instalación cancelada" --msgbox "Instalación cancelada" 8 40
-    cleanup
-    exit 0
-fi
-
-# Pantalla de instalación
-{
+# Main
+main() {
+    check_root
+    welcome_screen
+    validate_compatibility
     save_root_password
-    echo "10"
-    echo "# Preparando la instalación..."
-    sleep 1
-    if install_script "$SELECTED_SCRIPT"; then
-        echo "100"
-        echo "# Instalación completada"
-    else
-        rollback
-        whiptail --title "Error de instalación" --msgbox "Hubo un error durante la instalación. Revisa el archivo de registro para más detalles." 8 40
-        cleanup
-        exit 1
-    fi
-} | whiptail --gauge "Instalando $SELECTED_SCRIPT..." 6 60 0
+    select_script_screen
+    install_script "$SELECTED_SCRIPT"
+    final_screen
+    cleanup
+}
 
-# Pantalla final
-whiptail --title "Instalación completada" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 8 80
-whiptail --title "Registro de instalación" --textbox "$LOG_FILE" 20 80
-
-# Limpieza
-cleanup
-
-exit 0
+main
