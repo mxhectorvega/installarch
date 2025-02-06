@@ -1,194 +1,122 @@
 #!/bin/sh
 
-# Variables globales
+# Configuración inicial
+: "${LOG_FILE:=${HOME}/installarch.log}"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-REPO_DIR="$HOME/installarch"
-LOG_FILE="$HOME/installarch_install.log"
-ROOT_PASS_FILE="$HOME/.root_pass"
-USER_PASS_FILE="$HOME/.user_pass"
+REPO_DIR="installarch"
+TMP_DIR="/tmp/installarch_temp"
+cleanup_list=""
 
-# Función para registrar eventos
-log_event() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+# Limpieza final
+cleanup() {
+    rm -rf "${TMP_DIR}"
+    [ -n "$cleanup_list" ] && rm -rf $cleanup_list
 }
 
-# Limpiar instalaciones previas
-clean_previous_install() {
-    rm -rf "$REPO_DIR"
-    rm -f "$LOG_FILE"
-    log_event "Instalación previa eliminada"
+# Manejo de errores
+error() {
+    cleanup
+    whiptail --title "Error" --msgbox "ERROR: $1" 10 60
+    exit 1
+}
+
+# Validar dependencias
+check_deps() {
+    required="git whiptail find awk grep sudo"
+    missing=""
+    for cmd in $required; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing="$missing $cmd"
+        fi
+    done
+    [ -n "$missing" ] && error "Dependencias faltantes: $missing"
+}
+
+# Pantalla de bienvenida
+welcome() {
+    whiptail --title "Bienvenida" --yesno "Bienvenido al instalador de scripts de mxhectorvega\n\nLog: ${LOG_FILE}" \
+    12 60 --yes-button "Iniciar" --no-button "Cancelar" || exit 0
 }
 
 # Clonar repositorio
-clone_repository() {
-    git clone "$REPO_URL" "$REPO_DIR" 2>> "$LOG_FILE"
-    if [ $? -ne 0 ]; then
-        whiptail --title "Error" --msgbox "Error al clonar el repositorio. Revisa el archivo de registros en $LOG_FILE" 10 60
-        exit 1
+clone_repo() {
+    [ -d "${REPO_DIR}" ] && rm -rf "${REPO_DIR}"
+    if ! git clone "${REPO_URL}" "${REPO_DIR}" >"${LOG_FILE}" 2>&1; then
+        error "No se pudo clonar el repositorio"
     fi
-    log_event "Repositorio clonado exitosamente"
-}
-
-# Obtener contraseñas
-get_passwords() {
-    ROOT_PASS=$(whiptail --passwordbox "Introduce la contraseña de root:" 8 60 --title "Contraseña root" 3>&1 1>&2 2>&3)
-    echo "$ROOT_PASS" > "$ROOT_PASS_FILE"
-
-    USER_PASS=$(whiptail --passwordbox "Introduce la contraseña del usuario:" 8 60 --title "Contraseña usuario" 3>&1 1>&2 2>&3)
-    echo "$USER_PASS" > "$USER_PASS_FILE"
-
-    log_event "Contraseñas almacenadas para uso futuro"
 }
 
 # Listar scripts disponibles
 list_scripts() {
-    SCRIPT_FILES=$(find "$REPO_DIR" -type f -executable ! -name "*.*" | sort)
-    if [ -z "$SCRIPT_FILES" ]; then
-        whiptail --title "Error" --msgbox "No se encontraron scripts ejecutables en el repositorio." 8 60
-        exit 1
-    fi
-
-    MENU_OPTIONS=""
-    INDEX=1
-    for SCRIPT in $SCRIPT_FILES; do
-        SCRIPT_NAME=$(basename "$SCRIPT")
-        MENU_OPTIONS="$MENU_OPTIONS $INDEX \"$SCRIPT_NAME\""
-        INDEX=$((INDEX+1))
-    done
-
-    SELECTED_INDEX=$(eval "whiptail --title \"Lista de scripts\" --menu \"Selecciona un script para ejecutar:\" 20 60 10 $MENU_OPTIONS 3>&1 1>&2 2>&3")
-
-    if [ -z "$SELECTED_INDEX" ]; then
-        main_menu
-    else
-        SELECTED_SCRIPT=$(echo "$SCRIPT_FILES" | sed -n "${SELECTED_INDEX}p")
-        execute_script "$SELECTED_SCRIPT"
-    fi
+    find "${REPO_DIR}" -type f -executable ! -name "*.*" | awk -F/ '{print ++i " " $NF}'
 }
 
-# Ejecutar script seleccionado
-execute_script() {
-    SCRIPT_PATH="$1"
-    TOTAL_STEPS=10  # Suponiendo 10 pasos en el script
-    STEP=0
+# Ejecutar script con manejo de privilegios
+run_script() {
+    script="$1"
+    progress=0
+    total_steps=$(grep -c '^#' "$script" | tr -d '\n')
 
-    while [ $STEP -le $TOTAL_STEPS ]; do
-        PERCENT=$(( STEP * 100 / TOTAL_STEPS ))
-        echo $PERCENT
+    {
+        while read -r line; do
+            case "$line" in
+                *makepkg*|*git*)
+                    if [ "$(id -u)" -eq 0 ]; then
+                        sudo -u "${SUDO_USER}" "$line"
+                    else
+                        eval "$line"
+                    fi
+                    ;;
+                *)
+                    eval "$line"
+                    ;;
+            esac
+            progress=$((progress + 1))
+            printf "%d\n" "$((progress * 100 / total_steps))"
+        done < "$script"
+    } | whiptail --title "Instalando" --gauge "Progreso de instalación:" 10 60 0
+}
 
-        if [ $STEP -eq 3 ]; then
-            # Simular solicitud de contraseña
-            sleep 1
+# Pantalla de lista de scripts
+select_script() {
+    while true; do
+        script_list=$(list_scripts)
+        selection=$(whiptail --title "Scripts Disponibles" \
+        --menu "Seleccione un script:" 20 60 10 \
+        $script_list \
+        3>&1 1>&2 2>&3) || return 1
+
+        selected_script=$(find "${REPO_DIR}" -type f -executable ! -name "*.*" | sed -n "${selection}p")
+
+        if [ -f "$selected_script" ]; then
+            run_script "$selected_script"
+            return 0
+        else
+            error "Script no válido"
         fi
-
-        sleep 0.5
-        STEP=$((STEP+1))
-    done | whiptail --gauge "Instalando $SCRIPT_PATH..." 6 60 0
-
-    # Ejecutar el script como usuario adecuado
-    if [ "$(id -u)" -eq 0 ]; then
-        su "$(logname)" -c "$SCRIPT_PATH"
-    else
-        sh "$SCRIPT_PATH"
-    fi
-
-    if [ $? -ne 0 ]; then
-        whiptail --title "Error" --msgbox "La instalación falló. Revisa el archivo de registros en $LOG_FILE" 10 60
-        log_event "Error al ejecutar $SCRIPT_PATH"
-        exit 1
-    fi
-
-    log_event "Script $SCRIPT_PATH ejecutado correctamente"
-}
-
-# Pantalla de bienvenida
-welcome_screen() {
-    if whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\nEl archivo de registros se almacenará en:\n$LOG_FILE" 10 60; then
-        main_menu
-    else
-        exit 0
-    fi
-}
-
-# Menú principal
-main_menu() {
-    OPTION=$(whiptail --title "Menú Principal" --menu "Elige una opción:" 15 60 4 \
-        "1" "Listar y ejecutar scripts" \
-        "2" "Salir" 3>&1 1>&2 2>&3)
-
-    case $OPTION in
-        1)
-            list_scripts
-            ;;
-        2)
-            exit 0
-            ;;
-        *)
-            exit 0
-            ;;
-    esac
+    done
 }
 
 # Pantalla final
 final_screen() {
-    CHOICE=$(whiptail --title "Instalación completa" --menu "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60 2 \
-        "1" "Finalizar" \
-        "2" "Mostrar .log" 3>&1 1>&2 2>&3)
+    whiptail --title "Completado" \
+    --yesno "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\n\n¿Mostrar registro?" \
+    12 60 --yes-button "Finalizar" --no-button "Mostrar .log" && cleanup
 
-    case $CHOICE in
-        1)
-            exit 0
-            ;;
-        2)
-            whiptail --title "Registro de instalación" --textbox "$LOG_FILE" 20 60
-            ;;
-        *)
-            exit 0
-            ;;
-    esac
+    [ $? -eq 1 ] && whiptail --textbox "${LOG_FILE}" 20 60
 }
 
-# Validar dependencias
-validate_dependencies() {
-    DEPENDENCIES="whiptail git awk grep find"
+# Función principal
+main() {
+    check_deps
+    welcome
+    clone_repo
 
-    for DEP in $DEPENDENCIES; do
-        if ! command -v "$DEP" >/dev/null 2>&1; then
-            whiptail --title "Dependencia faltante" --msgbox "La dependencia \"$DEP\" no está instalada. Instalando..." 8 60
-            pacman -Sy --noconfirm "$DEP"
-            if [ $? -ne 0 ]; then
-                whiptail --title "Error" --msgbox "No se pudo instalar la dependencia $DEP." 8 60
-                exit 1
-            fi
-            log_event "Dependencia $DEP instalada"
-        fi
+    while select_script; do
+        final_screen
+        break
     done
 }
 
-# Limpiar residuos
-cleanup() {
-    rm -f "$ROOT_PASS_FILE" "$USER_PASS_FILE"
-    log_event "Archivos temporales eliminados"
-}
-
-# Manejo de señales y errores
-error_handler() {
-    whiptail --title "Error" --msgbox "Ocurrió un error. Revisa el archivo de registros en $LOG_FILE" 8 60
-    log_event "Error inesperado"
-    exit 1
-}
-
-trap error_handler ERR
-
-# Programa principal
-main() {
-    validate_dependencies
-    clean_previous_install
-    welcome_screen
-    get_passwords
-    clone_repository
-    final_screen
-    cleanup
-}
-
+# Inicio del programa
 main
