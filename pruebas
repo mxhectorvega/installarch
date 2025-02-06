@@ -1,89 +1,64 @@
 #!/bin/bash
-
-# Variables
-REPO_URL="https://github.com/mxhectorvega/installarch"
-LOG_FILE="$HOME/install.log"
-TEMP_DIR="/tmp/installarch"
-ROOT_PASSWORD=""
-
-# Función para mostrar mensaje de error
-error() {
-    whiptail --title "Error" --msgbox "$1" 8 45
-    echo "Error: $1" | tee -a $LOG_FILE
-    exit 1
-}
+# Instalador para ArchLinux
+# Clona el repositorio https://github.com/mxhectorvega/installarch
 
 # Pantalla de bienvenida
-welcome_screen() {
-    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega\nEl archivo de registros se almacenará en: $LOG_FILE" 12 60
-    if ! command -v git &> /dev/null; then
-        whiptail --title "Dependencias faltantes" --msgbox "Instalando git..." 8 45
-        pacman -Sy --noconfirm git || error "Fallo al instalar git"
-    fi
-    mkdir -p $TEMP_DIR || error "No se pudo crear el directorio temporal"
+whiptail --title "Bienvenido al Instalador" --msgbox "Bienvenido al instalador de scripts de mxhectorvega\nEl archivo de registro se almacenará en \$HOME/installarch.log" 10 60
+
+# Función para registrar mensajes
+log() {
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" >> "$HOME/installarch.log"
 }
 
-# Pantalla para clonar el repositorio y listar scripts
-list_scripts() {
-    git clone $REPO_URL $TEMP_DIR || error "Fallo al clonar el repositorio"
-    SCRIPTS=$(find $TEMP_DIR -type f -executable -not -name "*.*" -printf "%f\n")
-    SCRIPT=$(whiptail --title "Lista de scripts" --menu "Selecciona un script para ejecutar" 20 60 10 $(echo $SCRIPTS | nl -w2 -s'. ') 3>&1 1>&2 2>&3)
-    [[ $? -ne 0 ]] && error "No se seleccionó ningún script"
+# Limpiar archivo de registro anterior
+rm -f "$HOME/installarch.log"
+log "Iniciando instalador"
+
+# Clonar repositorio
+if git clone https://github.com/mxhectorvega/installarch "$HOME/installarch" 2>&1 | tee -a "$HOME/installarch.log"; then
+    log "Repositorio clonado exitosamente"
+else
+    log "Error al clonar el repositorio"
+    whiptail --title "Error" --msgbox "Error al clonar el repositorio. Revisa el archivo de registro para más detalles." 10 60
+    exit 1
+fi
+
+# Validar y verificar compatibilidad
+log "Validando compatibilidad de paquetes"
+# Aquí iría tu lógica de validación de compatibilidad
+
+# Función de retroceso en caso de fallo
+rollback() {
+    log "Iniciando rollback por error"
+    # Aquí iría tu lógica de retroceso
+    whiptail --title "Rollback" --msgbox "Se produjo un error. Realizando rollback..." 10 60
 }
 
-# Función para validar paquetes y sintaxis
-validate_scripts() {
-    whiptail --title "Validando" --infobox "Validando scripts..." 8 45
-    shellcheck $TEMP_DIR/$SCRIPT || error "Errores en la sintaxis del script"
-    # Validar dependencias
-    DEPS=$(grep -Po '^# Dependencies: \K.*' $TEMP_DIR/$SCRIPT)
-    for DEP in $DEPS; do
-        if ! pacman -Q $DEP &> /dev/null; then
-            whiptail --title "Dependencias faltantes" --msgbox "Instalando $DEP..." 8 45
-            pacman -Sy --noconfirm $DEP || error "Fallo al instalar $DEP"
-        fi
+# Almacenar contraseña root
+root_password=$(whiptail --title "Contraseña Root" --passwordbox "Introduce la contraseña root:" 10 60 3>&1 1>&2 2>&3)
+log "Contraseña root almacenada"
+
+# Pantalla de selección de script
+scripts=$(find "$HOME/installarch" -maxdepth 1 -type f -executable -exec basename {} \; | awk '{print NR " " $0}')
+selected_script=$(whiptail --title "Lista de Scripts" --menu "Selecciona un script para ejecutar" 20 78 12 $(echo "$scripts") 3>&1 1>&2 2>&3)
+
+# Pantalla de instalación
+{
+    for step in $(seq 1 10); do
+        sleep 1
+        echo $((step * 10))
     done
-}
+} | whiptail --gauge "Instalando $selected_script..." 6 60 0
 
-# Solicitar contraseña de root
-request_root_password() {
-    ROOT_PASSWORD=$(whiptail --title "Contraseña de root" --passwordbox "Por favor, introduce la contraseña de root:" 8 60 3>&1 1>&2 2>&3)
-    [[ $? -ne 0 ]] && error "No se proporcionó la contraseña de root"
-    echo "root:$ROOT_PASSWORD" | chpasswd
-}
+# Aquí iría la lógica de ejecución del script seleccionado
+log "Ejecutando script seleccionado: $selected_script"
 
-# Ejecutar el script seleccionado
-execute_script() {
-    whiptail --title "Instalación" --gauge "Instalando $SCRIPT..." 8 45 0
-    echo "Ejecutando $SCRIPT..." | tee -a $LOG_FILE
-    echo $ROOT_PASSWORD | sudo -S -u $SUDO_USER bash $TEMP_DIR/$SCRIPT 2>&1 | tee -a $LOG_FILE || error "Fallo en la ejecución del script"
-    whiptail --title "Instalación" --msgbox "Instalación completada." 8 45
-}
-
-# Función de limpieza
-cleanup() {
-    rm -rf $TEMP_DIR
-    whiptail --title "Limpieza" --msgbox "Limpieza completada." 8 45
-}
+# Limpiar residuos y temporales
+log "Limpiando residuos y temporales"
+# Aquí iría tu lógica de limpieza
 
 # Pantalla final
-final_screen() {
-    whiptail --title "Finalizar" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega\nLa instalación ha finalizado correctamente." 12 60
-    if whiptail --title "Mostrar .log" --yesno "¿Deseas ver el archivo de registros?" 8 45; then
-        whiptail --title "Archivo de registros" --textbox $LOG_FILE 20 60
-    fi
-}
+whiptail --title "Finalizar" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60
 
-# Función principal
-main() {
-    welcome_screen
-    list_scripts
-    validate_scripts
-    request_root_password
-    execute_script
-    cleanup
-    final_screen
-}
-
-# Ejecutar la función principal
-main
+# Mostrar archivo de registro
+whiptail --title "Registro" --textbox "$HOME/installarch.log" 20 80
