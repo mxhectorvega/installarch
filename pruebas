@@ -1,92 +1,162 @@
-#!/bin/bash
+#!/bin/sh
+# Script de instalación para Arch Linux
 
-# Establecer variables
+# Variables globales
 LOG_FILE="/var/log/installarch.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-INSTALL_DIR="/opt/installarch"
-SCRIPTS_DIR="$INSTALL_DIR/scripts"
+CLONE_DIR="/tmp/installarch"
+ROOT_PASSWORD=""
+USER="user"  # Cambiar por el usuario sin privilegios
 
-# Función para mostrar mensajes de error
-mostrar_error() {
+# Funciones de utilidad
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+}
+
+cleanup() {
+    log "Limpiando residuos y temporales..."
+    rm -rf "$CLONE_DIR"
+}
+
+fail() {
+    log "Error: $1"
     echo "Error: $1"
-    echo "Error: $1" >> "$LOG_FILE"
+    cleanup
     exit 1
 }
 
-# Función para instalar dependencias
-instalar_dependencias() {
-    sudo pacman -Sy --needed git || mostrar_error "Error al instalar git"
-    sudo pacman -Sy --needed base-devel || mostrar_error "Error al instalar base-devel"
-}
-
-# Función para clonar el repositorio
-clonar_repositorio() {
-    git clone "$REPO_URL" "$INSTALL_DIR" || mostrar_error "Error al clonar el repositorio"
-}
-
-# Función para verificar y validar scripts
-validar_scripts() {
-    for script in $(find "$SCRIPTS_DIR" -type f -executable);
-    do
-        shellcheck "$script" || mostrar_error "Error de sintaxis en $script"
-    done
-}
-
-# Función para mostrar la pantalla de bienvenida
-pantalla_bienvenida() {
+# Pantalla de Bienvenida
+welcome_screen() {
     clear
-    echo "Bienvenido al instalador de scripts de mxhectorvega"
-    echo "Los registros de instalación se almacenarán en $LOG_FILE"
-    echo "Presiona Enter para continuar o Ctrl+C para cancelar"
-    read -r
+    echo "============================================"
+    echo " Bienvenido al instalador de scripts de mxhectorvega"
+    echo "============================================"
+    echo "Archivo de registros: $LOG_FILE"
+    echo "============================================"
+    echo "1. Iniciar"
+    echo "2. Cancelar"
+    echo "============================================"
+    read -p "Seleccione una opción: " choice
+
+    case $choice in
+        1)
+            log "Iniciando instalación..."
+            install_dependencies
+            clone_repository
+            list_scripts
+            ;;
+        2)
+            log "Instalación cancelada por el usuario."
+            cleanup
+            exit 0
+            ;;
+        *)
+            fail "Opción no válida."
+            ;;
+    esac
 }
 
-# Función para mostrar la lista de scripts
-pantalla_lista_scripts() {
+# Instalar dependencias
+install_dependencies() {
+    log "Instalando dependencias..."
+    sudo pacman -Sy --noconfirm git base-devel || fail "No se pudieron instalar las dependencias."
+}
+
+# Clonar repositorio
+clone_repository() {
+    log "Clonando repositorio..."
+    git clone "$REPO_URL" "$CLONE_DIR" || fail "No se pudo clonar el repositorio."
+}
+
+# Listar scripts
+list_scripts() {
     clear
-    echo "Lista de scripts disponibles:"
-    scripts=($(find "$SCRIPTS_DIR" -type f -executable -exec basename {} \;))
-    for i in "${!scripts[@]}"; do
-        echo "$((i+1)). ${scripts[$i]}"
+    echo "============================================"
+    echo " Lista de scripts disponibles"
+    echo "============================================"
+    scripts=$(find "$CLONE_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print NR, $NF}')
+    echo "$scripts" | awk '{printf "%-5s %s\n", $1, $2}'
+    echo "============================================"
+    echo "1. Siguiente"
+    echo "2. Atrás"
+    echo "3. Cancelar"
+    echo "============================================"
+    read -p "Seleccione una opción: " choice
+
+    case $choice in
+        1)
+            read -p "Seleccione el número del script a ejecutar: " script_num
+            script_path=$(echo "$scripts" | awk -v num="$script_num" 'NR==num {print $2}')
+            [ -z "$script_path" ] && fail "Script no válido."
+            execute_script "$script_path"
+            ;;
+        2)
+            welcome_screen
+            ;;
+        3)
+            log "Instalación cancelada por el usuario."
+            cleanup
+            exit 0
+            ;;
+        *)
+            fail "Opción no válida."
+            ;;
+    esac
+}
+
+# Ejecutar script
+execute_script() {
+    script_path=$1
+    log "Ejecutando script: $script_path"
+    clear
+    echo "============================================"
+    echo " Instalando $script_path"
+    echo "============================================"
+
+    # Simulación de barra de progreso
+    steps=10
+    for i in $(seq 1 $steps); do
+        echo "Progreso: $i/$steps"
+        sleep 1
     done
-    echo "Selecciona un script para ejecutar (número):"
-    read -r seleccion
-    seleccion=$((seleccion-1))
-    if [ -z "${scripts[$seleccion]}" ]; then
-        mostrar_error "Selección no válida"
+
+    # Ejecutar el script
+    if [ "$(id -u)" -eq 0 ]; then
+        sudo -u "$USER" "$script_path" || fail "Error al ejecutar el script."
+    else
+        "$script_path" || fail "Error al ejecutar el script."
     fi
-    SCRIPT_SELECCIONADO="${scripts[$seleccion]}"
+
+    log "Script ejecutado correctamente."
+    final_screen
 }
 
-# Función para mostrar la pantalla de instalación
-pantalla_instalacion() {
+# Pantalla final
+final_screen() {
     clear
-    echo "Instalando script: $SCRIPT_SELECCIONADO"
-    echo "Progreso:"
+    echo "============================================"
+    echo " ♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega"
+    echo "============================================"
+    echo "1. Finalizar"
+    echo "2. Mostrar .log"
+    echo "============================================"
+    read -p "Seleccione una opción: " choice
 
-    # Ejecutar el script seleccionado y mostrar barra de progreso
-    "$SCRIPTS_DIR/$SCRIPT_SELECCIONADO" || mostrar_error "Error al ejecutar $SCRIPT_SELECCIONADO"
+    case $choice in
+        1)
+            log "Instalación finalizada."
+            cleanup
+            exit 0
+            ;;
+        2)
+            less "$LOG_FILE"
+            final_screen
+            ;;
+        *)
+            fail "Opción no válida."
+            ;;
+    esac
 }
 
-# Función para mostrar la pantalla final
-pantalla_final() {
-    clear
-    echo "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega"
-    echo "Presiona Enter para mostrar el archivo de registros o Ctrl+C para finalizar"
-    read -r
-    cat "$LOG_FILE"
-}
-
-# Función principal
-main() {
-    pantalla_bienvenida
-    instalar_dependencias
-    clonar_repositorio
-    validar_scripts
-    pantalla_lista_scripts
-    pantalla_instalacion
-    pantalla_final
-}
-
-# Ejecutar función principal
-main
+# Iniciar el instalador
+welcome_screen
