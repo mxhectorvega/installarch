@@ -18,6 +18,7 @@ sudo pacman -Sy --noconfirm
 
 # Instalar paquetes específicos para MacBook
 paquetes_macbook=(
+    "linux-headers"
     "broadcom-wl-dkms"
     "xf86-input-synaptics"
     "mbpfan"

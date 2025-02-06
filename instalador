@@ -1,138 +1,165 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+# Strict mode
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
 
 # Variables
-LOG_FILE="/tmp/installer.log"
-REPO_URL="https://github.com/mxhectorvega/installarch"
-CLONE_DIR="/tmp/installarch"
-USER=$(whoami)
-UNPRIVILEGED_USER="nobody"
+LOG_FILE="$HOME/arch_install.log"
+INSTALLED_PACKAGES=()
+TEMP_DIR="/tmp/arch_installer_$$"
 
-# Función para registrar mensajes en el archivo de log
-log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+# Crear directorio temporal
+mkdir -p "$TEMP_DIR"
+
+# Función de limpieza
+cleanup() {
+    local status=$?
+    if [ $status -ne 0 ]; then
+        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}"
+        for pkg in "${INSTALLED_PACKAGES[@]}"; do
+            echo -e "${YELLOW}Desinstalando: $pkg${NC}"
+            sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
+        done
+        echo -e "${GREEN}Sistema restaurado${NC}"
+    fi
+    rm -rf "$TEMP_DIR"
 }
 
-# Función para instalar dependencias
-install_dependencies() {
-    log "Verificando dependencias..."
-    if ! command -v whiptail >/dev/null 2>&1; then
-        log "Instalando whiptail..."
-        sudo pacman -S --noconfirm libnewt >> "$LOG_FILE" 2>&1 || { log "Error al instalar whiptail"; return 1; }
+trap cleanup EXIT
+
+# Función de bienvenida
+show_welcome() {
+    clear
+    echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
+    echo -e "${GREEN}│     Bienvenido al instalador de          │${NC}"
+    echo -e "${GREEN}│        scripts de mxhectorvega           │${NC}"
+    echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
+    echo -e "\nArchivo de registros: ${BLUE}$LOG_FILE${NC}\n"
+    sleep 1
+}
+
+# Función del menú
+show_menu() {
+    echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
+
+    echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
+    echo -e "${CYAN}2)${NC} Software flatpak para el usuario doméstico"
+    echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x"
+    echo -e "${CYAN}4)${NC} Controladores Wifi para MacBook Pro y Air"
+    echo -e "${CYAN}5)${NC} Controladores para impresora Epson L3210"
+    echo -e "${CYAN}6)${NC} Configuraciones para Hyprland"
+    echo -e "${CYAN}0)${NC} Salir\n"
+}
+
+# Función para registrar paquetes instalados
+register_package() {
+    INSTALLED_PACKAGES+=("$1")
+}
+
+# Función para ejecutar el script seleccionado
+execute_script() {
+    local url="$1"
+    local temp_script="$TEMP_DIR/script.sh"
+
+    echo -e "\n${YELLOW}Descargando script...${NC}"
+    if ! curl -s "$url" > "$temp_script"; then
+        echo -e "${RED}Error al descargar el script${NC}"
+        return 1
     fi
-    if ! command -v git >/dev/null 2>&1; then
-        log "Instalando git..."
-        sudo pacman -S --noconfirm git >> "$LOG_FILE" 2>&1 || { log "Error al instalar git"; return 1; }
+
+    chmod +x "$temp_script"
+    echo -e "${GREEN}Script descargado correctamente${NC}"
+    echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
+
+    # Ejecutar script y capturar su salida en el log
+    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
+        return 1
     fi
+
     return 0
 }
 
-# Función para clonar el repositorio
-clone_repo() {
-    log "Clonando repositorio..."
-    if [ "$USER" = "root" ]; then
-        sudo -u "$UNPRIVILEGED_USER" git clone "$REPO_URL" "$CLONE_DIR" >> "$LOG_FILE" 2>&1 || { log "Error al clonar el repositorio"; return 1; }
+# Función de pantalla final
+show_final_screen() {
+    local status=$1
+
+    clear
+    if [ "$status" -eq 0 ]; then
+        echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
+        echo -e "${GREEN}│      ¡Instalación completada con éxito!  │${NC}"
+        echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
     else
-        git clone "$REPO_URL" "$CLONE_DIR" >> "$LOG_FILE" 2>&1 || { log "Error al clonar el repositorio"; return 1; }
+        echo -e "${RED}╭──────────────────────────────────────────╮${NC}"
+        echo -e "${RED}│   ¡Error durante la instalación!         │${NC}"
+        echo -e "${RED}│   Revise el archivo de registros         │${NC}"
+        echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
     fi
-    return 0
+
+    echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
+    echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
+
+    if [ "$status" -ne 0 ]; then
+        echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
+        read -n 1
+        less "$LOG_FILE"
+    fi
+
+    echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
+    read -n 1
 }
 
-# Función para mostrar la pantalla de bienvenida
-welcome_screen() {
-    whiptail --title "Bienvenido" --msgbox "Bienvenido al instalador de scripts de mxhectorvega\n\nEl archivo de registros se almacenará en: $LOG_FILE" 10 60
-    if [ $? -eq 0 ]; then
-        if install_dependencies; then
-            main_menu
-        else
-            whiptail --title "Error" --msgbox "Error al instalar dependencias. Consulte el archivo de registros." 10 60
-            exit 1
-        fi
-    else
-        exit 1
-    fi
-}
+# URLs de los scripts (ocultas del menú)
+declare -A SCRIPT_URLS=(
+    [1]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
+    [2]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
+    [3]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome"
+    [4]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/macbook"
+    [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
+    [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/hyprland"
+)
 
-# Función para mostrar el menú principal
-main_menu() {
+# Función principal
+main() {
+    # Inicializar archivo de log
+    : > "$LOG_FILE"
+
     while true; do
-        choice=$(whiptail --title "Menú Principal" --menu "Seleccione una opción:" 15 60 4 \
-            "1" "Lista de scripts" \
-            "2" "Mostrar LOG" \
-            "3" "Salir" 3>&1 1>&2 2>&3)
+        # Mostrar bienvenida y menú
+        show_welcome
+        show_menu
 
-        case $choice in
-            1) script_list ;;
-            2) show_log ;;
-            3) exit 0 ;;
-            *) whiptail --title "Error" --msgbox "Opción no válida" 10 60 ;;
+        # Leer selección
+        read -rp $'\033[1;33mSeleccione una opción (0-6): \033[0m' selection
+
+        case $selection in
+            0)
+                echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
+                exit 0
+                ;;
+            [1-6])
+                if execute_script "${SCRIPT_URLS[$selection]}"; then
+                    show_final_screen 0
+                else
+                    show_final_screen 1
+                fi
+                ;;
+            *)
+                echo -e "\n${RED}Opción inválida. Por favor, seleccione un número del 0 al 6.${NC}"
+                sleep 2
+                continue
+                ;;
         esac
     done
 }
 
-# Función para mostrar la lista de scripts
-script_list() {
-    if clone_repo; then
-        scripts=$(find "$CLONE_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print $NF}')
-        script_array=()
-        for script in $scripts; do
-            script_array+=("$script" "")
-        done
-
-        selected_script=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 15 60 6 "${script_array[@]}" 3>&1 1>&2 2>&3)
-
-        if [ $? -eq 0 ]; then
-            install_script "$selected_script"
-        else
-            main_menu
-        fi
-    else
-        whiptail --title "Error" --msgbox "Error al clonar el repositorio. Consulte el archivo de registros." 10 60
-        main_menu
-    fi
-}
-
-# Función para instalar el script seleccionado
-install_script() {
-    script_name=$1
-    log "Ejecutando script: $script_name"
-    steps=$(grep -c '^step_' "$CLONE_DIR/$script_name")
-    progress=0
-
-    {
-        while read -r line; do
-            if echo "$line" | grep -q '^step_'; then
-                progress=$((progress + 1))
-                echo $((progress * 100 / steps))
-            fi
-            if echo "$line" | grep -q 'sudo'; then
-                password=$(whiptail --title "Contraseña Root" --passwordbox "Ingrese la contraseña de root:" 10 60 3>&1 1>&2 2>&3)
-                echo "$password" | sudo -S eval "$line" >> "$LOG_FILE" 2>&1
-            else
-                eval "$line" >> "$LOG_FILE" 2>&1
-            fi
-        done < "$CLONE_DIR/$script_name"
-    } | whiptail --gauge "Instalando $script_name..." 6 60 0
-
-    if [ $? -eq 0 ]; then
-        whiptail --title "Instalación Completa" --msgbox "La instalación de $script_name ha finalizado." 10 60
-    else
-        whiptail --title "Error" --msgbox "La instalación de $script_name ha fallado. Consulte el archivo de registros para más detalles." 10 60
-    fi
-}
-
-# Función para mostrar el archivo de registros
-show_log() {
-    whiptail --title "Archivo de Registros" --textbox "$LOG_FILE" 20 80
-}
-
-# Función para limpiar residuos
-cleanup() {
-    log "Limpiando residuos..."
-    rm -rf "$CLONE_DIR"
-}
-
-# Capturar la señal de salida para limpiar
-trap cleanup EXIT
-
-# Iniciar la pantalla de bienvenida
-welcome_screen
+# Ejecutar el script
+main "$@"
