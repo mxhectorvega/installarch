@@ -3,8 +3,8 @@
 # Instalación de Paru y configuración del repositorio Chaotic AUR en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
 # Ejecución: curl -L is.gd/mxrepos | bash
-# Fecha de actualización: 04/02/2025
-# Versión: 5.0
+# Fecha de actualización: 05/02/2025
+# Versión: 5.2
 
 # Función para mostrar mensajes con formato
 imprimir_mensaje() {
@@ -13,49 +13,59 @@ imprimir_mensaje() {
     sleep 3
 }
 
+# Verificar permisos de sudo
+if ! sudo -v; then
+    imprimir_mensaje "Este script requiere permisos de sudo. Ejecútalo como root o con un usuario con permisos de sudo."
+    exit 1
+fi
+
 # Actualizar y sincronizar repositorios
-sudo pacman -Sy --noconfirm
+echo "Actualizando repositorios..."
+sudo pacman -Sy --noconfirm || { imprimir_mensaje "Error al actualizar repositorios."; exit 1; }
 
-# Verificar si git está instalado, si no, instalarlo
-if ! command -v git &> /dev/null; then
-    echo "git no está instalado. Instalándolo..."
-    sudo pacman -S git --noconfirm --needed
-fi
-
-# Verificar si wget está instalado, si no, instalarlo
-if ! command -v wget &> /dev/null; then
-    echo "wget no está instalado. Instalándolo..."
-    sudo pacman -S wget --noconfirm --needed
-fi
+# Verificar e instalar dependencias
+for dep in git wget; do
+    if ! command -v "$dep" &> /dev/null; then
+        echo "Instalando $dep..."
+        sudo pacman -S "$dep" --noconfirm --needed || { imprimir_mensaje "Error al instalar $dep."; exit 1; }
+    fi
+done
 
 # Instalar Paru, AUR helper
-echo "Instalando Paru, AUR helper..."
-sudo pacman -S --needed --noconfirm base-devel
 if ! command -v paru &> /dev/null; then
-    git clone https://aur.archlinux.org/paru.git
+    echo "Instalando Paru, AUR helper..."
+    sudo pacman -S --needed --noconfirm base-devel || { imprimir_mensaje "Error al instalar base-devel."; exit 1; }
+    git clone https://aur.archlinux.org/paru.git || { imprimir_mensaje "Error al clonar el repositorio de Paru."; exit 1; }
     cd paru || exit
-    makepkg -si --noconfirm
+    makepkg -si --noconfirm || { imprimir_mensaje "Error al compilar Paru."; exit 1; }
     cd ..
     rm -rf paru
 fi
 
-# Añadir repositorio Chaotic AUR al archivo de configuración y configurar claves
+# Configurar repositorio Chaotic AUR
 echo "Configurando el repositorio Chaotic AUR..."
 
 # Recepción y firma de la clave
-sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key 3056513887B78AEB
+if ! sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com; then
+    imprimir_mensaje "Error al recibir la clave. Verifica tu conexión a Internet."
+    exit 1
+fi
+if ! sudo pacman-key --lsign-key 3056513887B78AEB; then
+    imprimir_mensaje "Error al firmar la clave."
+    exit 1
+fi
 
-# Descarga e instalación de paquetes de clave y lista de espejos
-wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst
-wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
-sudo pacman -U chaotic-keyring.pkg.tar.zst --noconfirm
-sudo pacman -U chaotic-mirrorlist.pkg.tar.zst --noconfirm
+# Descargar e instalar paquetes de clave y lista de espejos
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst || { imprimir_mensaje "Error al descargar chaotic-keyring."; exit 1; }
+wget https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst || { imprimir_mensaje "Error al descargar chaotic-mirrorlist."; exit 1; }
+sudo pacman -U chaotic-keyring.pkg.tar.zst --noconfirm || { imprimir_mensaje "Error al instalar chaotic-keyring."; exit 1; }
+sudo pacman -U chaotic-mirrorlist.pkg.tar.zst --noconfirm || { imprimir_mensaje "Error al instalar chaotic-mirrorlist."; exit 1; }
 
 # Eliminar archivos descargados
 rm chaotic-keyring.pkg.tar.zst chaotic-mirrorlist.pkg.tar.zst
 
 # Añadir el repositorio Chaotic AUR al archivo /etc/pacman.conf
+echo "Añadiendo repositorio Chaotic AUR a /etc/pacman.conf..."
 sudo tee -a /etc/pacman.conf <<EOF
 
 [chaotic-aur]
@@ -76,10 +86,8 @@ sudo sed -i 's/#BottomUp/BottomUp/g' /etc/paru.conf
 sudo sed -i 's/^#AurTimeout.*$/AurTimeout = 300/' /etc/paru.conf
 
 # Actualizar el sistema con el nuevo repositorio
-sudo pacman -Syyu --noconfirm
+echo "Actualizando el sistema..."
+sudo pacman -Syyu --noconfirm || { imprimir_mensaje "Error al actualizar el sistema."; exit 1; }
 
 # Mensaje final
 imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
-
-# Comando opcional para verificar la configuración del nuevo repositorio
-# sudo pacman -Syy
