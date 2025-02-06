@@ -1,142 +1,92 @@
-#!/usr/bin/env bash
-# Script de instalación para Arch Linux
-# Autor: mxhectorvega
-# Fecha: $(date +%Y-%m-%d)
-# Registro de acciones en: /var/log/mxhectorvega_install.log
+#!/bin/bash
 
-# Variables globales
-LOGFILE="/var/log/mxhectorvega_install.log"
+# Establecer variables
+LOG_FILE="/var/log/installarch.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-SCRIPTS_DIR="/home/$(whoami)/installarch"
-DEPENDENCIAS=(git awk grep find)
-ROOT_PASSWORD=""
-USER_NON_ROOT="$(logname)"
+INSTALL_DIR="/opt/installarch"
+SCRIPTS_DIR="$INSTALL_DIR/scripts"
 
-# Función para registrar acciones
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
-}
-
-# Función para comprobar e instalar dependencias
-instalar_dependencias() {
-    for pkg in "${DEPENDENCIAS[@]}"; do
-        if ! command -v "$pkg" >/dev/null 2>&1; then
-            log "Instalando dependencia: $pkg"
-            pacman -Sy --noconfirm "$pkg"
-        fi
-    done
-}
-
-# Función para clonar el repositorio
-clonar_repo() {
-    if [ ! -d "$SCRIPTS_DIR" ]; then
-        log "Clonando el repositorio..."
-        sudo -u "$USER_NON_ROOT" git clone "$REPO_URL" "$SCRIPTS_DIR" || manejar_error "No se pudo clonar el repositorio."
-    else
-        log "Actualizando el repositorio..."
-        (cd "$SCRIPTS_DIR" && sudo -u "$USER_NON_ROOT" git pull) || manejar_error "No se pudo actualizar el repositorio."
-    fi
-}
-
-# Función de manejo de errores
-manejar_error() {
-    echo "Error de Instalación: La instalación ha fallado. Revisa el archivo de registro en $LOGFILE para más detalles." | tee -a "$LOGFILE"
-    log "Error: $1"
+# Función para mostrar mensajes de error
+mostrar_error() {
+    echo "Error: $1"
+    echo "Error: $1" >> "$LOG_FILE"
     exit 1
 }
 
-# Función para solicitar la contraseña de root
-solicitar_contraseña_root() {
-    read -s -p "Por favor, ingresa tu contraseña de root: " ROOT_PASSWORD
-    echo
-    if [ -z "$ROOT_PASSWORD" ]; then
-        manejar_error "El usuario canceló la entrada de contraseña."
-    fi
+# Función para instalar dependencias
+instalar_dependencias() {
+    sudo pacman -Sy --needed git || mostrar_error "Error al instalar git"
+    sudo pacman -Sy --needed base-devel || mostrar_error "Error al instalar base-devel"
+}
+
+# Función para clonar el repositorio
+clonar_repositorio() {
+    git clone "$REPO_URL" "$INSTALL_DIR" || mostrar_error "Error al clonar el repositorio"
+}
+
+# Función para verificar y validar scripts
+validar_scripts() {
+    for script in $(find "$SCRIPTS_DIR" -type f -executable);
+    do
+        shellcheck "$script" || mostrar_error "Error de sintaxis en $script"
+    done
 }
 
 # Función para mostrar la pantalla de bienvenida
 pantalla_bienvenida() {
+    clear
     echo "Bienvenido al instalador de scripts de mxhectorvega"
-    echo "El archivo de registro se almacenará en $LOGFILE"
-    echo "Se instalarán las dependencias necesarias para la correcta visualización."
-    echo
-    read -p "¿Deseas iniciar la instalación? (s/n): " iniciar
-    if [ "$iniciar" != "s" ]; then
-        manejar_error "El usuario canceló la instalación."
-    fi
+    echo "Los registros de instalación se almacenarán en $LOG_FILE"
+    echo "Presiona Enter para continuar o Ctrl+C para cancelar"
+    read -r
 }
 
-# Función para listar y seleccionar scripts
-seleccionar_script() {
-    echo "Lista de Scripts:"
-    local opciones=()
-    local index=1
-    for script in $(find "$SCRIPTS_DIR" -type f -executable ! -name "*.*"); do
-        nombre_script=$(basename "$script")
-        opciones+=("$index" "$nombre_script")
-        echo "$index. $nombre_script"
-        ((index++))
+# Función para mostrar la lista de scripts
+pantalla_lista_scripts() {
+    clear
+    echo "Lista de scripts disponibles:"
+    scripts=($(find "$SCRIPTS_DIR" -type f -executable -exec basename {} \;))
+    for i in "${!scripts[@]}"; do
+        echo "$((i+1)). ${scripts[$i]}"
     done
-
-    read -p "Selecciona un script para ejecutar (número): " SCRIPT_SELECCIONADO
-    if ! [[ "$SCRIPT_SELECCIONADO" =~ ^[0-9]+$ ]] || [ "$SCRIPT_SELECCIONADO" -lt 1 ] || [ "$SCRIPT_SELECCIONADO" -ge "$index" ]; then
-        manejar_error "Selección inválida."
+    echo "Selecciona un script para ejecutar (número):"
+    read -r seleccion
+    seleccion=$((seleccion-1))
+    if [ -z "${scripts[$seleccion]}" ]; then
+        mostrar_error "Selección no válida"
     fi
-
-    NOMBRE_SCRIPT="${opciones[((SCRIPT_SELECCIONADO*2-1))]}"
-    RUTA_SCRIPT="$SCRIPTS_DIR/$NOMBRE_SCRIPT"
+    SCRIPT_SELECCIONADO="${scripts[$seleccion]}"
 }
 
-# Función para ejecutar el script seleccionado
-ejecutar_script() {
-    log "Ejecutando el script: $NOMBRE_SCRIPT"
-    TOTAL_PASOS=$(grep -c "^#" "$RUTA_SCRIPT")
-    PASO_ACTUAL=0
+# Función para mostrar la pantalla de instalación
+pantalla_instalacion() {
+    clear
+    echo "Instalando script: $SCRIPT_SELECCIONADO"
+    echo "Progreso:"
 
-    while IFS= read -r linea; do
-        if [[ $linea == "#"* ]]; then
-            ((PASO_ACTUAL++))
-            PERCENT=$((PASO_ACTUAL * 100 / TOTAL_PASOS))
-            echo "Instalación en progreso: $PERCENT%"
-            echo "# $linea"
-            sleep 0.5
-        else
-            if [[ $linea == *"makepkg"* && $EUID -eq 0 ]]; then
-                sudo -u "$USER_NON_ROOT" bash -c "$linea" >>"$LOGFILE" 2>&1 || manejar_error "Error al ejecutar makepkg: $linea"
-            else
-                sudo -u "$USER_NON_ROOT" bash -c "$linea" >>"$LOGFILE" 2>&1 || manejar_error "Error al ejecutar: $linea"
-            fi
-        fi
-    done < "$RUTA_SCRIPT"
+    # Ejecutar el script seleccionado y mostrar barra de progreso
+    "$SCRIPTS_DIR/$SCRIPT_SELECCIONADO" || mostrar_error "Error al ejecutar $SCRIPT_SELECCIONADO"
 }
 
 # Función para mostrar la pantalla final
 pantalla_final() {
-    echo "❤️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega"
-    read -p "¿Deseas mostrar el archivo de registros? (s/n): " mostrar_log
-    if [ "$mostrar_log" == "s" ]; then
-        cat "$LOGFILE"
-    fi
-    echo "Instalación completada."
+    clear
+    echo "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega"
+    echo "Presiona Enter para mostrar el archivo de registros o Ctrl+C para finalizar"
+    read -r
+    cat "$LOG_FILE"
 }
 
-# Función para validar y verificar compatibilidad de paquetes
-validar_compatibilidad() {
-    # Aquí puedes añadir la lógica para validar y verificar la compatibilidad de paquetes y sintaxis del instalador con los scripts clonados
-    log "Validando y verificando compatibilidad de paquetes y sintaxis del instalador con los scripts clonados..."
-}
-
-# Inicio del Script
-{
-    instalar_dependencias
-    solicitar_contraseña_root
+# Función principal
+main() {
     pantalla_bienvenida
-    clonar_repo
-    validar_compatibilidad
-    seleccionar_script
-    ejecutar_script
+    instalar_dependencias
+    clonar_repositorio
+    validar_scripts
+    pantalla_lista_scripts
+    pantalla_instalacion
     pantalla_final
-    log "Limpieza de archivos temporales."
-    rm -rf "$SCRIPTS_DIR"
-    log "Instalación finalizada con éxito."
 }
+
+# Ejecutar función principal
+main
