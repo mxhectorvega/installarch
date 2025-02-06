@@ -8,7 +8,7 @@
 LOGFILE="/var/log/mxhectorvega_install.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
 SCRIPTS_DIR="/home/$(whoami)/installarch"
-DEPENDENCIAS=(dialog git awk grep find)
+DEPENDENCIAS=(git awk grep find)
 ROOT_PASSWORD=""
 USER_NON_ROOT="$(logname)"
 
@@ -40,42 +40,47 @@ clonar_repo() {
 
 # Función de manejo de errores
 manejar_error() {
-    dialog --title "Error de Instalación" --msgbox "La instalación ha fallado.\nRevisa el archivo de registro en $LOGFILE para más detalles." 10 60
+    echo "Error de Instalación: La instalación ha fallado. Revisa el archivo de registro en $LOGFILE para más detalles." | tee -a "$LOGFILE"
     log "Error: $1"
     exit 1
 }
 
 # Función para solicitar la contraseña de root
 solicitar_contraseña_root() {
-    ROOT_PASSWORD=$(dialog --passwordbox "Por favor, ingresa tu contraseña de root:" 8 60 --title "Contraseña de Root" 3>&1 1>&2 2>&3)
-    if [ $? -ne 0 ]; then
+    read -s -p "Por favor, ingresa tu contraseña de root: " ROOT_PASSWORD
+    echo
+    if [ -z "$ROOT_PASSWORD" ]; then
         manejar_error "El usuario canceló la entrada de contraseña."
     fi
 }
 
 # Función para mostrar la pantalla de bienvenida
 pantalla_bienvenida() {
-    dialog --title "Bienvenido al instalador de scripts de mxhectorvega" \
-    --yes-label "Iniciar" --no-label "Cancelar" \
-    --yesno "El archivo de registro se almacenará en $LOGFILE\n\nSe instalarán las dependencias necesarias para la correcta visualización." 10 60
-    if [ $? -ne 0 ]; then
+    echo "Bienvenido al instalador de scripts de mxhectorvega"
+    echo "El archivo de registro se almacenará en $LOGFILE"
+    echo "Se instalarán las dependencias necesarias para la correcta visualización."
+    echo
+    read -p "¿Deseas iniciar la instalación? (s/n): " iniciar
+    if [ "$iniciar" != "s" ]; then
         manejar_error "El usuario canceló la instalación."
     fi
 }
 
 # Función para listar y seleccionar scripts
 seleccionar_script() {
+    echo "Lista de Scripts:"
     local opciones=()
     local index=1
     for script in $(find "$SCRIPTS_DIR" -type f -executable ! -name "*.*"); do
         nombre_script=$(basename "$script")
         opciones+=("$index" "$nombre_script")
+        echo "$index. $nombre_script"
         ((index++))
     done
 
-    SCRIPT_SELECCIONADO=$(dialog --title "Lista de Scripts" --menu "Selecciona un script para ejecutar:" 20 60 10 "${opciones[@]}" 3>&1 1>&2 2>&3)
-    if [ $? -ne 0 ]; then
-        manejar_error "El usuario canceló la selección de script."
+    read -p "Selecciona un script para ejecutar (número): " SCRIPT_SELECCIONADO
+    if ! [[ "$SCRIPT_SELECCIONADO" =~ ^[0-9]+$ ]] || [ "$SCRIPT_SELECCIONADO" -lt 1 ] || [ "$SCRIPT_SELECCIONADO" -ge "$index" ]; then
+        manejar_error "Selección inválida."
     fi
 
     NOMBRE_SCRIPT="${opciones[((SCRIPT_SELECCIONADO*2-1))]}"
@@ -88,15 +93,12 @@ ejecutar_script() {
     TOTAL_PASOS=$(grep -c "^#" "$RUTA_SCRIPT")
     PASO_ACTUAL=0
 
-    (
     while IFS= read -r linea; do
         if [[ $linea == "#"* ]]; then
             ((PASO_ACTUAL++))
             PERCENT=$((PASO_ACTUAL * 100 / TOTAL_PASOS))
-            echo "XXX"
-            echo $PERCENT
+            echo "Instalación en progreso: $PERCENT%"
             echo "# $linea"
-            echo "XXX"
             sleep 0.5
         else
             if [[ $linea == *"makepkg"* && $EUID -eq 0 ]]; then
@@ -106,14 +108,16 @@ ejecutar_script() {
             fi
         fi
     done < "$RUTA_SCRIPT"
-    ) | dialog --gauge "Instalando $NOMBRE_SCRIPT..." 10 60 0
 }
 
 # Función para mostrar la pantalla final
 pantalla_final() {
-    if dialog --title "Instalación Completa" --yes-label "Mostrar .log" --no-label "Finalizar" --yesno "❤️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60; then
-        dialog --title "Registro de Instalación" --textbox "$LOGFILE" 20 80
+    echo "❤️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega"
+    read -p "¿Deseas mostrar el archivo de registros? (s/n): " mostrar_log
+    if [ "$mostrar_log" == "s" ]; then
+        cat "$LOGFILE"
     fi
+    echo "Instalación completada."
 }
 
 # Función para validar y verificar compatibilidad de paquetes
