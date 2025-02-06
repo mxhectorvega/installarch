@@ -80,7 +80,7 @@ list_scripts() {
     echo -e "${RED}$((i+4)). Cancelar${RESET}"
     read -p "Selecciona una opción: " choice
 
-    if [ "$choice" -le "${#scripts[@]}" ]; then
+    if [ "$choice" -le "${#scripts[@]}" ] && [ "$choice" -gt 0 ]; then
         selected_script="${scripts[$((choice-1))]}"
         install_screen
     elif [ "$choice" -eq "$((i+2))" ]; then
