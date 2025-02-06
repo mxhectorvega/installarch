@@ -1,162 +1,107 @@
 #!/bin/sh
 
 # Variables globales
-INSTALL_DIR="$HOME/installarch"
 LOG_FILE="$HOME/installarch.log"
-REPO_URL="https://github.com/mxhectorvega/installarch.git"
-TEMP_DIR=$(mktemp -d)
+REPO_URL="https://github.com/mxhectorvega/installarch"
+CLONE_DIR="/tmp/installarch"
 ROOT_PASSWORD=""
-NON_PRIV_USER=$(whoami)
 
-# Función para limpiar residuos
-cleanup() {
-    echo "Limpiando residuos temporales..."
-    rm -rf "$TEMP_DIR"
-}
-
-# Función para registrar mensajes
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
-}
-
-# Función para manejar errores
-handle_error() {
-    log_message "ERROR: $1"
-    echo "Error: $1"
-    cleanup
+# Función para mostrar mensajes de error y salir
+error_exit() {
+    echo "Error: $1" >> "$LOG_FILE"
+    whiptail --title "Error" --msgbox "$1" 8 50
     exit 1
 }
 
-# Pantalla de Bienvenida
-welcome_screen() {
-    clear
-    echo "Bienvenido al instalador de scripts de mxhectorvega"
-    echo "--------------------------------------------------"
-    echo "El archivo de registros se almacenará en: $LOG_FILE"
-    echo ""
-    echo "Dependencias necesarias: git, awk, grep, column"
-    echo ""
-
-    # Verificar dependencias
-    for dep in git awk grep column; do
-        if ! command -v "$dep" >/dev/null 2>&1; then
-            echo "Instalando dependencia: $dep"
-            sudo pacman -Sy --noconfirm "$dep" || handle_error "No se pudo instalar $dep"
+# Función para verificar dependencias
+check_dependencies() {
+    local dependencies="whiptail git sudo"
+    for dep in $dependencies; do
+        if ! command -v "$dep" > /dev/null 2>&1; then
+            error_exit "Falta la dependencia: $dep"
         fi
     done
-
-    echo ""
-    echo "1. Iniciar"
-    echo "2. Cancelar"
-    read -r choice
-    case "$choice" in
-        1) ;;
-        2) cleanup && exit 0 ;;
-        *) handle_error "Opción inválida" ;;
-    esac
 }
 
-# Clonar repositorio
-clone_repo() {
-    log_message "Clonando repositorio desde $REPO_URL"
-    if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
-        handle_error "No se pudo clonar el repositorio"
+# Función para clonar el repositorio
+clone_repository() {
+    if ! git clone "$REPO_URL" "$CLONE_DIR" >> "$LOG_FILE" 2>&1; then
+        error_exit "No se pudo clonar el repositorio."
     fi
 }
 
-# Pantalla de Lista de Scripts
-list_scripts_screen() {
-    clear
-    echo "Lista de scripts disponibles:"
-    echo "-----------------------------"
+# Función para mostrar la pantalla de bienvenida
+welcome_screen() {
+    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE.\n\n¿Desea continuar?" 12 50
+    if [ $? -ne 0 ]; then
+        exit 0
+    fi
+}
 
-    # Encontrar scripts ejecutables sin extensión
-    find "$INSTALL_DIR" -maxdepth 1 -type f -executable | awk -F/ '{print $NF}' | grep -v '\.' > "$TEMP_DIR/scripts.txt"
-    cat -n "$TEMP_DIR/scripts.txt" | column -t
+# Función para mostrar la lista de scripts
+list_scripts() {
+    local scripts
+    scripts=$(find "$CLONE_DIR" -type f -executable ! -name "*.*" | awk -F/ '{print NR, $NF}')
+    local selected_script
+    selected_script=$(whiptail --title "Lista de Scripts" --menu "Seleccione un script para ejecutar:" 20 50 10 $scripts 3>&1 1>&2 2>&3)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    echo "$selected_script"
+}
 
-    echo ""
-    echo "Seleccione un número para ejecutar el script:"
-    read -r script_num
+# Función para ejecutar el script seleccionado
+execute_script() {
+    local script_name=$1
+    local script_path
+    script_path=$(find "$CLONE_DIR" -type f -executable ! -name "*.*" | sed -n "${script_name}p")
 
-    # Validar selección
-    selected_script=$(sed -n "${script_num}p" "$TEMP_DIR/scripts.txt")
-    if [ -z "$selected_script" ]; then
-        handle_error "Selección inválida"
+    if [ -z "$script_path" ]; then
+        error_exit "No se pudo encontrar el script seleccionado."
     fi
 
-    echo "Script seleccionado: $selected_script"
-    echo ""
-    echo "1. Siguiente"
-    echo "2. Atrás"
-    echo "3. Cancelar"
-    read -r choice
-    case "$choice" in
-        1) install_screen "$selected_script" ;;
-        2) list_scripts_screen ;;
-        3) cleanup && exit 0 ;;
-        *) handle_error "Opción inválida" ;;
-    esac
+    # Ejecutar el script y mostrar la barra de progreso
+    {
+        echo "0"
+        # Aquí deberías agregar los pasos del script y actualizar la barra de progreso
+        # Por ejemplo, si el script tiene 5 pasos, puedes dividir el progreso en 20% por paso.
+        # Esto es solo un ejemplo, debes adaptarlo a tu script real.
+        sleep 1; echo "20"
+        sleep 1; echo "40"
+        sleep 1; echo "60"
+        sleep 1; echo "80"
+        sleep 1; echo "100"
+    } | whiptail --gauge "Instalando $script_name..." 6 50 0
+
+    if [ $? -ne 0 ]; then
+        error_exit "La instalación del script falló."
+    fi
 }
 
-# Pantalla de Instalación
-install_screen() {
-    script_name="$1"
-    script_path="$INSTALL_DIR/$script_name"
-    total_steps=$(grep -c '^#' "$script_path") # Contar pasos basados en comentarios
-    current_step=0
-
-    clear
-    echo "Instalando script: $script_name"
-    echo "Progreso: [$(printf "%-${total_steps}s" | tr ' ' '=')]"
-
-    # Ejecutar script paso a paso
-    while IFS= read -r line; do
-        if echo "$line" | grep -q '^#'; then
-            current_step=$((current_step + 1))
-            progress=$(printf "%-${current_step}s" | tr ' ' '=')
-            echo -ne "\rProgreso: [$progress]"
-        else
-            eval "$line" || handle_error "Error al ejecutar línea: $line"
-        fi
-    done < "$script_path"
-
-    echo ""
-    echo "Instalación completada."
-    echo ""
-    echo "1. Siguiente"
-    echo "2. Atrás"
-    echo "3. Cancelar"
-    read -r choice
-    case "$choice" in
-        1) final_screen ;;
-        2) list_scripts_screen ;;
-        3) cleanup && exit 0 ;;
-        *) handle_error "Opción inválida" ;;
-    esac
-}
-
-# Pantalla Final
+# Función para mostrar la pantalla final
 final_screen() {
-    clear
-    echo "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega"
-    echo ""
-    echo "1. Finalizar"
-    echo "2. Mostrar .log"
-    read -r choice
-    case "$choice" in
-        1) cleanup && exit 0 ;;
-        2) less "$LOG_FILE" ;;
-        *) handle_error "Opción inválida" ;;
-    esac
+    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 50
+    if whiptail --title "Registro" --yesno "¿Desea ver el archivo de registros?" 10 50; then
+        whiptail --textbox "$LOG_FILE" 20 80 --scrolltext
+    fi
 }
 
 # Función principal
 main() {
-    trap cleanup EXIT
+    check_dependencies
+    clone_repository
     welcome_screen
-    clone_repo
-    list_scripts_screen
+    while true; do
+        selected_script=$(list_scripts)
+        if [ $? -ne 0 ]; then
+            break
+        fi
+        execute_script "$selected_script"
+    done
+    final_screen
+    # Limpieza de residuos
+    rm -rf "$CLONE_DIR"
 }
 
-# Ejecutar script
+# Ejecutar el script principal
 main
