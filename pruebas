@@ -1,151 +1,192 @@
 #!/bin/sh
 
 # Variables globales
-LOG_FILE="$HOME/installarch.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
-INSTALL_DIR="/tmp/installarch"
-ROOT_PASS=""
-USER_PASS=""
-USER_NAME=""
+REPO_DIR="$HOME/installarch"
+LOG_FILE="$HOME/installarch_install.log"
+ROOT_PASS_FILE="$HOME/.root_pass"
+USER_PASS_FILE="$HOME/.user_pass"
 
-# Función para limpiar residuos
-cleanup() {
-    rm -rf "$INSTALL_DIR"
-    if [ -f "$LOG_FILE" ]; then
-        rm -f "$LOG_FILE"
-    fi
+# Función para registrar eventos
+log_event() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# Crear archivo de registro
-create_log() {
-    cleanup
-    echo "Registro de instalación - $(date)" > "$LOG_FILE"
-    echo "========================================" >> "$LOG_FILE"
+# Limpiar instalaciones previas
+clean_previous_install() {
+    rm -rf "$REPO_DIR"
+    rm -f "$LOG_FILE"
+    log_event "Instalación previa eliminada"
 }
 
 # Clonar repositorio
-clone_repo() {
-    if [ -d "$INSTALL_DIR" ]; then
-        rm -rf "$INSTALL_DIR"
-    fi
-    git clone "$REPO_URL" "$INSTALL_DIR" >> "$LOG_FILE" 2>&1
+clone_repository() {
+    git clone "$REPO_URL" "$REPO_DIR" 2>> "$LOG_FILE"
     if [ $? -ne 0 ]; then
-        whiptail --title "Error" --msgbox "No se pudo clonar el repositorio. Verifica tu conexión a internet." 10 60
+        whiptail --title "Error" --msgbox "Error al clonar el repositorio. Revisa el archivo de registros en $LOG_FILE" 10 60
         exit 1
     fi
+    log_event "Repositorio clonado exitosamente"
 }
 
-# Validar dependencias
-validate_dependencies() {
-    MISSING_DEPS=""
-    for DEP in git whiptail makepkg; do
-        if ! command -v "$DEP" >/dev/null 2>&1; then
-            MISSING_DEPS="$MISSING_DEPS $DEP"
-        fi
+# Obtener contraseñas
+get_passwords() {
+    ROOT_PASS=$(whiptail --passwordbox "Introduce la contraseña de root:" 8 60 --title "Contraseña root" 3>&1 1>&2 2>&3)
+    echo "$ROOT_PASS" > "$ROOT_PASS_FILE"
+
+    USER_PASS=$(whiptail --passwordbox "Introduce la contraseña del usuario:" 8 60 --title "Contraseña usuario" 3>&1 1>&2 2>&3)
+    echo "$USER_PASS" > "$USER_PASS_FILE"
+
+    log_event "Contraseñas almacenadas para uso futuro"
+}
+
+# Listar scripts disponibles
+list_scripts() {
+    SCRIPT_FILES=$(find "$REPO_DIR" -type f -executable ! -name "*.*" | sort)
+    if [ -z "$SCRIPT_FILES" ]; then
+        whiptail --title "Error" --msgbox "No se encontraron scripts ejecutables en el repositorio." 8 60
+        exit 1
+    fi
+
+    MENU_OPTIONS=""
+    INDEX=1
+    for SCRIPT in $SCRIPT_FILES; do
+        SCRIPT_NAME=$(basename "$SCRIPT")
+        MENU_OPTIONS="$MENU_OPTIONS $INDEX \"$SCRIPT_NAME\""
+        INDEX=$((INDEX+1))
     done
 
-    if [ -n "$MISSING_DEPS" ]; then
-        whiptail --title "Error" --msgbox "Faltan las siguientes dependencias:$MISSING_DEPS" 10 60
-        exit 1
+    SELECTED_INDEX=$(eval "whiptail --title \"Lista de scripts\" --menu \"Selecciona un script para ejecutar:\" 20 60 10 $MENU_OPTIONS 3>&1 1>&2 2>&3")
+
+    if [ -z "$SELECTED_INDEX" ]; then
+        main_menu
+    else
+        SELECTED_SCRIPT=$(echo "$SCRIPT_FILES" | sed -n "${SELECTED_INDEX}p")
+        execute_script "$SELECTED_SCRIPT"
     fi
 }
 
-# Pantalla de Bienvenida
-welcome_screen() {
-    whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\n\nEl archivo de registros se almacenará en: $LOG_FILE\n\n¿Deseas iniciar la instalación?" 15 60
+# Ejecutar script seleccionado
+execute_script() {
+    SCRIPT_PATH="$1"
+    TOTAL_STEPS=10  # Suponiendo 10 pasos en el script
+    STEP=0
+
+    while [ $STEP -le $TOTAL_STEPS ]; do
+        PERCENT=$(( STEP * 100 / TOTAL_STEPS ))
+        echo $PERCENT
+
+        if [ $STEP -eq 3 ]; then
+            # Simular solicitud de contraseña
+            sleep 1
+        fi
+
+        sleep 0.5
+        STEP=$((STEP+1))
+    done | whiptail --gauge "Instalando $SCRIPT_PATH..." 6 60 0
+
+    # Ejecutar el script como usuario adecuado
+    if [ "$(id -u)" -eq 0 ]; then
+        su "$(logname)" -c "$SCRIPT_PATH"
+    else
+        sh "$SCRIPT_PATH"
+    fi
+
     if [ $? -ne 0 ]; then
+        whiptail --title "Error" --msgbox "La instalación falló. Revisa el archivo de registros en $LOG_FILE" 10 60
+        log_event "Error al ejecutar $SCRIPT_PATH"
+        exit 1
+    fi
+
+    log_event "Script $SCRIPT_PATH ejecutado correctamente"
+}
+
+# Pantalla de bienvenida
+welcome_screen() {
+    if whiptail --title "Bienvenido" --yesno "Bienvenido al instalador de scripts de mxhectorvega.\nEl archivo de registros se almacenará en:\n$LOG_FILE" 10 60; then
+        main_menu
+    else
         exit 0
     fi
 }
 
-# Pantalla de Lista de Scripts
-list_scripts() {
-    cd "$INSTALL_DIR" || exit 1
-    SCRIPTS=$(find . -type f -executable ! -name "*.*" | awk '{print NR, $0}' | column -t)
-    if [ -z "$SCRIPTS" ]; then
-        whiptail --title "Error" --msgbox "No se encontraron scripts ejecutables en el repositorio." 10 60
-        exit 1
-    fi
+# Menú principal
+main_menu() {
+    OPTION=$(whiptail --title "Menú Principal" --menu "Elige una opción:" 15 60 4 \
+        "1" "Listar y ejecutar scripts" \
+        "2" "Salir" 3>&1 1>&2 2>&3)
 
-    CHOICE=$(whiptail --title "Lista de Scripts" --menu "Selecciona un script para ejecutar:" 20 60 10 $SCRIPTS 3>&1 1>&2 2>&3)
-    if [ $? -ne 0 ]; then
-        return 1
-    fi
-
-    SELECTED_SCRIPT=$(echo "$SCRIPTS" | grep "^$CHOICE " | awk '{print $2}')
-    echo "Script seleccionado: $SELECTED_SCRIPT" >> "$LOG_FILE"
+    case $OPTION in
+        1)
+            list_scripts
+            ;;
+        2)
+            exit 0
+            ;;
+        *)
+            exit 0
+            ;;
+    esac
 }
 
-# Pantalla de Instalación
-install_script() {
-    TOTAL_STEPS=$(grep -c '^#' "$INSTALL_DIR/$SELECTED_SCRIPT")
-    STEP=0
+# Pantalla final
+final_screen() {
+    CHOICE=$(whiptail --title "Instalación completa" --menu "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60 2 \
+        "1" "Finalizar" \
+        "2" "Mostrar .log" 3>&1 1>&2 2>&3)
 
-    (
-        while IFS= read -r LINE; do
-            STEP=$((STEP + 1))
-            PERCENTAGE=$((STEP * 100 / TOTAL_STEPS))
-            echo "$PERCENTAGE"
-            echo "# Ejecutando paso $STEP de $TOTAL_STEPS: $LINE"
+    case $CHOICE in
+        1)
+            exit 0
+            ;;
+        2)
+            whiptail --title "Registro de instalación" --textbox "$LOG_FILE" 20 60
+            ;;
+        *)
+            exit 0
+            ;;
+    esac
+}
 
-            # Cambiar al usuario sin privilegios si es necesario
-            if echo "$LINE" | grep -q 'makepkg'; then
-                su "$USER_NAME" -c "$LINE" >> "$LOG_FILE" 2>&1
-            elif echo "$LINE" | grep -q 'git'; then
-                su "$USER_NAME" -c "$LINE" >> "$LOG_FILE" 2>&1
-            else
-                eval "$LINE" >> "$LOG_FILE" 2>&1
-            fi
+# Validar dependencias
+validate_dependencies() {
+    DEPENDENCIES="whiptail git awk grep find"
 
+    for DEP in $DEPENDENCIES; do
+        if ! command -v "$DEP" >/dev/null 2>&1; then
+            whiptail --title "Dependencia faltante" --msgbox "La dependencia \"$DEP\" no está instalada. Instalando..." 8 60
+            pacman -Sy --noconfirm "$DEP"
             if [ $? -ne 0 ]; then
-                echo "Error en el paso $STEP: $LINE" >> "$LOG_FILE"
+                whiptail --title "Error" --msgbox "No se pudo instalar la dependencia $DEP." 8 60
                 exit 1
             fi
-        done < "$INSTALL_DIR/$SELECTED_SCRIPT"
-    ) | whiptail --gauge "Instalando $SELECTED_SCRIPT..." 10 60 0
-
-    if [ $? -ne 0 ]; then
-        whiptail --title "Error" --msgbox "La instalación falló. Consulta el archivo de registros en $LOG_FILE" 10 60
-        return 1
-    fi
-}
-
-# Pantalla Final
-final_screen() {
-    whiptail --title "Finalizado" --msgbox "♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60
-
-    if whiptail --title "Mostrar Log" --yesno "¿Deseas ver el archivo de registros?" 10 60; then
-        whiptail --textbox "$LOG_FILE" 20 60
-    fi
-}
-
-# Almacenar contraseñas
-store_credentials() {
-    ROOT_PASS=$(whiptail --passwordbox "Ingresa la contraseña de root:" 10 60 3>&1 1>&2 2>&3)
-    USER_PASS=$(whiptail --passwordbox "Ingresa la contraseña del usuario $USER_NAME:" 10 60 3>&1 1>&2 2>&3)
-    echo "Contraseña root almacenada." >> "$LOG_FILE"
-    echo "Contraseña usuario almacenada." >> "$LOG_FILE"
-}
-
-# Función principal
-main() {
-    create_log
-    validate_dependencies
-    welcome_screen
-    store_credentials
-    clone_repo
-
-    while true; do
-        if list_scripts; then
-            install_script
-            if [ $? -eq 0 ]; then
-                break
-            fi
-        else
-            exit 0
+            log_event "Dependencia $DEP instalada"
         fi
     done
+}
 
+# Limpiar residuos
+cleanup() {
+    rm -f "$ROOT_PASS_FILE" "$USER_PASS_FILE"
+    log_event "Archivos temporales eliminados"
+}
+
+# Manejo de señales y errores
+error_handler() {
+    whiptail --title "Error" --msgbox "Ocurrió un error. Revisa el archivo de registros en $LOG_FILE" 8 60
+    log_event "Error inesperado"
+    exit 1
+}
+
+trap error_handler ERR
+
+# Programa principal
+main() {
+    validate_dependencies
+    clean_previous_install
+    welcome_screen
+    get_passwords
+    clone_repository
     final_screen
     cleanup
 }
