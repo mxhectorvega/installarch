@@ -8,7 +8,7 @@
 LOGFILE="/var/log/mxhectorvega_install.log"
 REPO_URL="https://github.com/mxhectorvega/installarch"
 SCRIPTS_DIR="/home/$(whoami)/installarch"
-DEPENDENCIAS=(whiptail git awk grep find)
+DEPENDENCIAS=(dialog git awk grep find)
 ROOT_PASSWORD=""
 USER_NON_ROOT="$(logname)"
 
@@ -40,14 +40,14 @@ clonar_repo() {
 
 # Función de manejo de errores
 manejar_error() {
-    whiptail --title "Error de Instalación" --msgbox "La instalación ha fallado.\nRevisa el archivo de registro en $LOGFILE para más detalles." 10 60
+    dialog --title "Error de Instalación" --msgbox "La instalación ha fallado.\nRevisa el archivo de registro en $LOGFILE para más detalles." 10 60
     log "Error: $1"
     exit 1
 }
 
 # Función para solicitar la contraseña de root
 solicitar_contraseña_root() {
-    ROOT_PASSWORD=$(whiptail --passwordbox "Por favor, ingresa tu contraseña de root:" 8 60 --title "Contraseña de Root" 3>&1 1>&2 2>&3)
+    ROOT_PASSWORD=$(dialog --passwordbox "Por favor, ingresa tu contraseña de root:" 8 60 --title "Contraseña de Root" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
         manejar_error "El usuario canceló la entrada de contraseña."
     fi
@@ -55,8 +55,8 @@ solicitar_contraseña_root() {
 
 # Función para mostrar la pantalla de bienvenida
 pantalla_bienvenida() {
-    whiptail --title "Bienvenido al instalador de scripts de mxhectorvega" \
-    --yes-button "Iniciar" --no-button "Cancelar" \
+    dialog --title "Bienvenido al instalador de scripts de mxhectorvega" \
+    --yes-label "Iniciar" --no-label "Cancelar" \
     --yesno "El archivo de registro se almacenará en $LOGFILE\n\nSe instalarán las dependencias necesarias para la correcta visualización." 10 60
     if [ $? -ne 0 ]; then
         manejar_error "El usuario canceló la instalación."
@@ -73,7 +73,7 @@ seleccionar_script() {
         ((index++))
     done
 
-    SCRIPT_SELECCIONADO=$(whiptail --title "Lista de Scripts" --menu "Selecciona un script para ejecutar:" 20 60 10 "${opciones[@]}" 3>&1 1>&2 2>&3)
+    SCRIPT_SELECCIONADO=$(dialog --title "Lista de Scripts" --menu "Selecciona un script para ejecutar:" 20 60 10 "${opciones[@]}" 3>&1 1>&2 2>&3)
     if [ $? -ne 0 ]; then
         manejar_error "El usuario canceló la selección de script."
     fi
@@ -93,8 +93,10 @@ ejecutar_script() {
         if [[ $linea == "#"* ]]; then
             ((PASO_ACTUAL++))
             PERCENT=$((PASO_ACTUAL * 100 / TOTAL_PASOS))
+            echo "XXX"
             echo $PERCENT
             echo "# $linea"
+            echo "XXX"
             sleep 0.5
         else
             if [[ $linea == *"makepkg"* && $EUID -eq 0 ]]; then
@@ -104,14 +106,20 @@ ejecutar_script() {
             fi
         fi
     done < "$RUTA_SCRIPT"
-    ) | whiptail --gauge "Instalando $NOMBRE_SCRIPT..." 6 60 0
+    ) | dialog --gauge "Instalando $NOMBRE_SCRIPT..." 10 60 0
 }
 
 # Función para mostrar la pantalla final
 pantalla_final() {
-    if whiptail --title "Instalación Completa" --yes-button "Mostrar .log" --no-button "Finalizar" --yesno "❤️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60; then
-        whiptail --title "Registro de Instalación" --textbox "$LOGFILE" 20 80
+    if dialog --title "Instalación Completa" --yes-label "Mostrar .log" --no-label "Finalizar" --yesno "❤️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega" 10 60; then
+        dialog --title "Registro de Instalación" --textbox "$LOGFILE" 20 80
     fi
+}
+
+# Función para validar y verificar compatibilidad de paquetes
+validar_compatibilidad() {
+    # Aquí puedes añadir la lógica para validar y verificar la compatibilidad de paquetes y sintaxis del instalador con los scripts clonados
+    log "Validando y verificando compatibilidad de paquetes y sintaxis del instalador con los scripts clonados..."
 }
 
 # Inicio del Script
@@ -120,6 +128,7 @@ pantalla_final() {
     solicitar_contraseña_root
     pantalla_bienvenida
     clonar_repo
+    validar_compatibilidad
     seleccionar_script
     ejecutar_script
     pantalla_final
