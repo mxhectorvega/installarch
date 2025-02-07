@@ -22,7 +22,7 @@ fi
 # Agregar el repositorio flathub
 if ! flatpak remote-list | grep -q flathub; then
     echo "Agregando el repositorio flathub..."
-    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo && sudo systemctl restart flatpak-system-helper && sudo systemctl restart dbus
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
 fi
 
@@ -122,17 +122,17 @@ while true; do
     # Validar la opción seleccionada y proceder con la instalación
     if [ "$opcion" -eq 1 ]; then
         echo "Instalando paquetes de la Lista GNOME..."
-        for paquete in "${paquetes_gnome[@]}"; do
+        for paquete in "$paquete_adicional"; do
             flatpak install --user -y "$paquete"
         done
-        flatpak install --user -y "$paquete_adicional"
+        flatpak install --user -y "${paquetes_gnome[@]}"
         break
     elif [ "$opcion" -eq 2 ]; then
         echo "Instalando paquetes de la Lista KDE..."
-        for paquete in "${paquetes_kde[@]}"; do
+        for paquete in "$paquete_adicional"; do
             flatpak install --user -y "$paquete"
         done
-        flatpak install --user -y "$paquete_adicional"
+        flatpak install --user -y "${paquetes_kde[@]}"
         echo "Instalando paquetes adicionales para permisos flatpak, capturador de pantalla y gestor de particiones GUI..."
         sudo pacman -Sy flatpak-kcm spectacle partitionmanager --noconfirm --needed
         break
