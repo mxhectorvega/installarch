@@ -142,7 +142,7 @@ while true; do
 done
 
 # Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
+imprimir_mensaje "♥ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
 
 # Comando para ver la lista de aplicaciones flatpak instaladas
 # flatpak list --app --columns=application
