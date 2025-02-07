@@ -31,13 +31,16 @@ check_requirements() {
     if ! grep -q "Arch Linux" /etc/os-release; then
         echo -e "${RED}Error: Este script solo funciona en Arch Linux${NC}"
         exit 1
-    }
+    fi  # <- Aquí estaba el error, había un } en lugar de fi
 
     # Verificar permisos de sudo
     if ! sudo -v; then
         echo -e "${RED}Error: Se requieren privilegios de sudo${NC}"
         exit 1
-    }
+    fi
+
+    # El resto de la función permanece igual...
+}
 
     # Verificar herramientas básicas
     local required_tools=("curl" "tee" "less")
