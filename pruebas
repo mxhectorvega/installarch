@@ -3,18 +3,14 @@
 # Strict mode
 set -euo pipefail
 
-# Debug mode para encontrar errores
-exec 3>&2 2> >(tee -a "$HOME/arch_install.log" >&3)
-set -x
-
-# Colors
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-RED='\033[0;31m'
-PURPLE='\033[0;35m'
-NC='\033[0m'
+# Colores
+GREEN='\e[0;32m'
+BLUE='\e[0;34m'
+YELLOW='\e[1;33m'
+CYAN='\e[0;36m'
+RED='\e[0;31m'
+PURPLE='\e[0;35m'
+NC='\e[0m'
 
 # Variables
 LOG_FILE="$HOME/arch_install.log"
@@ -28,12 +24,12 @@ mkdir -p "$TEMP_DIR"
 cleanup() {
     local status=$?
     if [ $status -ne 0 ]; then
-        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}" | tee -a "$LOG_FILE"
+        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}"
         for pkg in "${INSTALLED_PACKAGES[@]}"; do
-            echo -e "${YELLOW}Desinstalando: $pkg${NC}" | tee -a "$LOG_FILE"
-            sudo pacman -R --noconfirm "$pkg" 2>> "$LOG_FILE" || true
+            echo -e "${YELLOW}Desinstalando: $pkg${NC}"
+            sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
         done
-        echo -e "${GREEN}Sistema restaurado${NC}" | tee -a "$LOG_FILE"
+        echo -e "${GREEN}Sistema restaurado${NC}"
     fi
     rm -rf "$TEMP_DIR"
 }
@@ -43,8 +39,11 @@ trap cleanup EXIT
 # Función de bienvenida
 show_welcome() {
     clear
-    echo -e "${GREEN}Bienvenido al instalador de scripts de mxhectorvega${NC}"
-    echo -e "Archivo de registros: ${BLUE}$LOG_FILE${NC}\n"
+    echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
+    echo -e "${GREEN}│     Bienvenido al instalador de          │${NC}"
+    echo -e "${GREEN}│        scripts de mxhectorvega           │${NC}"
+    echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
+    echo -e "\nArchivo de registros: ${BLUE}$LOG_FILE${NC}\n"
     sleep 1
 }
 
@@ -70,45 +69,27 @@ declare -A SCRIPT_URLS=(
     [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/hyprland"
 )
 
-# Función para ejecutar el script seleccionado
-execute_script() {
-    local url="$1"
-    local temp_script="$TEMP_DIR/script.sh"
-
-    echo -e "\n${YELLOW}Descargando script...${NC}" | tee -a "$LOG_FILE"
-    if ! curl -s "$url" -o "$temp_script"; then
-        echo -e "${RED}Error al descargar el script${NC}" | tee -a "$LOG_FILE"
-        return 1
-    fi
-
-    chmod +x "$temp_script"
-    echo -e "${GREEN}Script descargado correctamente${NC}" | tee -a "$LOG_FILE"
-    echo -e "\n${YELLOW}Ejecutando script...${NC}\n" | tee -a "$LOG_FILE"
-
-    # Activar depuración en la ejecución del script
-    set -x
-    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
-        return 1
-    fi
-    set +x
-
-    return 0
-}
-
 # Función principal
 main() {
     : > "$LOG_FILE"
     while true; do
         show_welcome
         show_menu
-        read -rp "Seleccione una opción (0-6): " selection
+        read -rp "${YELLOW}Seleccione una opción (0-6): ${NC}" selection
         case $selection in
             0) echo -e "\n${YELLOW}Saliendo del instalador...${NC}"; exit 0 ;;
             [1-6])
-                if execute_script "${SCRIPT_URLS[$selection]}"; then
-                    echo -e "${GREEN}Instalación completada con éxito.${NC}" | tee -a "$LOG_FILE"
-                else
-                    echo -e "${RED}Error en la instalación. Revise el log.${NC}" | tee -a "$LOG_FILE"
+                script_url="${SCRIPT_URLS[$selection]}"
+                echo -e "\n${YELLOW}Descargando script...${NC}"
+                temp_script="$TEMP_DIR/script.sh"
+                if ! curl -s "$script_url" > "$temp_script"; then
+                    echo -e "${RED}Error al descargar el script${NC}"
+                    continue
+                fi
+                chmod +x "$temp_script"
+                echo -e "${GREEN}Ejecutando script...${NC}\n"
+                if ! bash "$temp_script" | tee -a "$LOG_FILE"; then
+                    echo -e "${RED}Hubo errores en la instalación. Revise el log.${NC}"
                 fi
                 ;;
             *) echo -e "\n${RED}Opción inválida. Intente de nuevo.${NC}"; sleep 2 ;;
@@ -116,4 +97,4 @@ main() {
     done
 }
 
-main "$@"
+main
