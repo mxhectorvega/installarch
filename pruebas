@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # Instalación de paquetes flatpak para el usuario doméstico.
 # Repositorio: https://github.com/mxhectorvega/installarch
 # Ejecución: curl -L is.gd/mxflatpak | bash
@@ -9,30 +8,24 @@
 # Función para mostrar mensajes con formato
 imprimir_mensaje() {
     local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
-}
-
-# Función para mostrar diálogos con formato y limpiar pantalla
-mostrar_dialogo() {
-    local dialogo="$1"
     clear
-    echo -e "\n╭─────────────────────────────────────────────────╮"
-    echo -e "│                                                 │"
-    echo -e "│$dialogo"
-    echo -e "│                                                 │"
-    echo -e "╰─────────────────────────────────────────────────╯\n"
+    echo -e "\e[32m╭─────────────────────────────────────────────────╮\e[0m"
+    echo -e "\e[32m│                                                 │\e[0m"
+    printf "\e[32m│%*s\e[0m\n" $(( (${#mensaje} + 48) / 2 )) "$mensaje"
+    echo -e "\e[32m│                                                 │\e[0m"
+    echo -e "\e[32m╰─────────────────────────────────────────────────╯\e[0m"
+    sleep 3
 }
 
 # Verificar si flatpak está instalado, si no, instalarlo
 if ! command -v flatpak &> /dev/null; then
-    mostrar_dialogo "Flatpak no está instalado. Instalándolo..."
+    imprimir_mensaje "Flatpak no está instalado. Instalándolo..."
     sudo pacman -S flatpak --noconfirm --needed
 fi
 
 # Agregar el repositorio flathub
 if ! flatpak remote-list | grep -q flathub; then
-    mostrar_dialogo "Agregando el repositorio flathub..."
+    imprimir_mensaje "Agregando el repositorio flathub..."
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 fi
 
@@ -124,33 +117,30 @@ paquete_adicional="https://sober.vinegarhq.org/sober.flatpakref"
 
 # Bucle para preguntar al usuario hasta que seleccione una opción válida
 while true; do
-    mostrar_dialogo "¿Qué lista de paquetes flatpak deseas instalar?\n1) Para entorno de escritorio GNOME (instalado con script minimal por mxhectorvega)\n2) Para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
+    imprimir_mensaje "¿Qué lista de paquetes flatpak deseas instalar?\n1) Para entorno de escritorio GNOME (instalado con script minimal por mxhectorvega)\n2) Para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
     read -rp "Selecciona una opción (1 o 2): " opcion
 
     # Validar la opción seleccionada y proceder con la instalación
     if [ "$opcion" -eq 1 ]; then
-        mostrar_dialogo "Instalando paquetes de la Lista GNOME..."
+        imprimir_mensaje "Instalando paquetes de la Lista GNOME..."
         for paquete in "${paquetes_gnome[@]}"; do
             flatpak install --user -y "$paquete"
         done
         flatpak install --user -y "$paquete_adicional"
         break
     elif [ "$opcion" -eq 2 ]; then
-        mostrar_dialogo "Instalando paquetes de la Lista KDE..."
+        imprimir_mensaje "Instalando paquetes de la Lista KDE..."
         for paquete in "${paquetes_kde[@]}"; do
             flatpak install --user -y "$paquete"
         done
         flatpak install --user -y "$paquete_adicional"
-        mostrar_dialogo "Instalando paquetes adicionales para permisos flatpak, capturador de pantalla y gestor de particiones GUI..."
+        imprimir_mensaje "Instalando paquetes adicionales para permisos flatpak, capturador de pantalla y gestor de particiones GUI..."
         sudo pacman -Sy flatpak-kcm spectacle partitionmanager --noconfirm --needed
         break
     else
-        mostrar_dialogo "Opción no válida. Por favor, selecciona una opción válida."
+        imprimir_mensaje "Opción no válida. Por favor, selecciona una opción válida."
     fi
 done
 
 # Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
-
-# Comando para ver la lista de aplicaciones flatpak instaladas
-# flatpak list --app --columns=application
+imprimir_mensaje "♥️ Suscríbete!\n🌐 https://www.youtube.com/mxhectorvega"
