@@ -29,7 +29,6 @@ sudo pacman -Sy --noconfirm
 # Instalar paquetes esenciales para el sistema operativo
 paquetes_esenciales=(
     "openssh"
-    "seahorse"
     "acpi"
     "plocate"
     "usbutils"
@@ -56,6 +55,7 @@ herramientas_terminal=(
     "vim"
     "less"
     "man"
+    "nmap"
     "speedtest-cli"
 )
 

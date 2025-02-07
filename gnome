@@ -48,6 +48,7 @@ herramientas_terminal=(
     "vim"
     "less"
     "man"
+    "nmap"
     "speedtest-cli"
 )
 
