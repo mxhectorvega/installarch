@@ -107,12 +107,3 @@ sudo pacman -S jre8-openjdk --noconfirm --needed
 
 # Mensaje final
 imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
-
-# Activar el servicio de pantalla de inicio de sesión (GDM)
-for i in {1..8}; do
-    clear
-    printf 'Activando display manager'$(printf '.%.0s' $(seq 1 $i))
-    sleep 0.1
-done
-
-sudo systemctl enable --now gdm
