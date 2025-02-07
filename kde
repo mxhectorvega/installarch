@@ -62,23 +62,6 @@ herramientas_terminal=(
 sudo pacman -S "${herramientas_terminal[@]}" --noconfirm --needed
 
 # Paquetes faltantes en la instalacion KDE Plasma de archinstall
-herramientas_terminal=(
-    "fastfetch"
-    "git"
-    "curl"
-    "wget"
-    "nvtop"
-    "htop"
-    "vim"
-    "less"
-    "man"
-    "nmap"
-    "speedtest-cli"
-)
-
-sudo pacman -S "${herramientas_terminal[@]}" --noconfirm --needed
-
-# Paquetes faltantes de la instalacion archinstall para KDE Plasma
 plasma=(
     "flatpak-kcm"
     "spectacle"
