@@ -20,6 +20,9 @@ TEMP_DIR="/tmp/arch_installer_$$"
 # Crear directorio temporal
 mkdir -p "$TEMP_DIR"
 
+# Lista de dependencias
+DEPENDENCIAS=("curl" "sudo" "bash")
+
 # Función de limpieza
 cleanup() {
     local status=$?
@@ -68,6 +71,20 @@ show_menu() {
 # Función para registrar paquetes instalados
 register_package() {
     INSTALLED_PACKAGES+=("$1")
+}
+
+# Función para verificar e instalar dependencias
+check_dependencies() {
+    echo -e "${YELLOW}Verificando dependencias...${NC}" | tee -a "$LOG_FILE"
+    for dep in "${DEPENDENCIAS[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            echo -e "${RED}Dependencia no encontrada: $dep. Instalando...${NC}" | tee -a "$LOG_FILE"
+            sudo pacman -S --noconfirm "$dep" 2>&1 | tee -a "$LOG_FILE"
+            register_package "$dep"
+        else
+            echo -e "${GREEN}Dependencia encontrada: $dep${NC}" | tee -a "$LOG_FILE"
+        fi
+    done
 }
 
 # Función para ejecutar el script seleccionado
@@ -142,6 +159,9 @@ declare -A SCRIPT_URLS=(
 main() {
     # Inicializar archivo de log
     : > "$LOG_FILE"
+
+    # Verificar e instalar dependencias
+    check_dependencies
 
     while true; do
         # Mostrar bienvenida y menú
