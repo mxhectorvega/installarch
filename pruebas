@@ -31,7 +31,7 @@ check_requirements() {
     if ! grep -q "Arch Linux" /etc/os-release; then
         echo -e "${RED}Error: Este script solo funciona en Arch Linux${NC}"
         exit 1
-    fi  # <- Aquí estaba el error, había un } en lugar de fi
+    fi
 
     # Verificar permisos de sudo
     if ! sudo -v; then
@@ -39,11 +39,8 @@ check_requirements() {
         exit 1
     fi
 
-    # El resto de la función permanece igual...
-}
-
     # Verificar herramientas básicas
-    local required_tools=("curl" "tee" "less")
+    required_tools=("curl" "tee" "less")
     for tool in "${required_tools[@]}"; do
         if ! command -v "$tool" &> /dev/null; then
             echo -e "${RED}Error: Falta la herramienta requerida: $tool${NC}"
@@ -58,7 +55,7 @@ check_requirements() {
     if ! touch "$LOG_FILE" 2>/dev/null || ! touch "$ERROR_LOG" 2>/dev/null; then
         echo -e "${RED}Error: No se puede escribir en los archivos de log${NC}"
         exit 1
-    }
+    fi
 
     echo -e "${GREEN}✓ Todos los requisitos cumplidos${NC}"
 }
@@ -110,7 +107,7 @@ show_welcome() {
     sleep 1
 }
 
-# Función del menú mejorada
+# Función del menú
 show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
 
@@ -129,7 +126,7 @@ register_package() {
     echo "Paquete registrado: $1" >> "$LOG_FILE"
 }
 
-# Función para ejecutar script mejorada
+# Función para ejecutar script
 execute_script() {
     local url="$1"
     local temp_script="$TEMP_DIR/script.sh"
@@ -138,18 +135,18 @@ execute_script() {
     if ! curl -I -s "$url" | grep -q "HTTP/[1-9].[0-9] [23].."; then
         echo -e "${RED}Error: URL no accesible${NC}" | tee -a "$LOG_FILE"
         return 1
-    }
+    fi
 
     echo -e "\n${YELLOW}Descargando script...${NC}" | tee -a "$LOG_FILE"
     if ! curl -s "$url" > "$temp_script"; then
         echo -e "${RED}Error al descargar el script${NC}" | tee -a "$LOG_FILE"
         return 1
-    }
+    fi
 
     if [ ! -s "$temp_script" ]; then
         echo -e "${RED}Error: Script descargado está vacío${NC}" | tee -a "$LOG_FILE"
         return 1
-    }
+    fi
 
     chmod +x "$temp_script"
     echo -e "${GREEN}Script descargado correctamente${NC}" | tee -a "$LOG_FILE"
@@ -158,18 +155,18 @@ execute_script() {
     if ! bash -n "$temp_script"; then
         echo -e "${RED}Error: El script contiene errores de sintaxis${NC}" | tee -a "$LOG_FILE"
         return 1
-    }
+    fi
 
     echo -e "\n${YELLOW}Ejecutando script...${NC}\n" | tee -a "$LOG_FILE"
     if ! bash "$temp_script" 2> >(tee -a "$ERROR_LOG") | tee -a "$LOG_FILE"; then
         echo -e "${RED}Error durante la ejecución del script${NC}" | tee -a "$LOG_FILE"
         return 1
-    }
+    fi
 
     return 0
 }
 
-# Función de pantalla final mejorada
+# Función de pantalla final
 show_final_screen() {
     local status=$1
 
@@ -208,7 +205,7 @@ declare -A SCRIPT_URLS=(
     [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/hyprland"
 )
 
-# Función principal mejorada
+# Función principal
 main() {
     # Verificar requisitos
     check_requirements
@@ -247,3 +244,4 @@ main() {
 
 # Ejecutar el script
 main "$@"
+# 10:35PM
