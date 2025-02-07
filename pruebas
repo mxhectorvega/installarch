@@ -4,80 +4,39 @@
 set -euo pipefail
 
 # Colors
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly PURPLE='\033[0;35m'
-readonly CYAN='\033[0;36m'
-readonly NC='\033[0m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
 
-# Global variables
-readonly LOG_FILE="$HOME/arch_install.log"
-readonly TEMP_PASSWORD_FILE="/tmp/.arch_install_pwd"
-declare -A INSTALLED_PACKAGES=()
+# Variables
+LOG_FILE="$HOME/arch_install.log"
+INSTALLED_PACKAGES=()
+TEMP_DIR="/tmp/arch_installer_$$"
 
-# Clean up function
+# Crear directorio temporal
+mkdir -p "$TEMP_DIR"
+
+# Función de limpieza
 cleanup() {
-    rm -f "$TEMP_PASSWORD_FILE"
-    if [[ ${#INSTALLED_PACKAGES[@]} -gt 0 && $? -ne 0 ]]; then
-        echo -e "${RED}Installation failed. Rolling back...${NC}"
-        for pkg in "${!INSTALLED_PACKAGES[@]}"; do
-            sudo pacman -R --noconfirm "$pkg"
+    local status=$?
+    if [ $status -ne 0 ]; then
+        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}"
+        for pkg in "${INSTALLED_PACKAGES[@]}"; do
+            echo -e "${YELLOW}Desinstalando: $pkg${NC}"
+            sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
         done
+        echo -e "${GREEN}Sistema restaurado${NC}"
     fi
+    rm -rf "$TEMP_DIR"
 }
 
 trap cleanup EXIT
 
-# Logger function
-log() {
-    local message="$1"
-    local timestamp
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo -e "$timestamp: $message" | tee -a "$LOG_FILE"
-}
-
-# Password dialog function
-get_password() {
-    local prompt="$1"
-    local password
-
-    # Create custom password prompt
-    echo -e "${BLUE}╭─────────────────────────────╮${NC}"
-    echo -e "${BLUE}│${NC} $prompt"
-    echo -e "${BLUE}╰─────────────────────────────╯${NC}"
-
-    read -rs password
-    echo "$password"
-}
-
-# Check and install dependencies
-check_dependencies() {
-    local deps=("curl" "git" "base-devel")
-
-    for dep in "${deps[@]}"; do
-        if ! command -v "$dep" &> /dev/null; then
-            log "Installing dependency: $dep"
-            sudo pacman -S --noconfirm "$dep"
-            INSTALLED_PACKAGES["$dep"]=1
-        fi
-    done
-}
-
-# Progress bar function
-show_progress() {
-    local current=$1
-    local total=$2
-    local width=50
-    local percentage=$((current * 100 / total))
-    local filled=$((percentage * width / 100))
-    local empty=$((width - filled))
-
-    printf "\r${CYAN}[%-${width}s] %d%%${NC}" "$(printf '#%.0s' $(seq 1 "$filled"))$(printf ' %.0s' $(seq 1 "$empty"))" "$percentage"
-}
-
-# Welcome screen
+# Función de bienvenida
 show_welcome() {
     clear
     echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
@@ -85,67 +44,51 @@ show_welcome() {
     echo -e "${GREEN}│        scripts de mxhectorvega           │${NC}"
     echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
     echo -e "\nArchivo de registros: ${BLUE}$LOG_FILE${NC}\n"
-    sleep 2
+    sleep 1
 }
 
-# Script selection menu
-select_script() {
-    local scripts=(
-        "Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
-        "Software flatpak para el usuario doméstico"
-        "Entorno de escritorio Gnome 47.x"
-        "Controladores Wifi para MacBook Pro y Air"
-        "Controladores para impresora Epson L3210"
-        "Configuraciones para Hyprland"
-    )
+# Función del menú
+show_menu() {
+    echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
 
-    local urls=(
-        "https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
-        "https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
-        "https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome"
-        "https://raw.githubusercontent.com/mxhectorvega/installarch/main/macbook"
-        "https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
-        "https://raw.githubusercontent.com/mxhectorvega/installarch/main/hyprland"
-    )
-
-    echo -e "${YELLOW}Seleccione un script para instalar:${NC}\n"
-
-    for i in "${!scripts[@]}"; do
-        echo -e "${CYAN}$((i+1))${NC}) ${scripts[$i]}"
-    done
-
-    local selection
-    read -rp $'\nIngrese el número de su selección: ' selection
-
-    if [[ "$selection" =~ ^[1-6]$ ]]; then
-        echo "${urls[$((selection-1))]}"
-    else
-        echo ""
-    fi
+    echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
+    echo -e "${CYAN}2)${NC} Software flatpak para el usuario doméstico"
+    echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x"
+    echo -e "${CYAN}4)${NC} Controladores Wifi para MacBook Pro y Air"
+    echo -e "${CYAN}5)${NC} Controladores para impresora Epson L3210"
+    echo -e "${CYAN}6)${NC} Configuraciones para Hyprland"
+    echo -e "${CYAN}0)${NC} Salir\n"
 }
 
-# Execute selected script
+# Función para registrar paquetes instalados
+register_package() {
+    INSTALLED_PACKAGES+=("$1")
+}
+
+# Función para ejecutar el script seleccionado
 execute_script() {
     local url="$1"
-    local temp_script
-    temp_script=$(mktemp)
+    local temp_script="$TEMP_DIR/script.sh"
 
-    curl -s "$url" > "$temp_script"
-    chmod +x "$temp_script"
-
-    echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
-
-    # Execute as non-root user when needed
-    if grep -q "git clone\|makepkg" "$temp_script"; then
-        sudo -u "$SUDO_USER" "$temp_script"
-    else
-        "$temp_script"
+    echo -e "\n${YELLOW}Descargando script...${NC}"
+    if ! curl -s "$url" > "$temp_script"; then
+        echo -e "${RED}Error al descargar el script${NC}"
+        return 1
     fi
 
-    rm -f "$temp_script"
+    chmod +x "$temp_script"
+    echo -e "${GREEN}Script descargado correctamente${NC}"
+    echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
+
+    # Ejecutar script y capturar su salida en el log
+    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
+        return 1
+    fi
+
+    return 0
 }
 
-# Show final screen
+# Función de pantalla final
 show_final_screen() {
     local status=$1
 
@@ -161,50 +104,63 @@ show_final_screen() {
         echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
     fi
 
-    echo -e "\n${PURPLE}♥️ Suscríbete! 🌐 https://www.youtube.com/mxhectorvega${NC}\n"
+    echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
+    echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
 
-    # Show logs in scrollable view
-    echo -e "${YELLOW}Presione q para salir del registro${NC}"
-    less "$LOG_FILE"
+    if [ "$status" -ne 0 ]; then
+        echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
+        read -n 1
+        less "$LOG_FILE"
+    fi
+
+    echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
+    read -n 1
 }
 
-# Main function
+# URLs de los scripts (ocultas del menú)
+declare -A SCRIPT_URLS=(
+    [1]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
+    [2]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
+    [3]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome"
+    [4]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/macbook"
+    [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
+    [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/hyprland"
+)
+
+# Función principal
 main() {
-    # Initialize log file
+    # Inicializar archivo de log
     : > "$LOG_FILE"
 
-    # Check if running as root
-    if [[ $EUID -ne 0 ]]; then
-        echo "Este script debe ejecutarse como root"
-        exit 1
-    fi
+    while true; do
+        # Mostrar bienvenida y menú
+        show_welcome
+        show_menu
 
-    # Store current user
-    SUDO_USER=${SUDO_USER:-$(logname)}
+        # Leer selección
+        read -rp $'\033[1;33mSeleccione una opción (0-6): \033[0m' selection
 
-    # Show welcome screen
-    show_welcome
-
-    # Check dependencies
-    check_dependencies
-
-    # Get script selection
-    local selected_url
-    selected_url=$(select_script)
-
-    if [[ -n "$selected_url" ]]; then
-        # Execute selected script
-        if execute_script "$selected_url"; then
-            show_final_screen 0
-        else
-            show_final_screen 1
-        fi
-    else
-        echo -e "${RED}Selección inválida${NC}"
-        exit 1
-    fi
+        case $selection in
+            0)
+                echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
+                exit 0
+                ;;
+            [1-6])
+                if execute_script "${SCRIPT_URLS[$selection]}"; then
+                    show_final_screen 0
+                else
+                    show_final_screen 1
+                fi
+                ;;
+            *)
+                echo -e "\n${RED}Opción inválida. Por favor, seleccione un número del 0 al 6.${NC}"
+                sleep 2
+                continue
+                ;;
+        esac
+    done
 }
 
-# Execute main function
+# Ejecutar el script
 main "$@"
-#321
+#lds
