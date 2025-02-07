@@ -3,14 +3,14 @@
 # Strict mode
 set -euo pipefail
 
-# Colores
-GREEN='\e[0;32m'
-BLUE='\e[0;34m'
-YELLOW='\e[1;33m'
-CYAN='\e[0;36m'
-RED='\e[0;31m'
-PURPLE='\e[0;35m'
-NC='\e[0m'
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
 
 # Variables
 LOG_FILE="$HOME/arch_install.log"
@@ -34,7 +34,30 @@ cleanup() {
     rm -rf "$TEMP_DIR"
 }
 
-trap cleanup EXIT
+trap cleanup EXIT SIGINT SIGTERM
+
+# Verificar dependencias
+check_dependencies() {
+    local dependencies=("curl" "sudo")
+    for dep in "${dependencies[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            echo -e "${RED}Error: $dep no está instalado.${NC}"
+            echo -e "${YELLOW}Instalando $dep...${NC}"
+            pacman -Sy --noconfirm "$dep" || {
+                echo -e "${RED}No se pudo instalar $dep. Abortando...${NC}"
+                exit 1
+            }
+        fi
+    done
+}
+
+# Verificar conexión a Internet
+check_internet() {
+    if ! ping -c 1 google.com &> /dev/null; then
+        echo -e "${RED}Error: No hay conexión a Internet.${NC}"
+        exit 1
+    fi
+}
 
 # Función de bienvenida
 show_welcome() {
@@ -50,16 +73,83 @@ show_welcome() {
 # Función del menú
 show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
+
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
+    echo -e "   - Configura repositorios adicionales y herramientas para AUR."
     echo -e "${CYAN}2)${NC} Software flatpak para el usuario doméstico"
+    echo -e "   - Instala y configura Flatpak para aplicaciones de usuario."
     echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x"
+    echo -e "   - Instala y configura el entorno de escritorio Gnome."
     echo -e "${CYAN}4)${NC} Controladores Wifi para MacBook Pro y Air"
+    echo -e "   - Instala controladores para dispositivos WiFi en MacBooks."
     echo -e "${CYAN}5)${NC} Controladores para impresora Epson L3210"
+    echo -e "   - Configura controladores para impresoras Epson."
     echo -e "${CYAN}6)${NC} Configuraciones para Hyprland"
+    echo -e "   - Instala y configura el compositor Hyprland."
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 
-# URLs de los scripts
+# Función para registrar paquetes instalados
+register_package() {
+    if [[ ! " ${INSTALLED_PACKAGES[@]} " =~ " $1 " ]]; then
+        INSTALLED_PACKAGES+=("$1")
+    fi
+}
+
+# Función para ejecutar el script seleccionado
+execute_script() {
+    local url="$1"
+    local temp_script="$TEMP_DIR/script.sh"
+
+    echo -e "\n${YELLOW}Descargando script...${NC}"
+    if ! curl -s "$url" > "$temp_script"; then
+        echo -e "${RED}Error al descargar el script${NC}"
+        return 1
+    fi
+
+    chmod +x "$temp_script"
+    echo -e "${GREEN}Script descargado correctamente${NC}"
+    echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
+
+    # Ejecutar script y capturar su salida en el log
+    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
+        echo -e "${RED}Error durante la ejecución del script${NC}"
+        return 1
+    fi
+
+    return 0
+}
+
+# Función de pantalla final
+show_final_screen() {
+    local status=$1
+
+    clear
+    if [ "$status" -eq 0 ]; then
+        echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
+        echo -e "${GREEN}│      ¡Instalación completada con éxito!  │${NC}"
+        echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
+    else
+        echo -e "${RED}╭──────────────────────────────────────────╮${NC}"
+        echo -e "${RED}│   ¡Error durante la instalación!         │${NC}"
+        echo -e "${RED}│   Revise el archivo de registros         │${NC}"
+        echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
+    fi
+
+    echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
+    echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
+
+    if [ "$status" -ne 0 ]; then
+        echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
+        read -n 1
+        less -R "$LOG_FILE"
+    fi
+
+    echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
+    read -n 1
+}
+
+# URLs de los scripts (ocultas del menú)
 declare -A SCRIPT_URLS=(
     [1]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
     [2]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
@@ -71,30 +161,40 @@ declare -A SCRIPT_URLS=(
 
 # Función principal
 main() {
+    check_dependencies
+    check_internet
+
+    # Inicializar archivo de log
     : > "$LOG_FILE"
+
     while true; do
+        # Mostrar bienvenida y menú
         show_welcome
         show_menu
-        read -rp "${YELLOW}Seleccione una opción (0-6): ${NC}" selection
+
+        # Leer selección
+        read -rp $'\033[1;33mSeleccione una opción (0-6): \033[0m' selection
+
         case $selection in
-            0) echo -e "\n${YELLOW}Saliendo del instalador...${NC}"; exit 0 ;;
+            0)
+                echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
+                exit 0
+                ;;
             [1-6])
-                script_url="${SCRIPT_URLS[$selection]}"
-                echo -e "\n${YELLOW}Descargando script...${NC}"
-                temp_script="$TEMP_DIR/script.sh"
-                if ! curl -s "$script_url" > "$temp_script"; then
-                    echo -e "${RED}Error al descargar el script${NC}"
-                    continue
-                fi
-                chmod +x "$temp_script"
-                echo -e "${GREEN}Ejecutando script...${NC}\n"
-                if ! bash "$temp_script" | tee -a "$LOG_FILE"; then
-                    echo -e "${RED}Hubo errores en la instalación. Revise el log.${NC}"
+                if execute_script "${SCRIPT_URLS[$selection]}"; then
+                    show_final_screen 0
+                else
+                    show_final_screen 1
                 fi
                 ;;
-            *) echo -e "\n${RED}Opción inválida. Intente de nuevo.${NC}"; sleep 2 ;;
+            *)
+                echo -e "\n${RED}Opción inválida. Por favor, seleccione un número del 0 al 6.${NC}"
+                sleep 2
+                continue
+                ;;
         esac
     done
 }
 
-main
+# Ejecutar el script
+main "$@"
