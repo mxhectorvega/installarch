@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
+
 # Strict mode
 set -euo pipefail
-
-# Redirigir stdin a /dev/tty para permitir interacción con el usuario
-exec < /dev/tty
 
 # Colors
 GREEN='\033[0;32m'
@@ -17,6 +15,10 @@ NC='\033[0m'
 # Variables
 LOG_FILE="$HOME/arch_install.log"
 INSTALLED_PACKAGES=()
+TEMP_DIR="/tmp/arch_installer_$$"
+
+# Crear directorio temporal
+mkdir -p "$TEMP_DIR"
 
 # Función de limpieza
 cleanup() {
@@ -29,7 +31,9 @@ cleanup() {
         done
         echo -e "${GREEN}Sistema restaurado${NC}"
     fi
+    rm -rf "$TEMP_DIR"
 }
+
 trap cleanup EXIT
 
 # Función de bienvenida
@@ -46,6 +50,7 @@ show_welcome() {
 # Función del menú
 show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
+
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
     echo -e "${CYAN}2)${NC} Software flatpak para el usuario doméstico"
     echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x"
@@ -63,26 +68,32 @@ register_package() {
 # Función para ejecutar el script seleccionado
 execute_script() {
     local url="$1"
+    local temp_script="$TEMP_DIR/script.sh"
+
     echo -e "\n${YELLOW}Descargando script...${NC}"
-    local script_content
-    if ! script_content=$(curl -s "$url"); then
+    if ! curl -s "$url" > "$temp_script"; then
         echo -e "${RED}Error al descargar el script${NC}"
         return 1
     fi
+
+    chmod +x "$temp_script"
     echo -e "${GREEN}Script descargado correctamente${NC}"
     echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
-    # Ejecutar script en memoria y capturar su salida en el log
-    if ! echo "$script_content" | bash 2>&1 | tee -a "$LOG_FILE"; then
+
+    # Ejecutar script y capturar su salida en el log
+    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
         return 1
     fi
+
     return 0
 }
 
 # Función de pantalla final
 show_final_screen() {
     local status=$1
+
     clear
-    if [ "$status" -eq 0 ]; then
+    if [ "$status" -eq 0 ]; entonces
         echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
         echo -e "${GREEN}│      ¡Instalación completada con éxito!  │${NC}"
         echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
@@ -92,13 +103,16 @@ show_final_screen() {
         echo -e "${RED}│   Revise el archivo de registros         │${NC}"
         echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
     fi
+
     echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
     echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
+
     if [ "$status" -ne 0 ]; then
         echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
         read -n 1
         less "$LOG_FILE"
     fi
+
     echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
     read -n 1
 }
@@ -117,12 +131,15 @@ declare -A SCRIPT_URLS=(
 main() {
     # Inicializar archivo de log
     : > "$LOG_FILE"
+
     while true; do
         # Mostrar bienvenida y menú
         show_welcome
         show_menu
+
         # Leer selección
         read -rp $'\033[1;33mSeleccione una opción (0-6): \033[0m' selection
+
         case $selection in
             0)
                 echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
@@ -146,4 +163,4 @@ main() {
 
 # Ejecutar el script
 main "$@"
-# Para hacer que el script se ejecute a través de una tubería (|) como en curl | bash, es necesario modificarlo para que sea compatible con la entrada estándar (stdin). Esto significa que no debe depender de archivos locales o interacciones complejas que puedan romperse al ejecutarlo desde una tubería.
+#loco
