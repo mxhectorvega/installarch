@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Strict mode
+# Modo estricto
 set -euo pipefail
 
-# Colors
+# Colores
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -16,7 +16,6 @@ NC='\033[0m'
 LOG_FILE="$HOME/arch_install.log"
 INSTALLED_PACKAGES=()
 TEMP_DIR="/tmp/arch_installer_$$"
-REQUIRED_DEPENDENCIES=("curl" "less")
 
 # Crear directorio temporal
 mkdir -p "$TEMP_DIR"
@@ -24,29 +23,18 @@ mkdir -p "$TEMP_DIR"
 # Función de limpieza
 cleanup() {
     local status=$?
-    if [ $status -ne 0 ]; then
-        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}"
-        for pkg in "${INSTALLED_PACKAGES[@]}"; do
-            echo -e "${YELLOW}Desinstalando: $pkg${NC}"
+    if [ $status -ne 0 ];then
+        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}" | tee -a "$LOG_FILE"
+        for pkg in "${INSTALLED_PACKAGES[@]}";do
+            echo -e "${YELLOW}Desinstalando: $pkg${NC}" | tee -a "$LOG_FILE"
             sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
         done
-        echo -e "${GREEN}Sistema restaurado${NC}"
+        echo -e "${GREEN}Sistema restaurado${NC}" | tee -a "$LOG_FILE"
     fi
     rm -rf "$TEMP_DIR"
 }
 
 trap cleanup EXIT
-
-# Función para verificar dependencias
-check_dependencies() {
-    for pkg in "${REQUIRED_DEPENDENCIES[@]}"; do
-        if ! command -v "$pkg" &>/dev/null; then
-            echo -e "${YELLOW}Instalando dependencia: $pkg${NC}"
-            sudo pacman -S --noconfirm "$pkg"
-            register_package "$pkg"
-        fi
-    done
-}
 
 # Función de bienvenida
 show_welcome() {
@@ -83,8 +71,8 @@ execute_script() {
     local temp_script="$TEMP_DIR/script.sh"
 
     echo -e "\n${YELLOW}Descargando script...${NC}"
-    if ! curl -s "$url" > "$temp_script"; then
-        echo -e "${RED}Error al descargar el script${NC}"
+    if ! curl -s "$url" > "$temp_script";then
+        echo -e "${RED}Error al descargar el script${NC}" | tee -a "$LOG_FILE"
         return 1
     fi
 
@@ -144,9 +132,6 @@ main() {
     # Inicializar archivo de log
     : > "$LOG_FILE"
 
-    # Verificar dependencias antes de comenzar
-    check_dependencies
-
     while true; do
         # Mostrar bienvenida y menú
         show_welcome
@@ -178,4 +163,4 @@ main() {
 
 # Ejecutar el script
 main "$@"
-# 7:15PM
+# 7:44PM
