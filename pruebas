@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
+
+# Strict mode
 set -euo pipefail
 
+# Debug mode
 exec 5> "$HOME/arch_install.debug.log"
 BASH_XTRACEFD="5"
 
+# Colors
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -12,83 +16,77 @@ RED='\033[0;31m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
 
+# Variables
 LOG_FILE="$HOME/arch_install.log"
 ERROR_LOG="$HOME/arch_install.error.log"
 DEBUG_DIR="$HOME/arch_install.debug"
 INSTALLED_PACKAGES=()
-TEMP_DIR=$(mktemp -d /tmp/arch_installer_XXXXXX)
+TEMP_DIR="/tmp/arch_installer_$$"
 
-initialize_logs() {
-    echo -e "Fecha de inicio: $(date)" > "$LOG_FILE"
-    echo -e "Usuario: $(whoami)" >> "$LOG_FILE"
-    echo -e "Directorio actual: $(pwd)" >> "$LOG_FILE"
-    echo -e "Versión de Bash: $BASH_VERSION" >> "$LOG_FILE"
-    echo -e "Variables de entorno:" >> "$LOG_FILE"
-    env >> "$LOG_FILE"
-}
-
+# Verificación inicial de requisitos
 check_requirements() {
     echo -e "${YELLOW}Verificando requisitos...${NC}"
+
+    # Verificar si es Arch Linux
     if ! grep -q "Arch Linux" /etc/os-release; then
         echo -e "${RED}Error: Este script solo funciona en Arch Linux${NC}"
         exit 1
     fi
 
-    if ! command -v sudo &> /dev/null; then
-        echo -e "${RED}Error: Falta la herramienta sudo${NC}"
-        if command -v pacman &> /dev/null; then
-            echo -e "${YELLOW}Intentando instalar sudo...${NC}"
-            if pacman -S --noconfirm sudo; then
-                echo -e "${GREEN}✓ Sudo instalado correctamente${NC}"
-            else
-                echo -e "${RED}Error: No se pudo instalar sudo${NC}"
-                exit 1
-            fi
-        else
-            echo -e "${RED}Error: No se puede instalar sudo sin pacman${NC}"
-            exit 1
-        fi
+    # Verificar permisos de sudo
+    if ! sudo -v; then
+        echo -e "${RED}Error: Se requieren privilegios de sudo${NC}"
+        exit 1
     fi
 
-    required_tools=("curl" "tee" "less" "pacman")
+    # Verificar herramientas básicas
+    required_tools=("curl" "tee" "less")
     for tool in "${required_tools[@]}"; do
         if ! command -v "$tool" &> /dev/null; then
             echo -e "${RED}Error: Falta la herramienta requerida: $tool${NC}"
-            if command -v sudo &> /dev/null && command -v pacman &> /dev/null; then
-                echo -e "${YELLOW}Intentando instalar $tool...${NC}"
-                if sudo pacman -S --noconfirm "$tool"; then
-                    echo -e "${GREEN}✓ $tool instalado correctamente${NC}"
-                else
-                    echo -e "${RED}Error: No se pudo instalar $tool${NC}"
-                    exit 1
-                fi
-            else
-                echo -e "${RED}Error: No se pueden instalar herramientas automáticamente sin sudo o pacman${NC}"
-                exit 1
-            fi
+            exit 1
         fi
     done
 
+    # Crear directorios necesarios
     mkdir -p "$TEMP_DIR" "$DEBUG_DIR"
+
+    # Verificar permisos de escritura para logs
     if ! touch "$LOG_FILE" 2>/dev/null || ! touch "$ERROR_LOG" 2>/dev/null; then
         echo -e "${RED}Error: No se puede escribir en los archivos de log${NC}"
         exit 1
     fi
+
     echo -e "${GREEN}✓ Todos los requisitos cumplidos${NC}"
 }
 
+# Función de limpieza mejorada
 cleanup() {
     local status=$?
     if [ $status -ne 0 ]; then
         echo -e "\n${RED}Error detectado. Código: $status${NC}"
         echo -e "${RED}Consultando logs para más detalles...${NC}"
+
+        # Mostrar últimas líneas del log de errores
         if [ -f "$ERROR_LOG" ]; then
             echo -e "\n${YELLOW}Últimas líneas del log de errores:${NC}"
             tail -n 20 "$ERROR_LOG"
         fi
+
+        # Preservar archivos temporales para debugging
         echo -e "\n${YELLOW}Guardando archivos de debug en: $DEBUG_DIR${NC}"
-        mkdir -p "$DEBUG_DIR"
         cp -r "$TEMP_DIR"/* "$DEBUG_DIR/" 2>/dev/null || true
+
+        # Desinstalar paquetes si es necesario
+        if [ ${#INSTALLED_PACKAGES[@]} -gt 0 ]; then
+            echo -e "\n${YELLOW}Desinstalando paquetes instalados:${NC}"
+            for pkg in "${INSTALLED_PACKAGES[@]}"; do
+                echo -e "${YELLOW}Desinstalando: $pkg${NC}"
+                sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
+            done
+        fi
+
+        echo -e "${GREEN}Sistema restaurado${NC}"
     else
         rm -rf "$TEMP_DIR"
     fi
@@ -97,6 +95,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'trap - EXIT; cleanup; exit 1' INT TERM
 
+# Función de bienvenida
 show_welcome() {
     clear
     echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
@@ -108,8 +107,10 @@ show_welcome() {
     sleep 1
 }
 
+# Función del menú
 show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
+
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
     echo -e "${CYAN}2)${NC} Software flatpak para el usuario doméstico"
     echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x"
@@ -119,23 +120,26 @@ show_menu() {
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 
+# Función para registrar paquetes instalados
 register_package() {
     INSTALLED_PACKAGES+=("$1")
     echo "Paquete registrado: $1" >> "$LOG_FILE"
 }
 
+# Función para ejecutar script
 execute_script() {
     local url="$1"
     local temp_script="$TEMP_DIR/script.sh"
+
     echo -e "\n${YELLOW}Verificando URL: $url${NC}" | tee -a "$LOG_FILE"
     if ! curl -I -s "$url" | grep -q "HTTP/[1-9].[0-9] [23].."; then
-        echo -e "${RED}Error: La URL no es accesible o no responde correctamente.${NC}" | tee -a "$LOG_FILE"
+        echo -e "${RED}Error: URL no accesible${NC}" | tee -a "$LOG_FILE"
         return 1
     fi
 
     echo -e "\n${YELLOW}Descargando script...${NC}" | tee -a "$LOG_FILE"
-    if ! curl --retry 3 -s "$url" > "$temp_script"; then
-        echo -e "${RED}Error: No se pudo descargar el script después de 3 intentos.${NC}" | tee -a "$LOG_FILE"
+    if ! curl -s "$url" > "$temp_script"; then
+        echo -e "${RED}Error al descargar el script${NC}" | tee -a "$LOG_FILE"
         return 1
     fi
 
@@ -147,6 +151,7 @@ execute_script() {
     chmod +x "$temp_script"
     echo -e "${GREEN}Script descargado correctamente${NC}" | tee -a "$LOG_FILE"
 
+    # Verificar sintaxis del script
     if ! bash -n "$temp_script"; then
         echo -e "${RED}Error: El script contiene errores de sintaxis${NC}" | tee -a "$LOG_FILE"
         return 1
@@ -154,15 +159,17 @@ execute_script() {
 
     echo -e "\n${YELLOW}Ejecutando script...${NC}\n" | tee -a "$LOG_FILE"
     if ! bash "$temp_script" 2> >(tee -a "$ERROR_LOG") | tee -a "$LOG_FILE"; then
-        local exit_code=$?
-        echo -e "${RED}Error ($exit_code): Ocurrió un problema durante la ejecución del script.${NC}" | tee -a "$LOG_FILE"
+        echo -e "${RED}Error durante la ejecución del script${NC}" | tee -a "$LOG_FILE"
         return 1
     fi
+
     return 0
 }
 
+# Función de pantalla final
 show_final_screen() {
     local status=$1
+
     clear
     if [ "$status" -eq 0 ]; then
         echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
@@ -174,17 +181,21 @@ show_final_screen() {
         echo -e "${RED}│   Revise los archivos de registro        │${NC}"
         echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
     fi
+
     echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
     echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
+
     if [ "$status" -ne 0 ]; then
         echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
         read -n 1
         less "$ERROR_LOG"
     fi
+
     echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
     read -n 1
 }
 
+# URLs de los scripts
 declare -A SCRIPT_URLS=(
     [1]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
     [2]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
@@ -194,13 +205,21 @@ declare -A SCRIPT_URLS=(
     [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/hyprland"
 )
 
+# Función principal
 main() {
+    # Verificar requisitos
     check_requirements
-    initialize_logs
+
+    # Inicializar archivos de log
+    : > "$LOG_FILE"
+    : > "$ERROR_LOG"
+
     while true; do
         show_welcome
         show_menu
+
         read -rp $'\033[1;33mSeleccione una opción (0-6): \033[0m' selection
+
         case $selection in
             0)
                 echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
@@ -223,5 +242,6 @@ main() {
     done
 }
 
+# Ejecutar el script
 main "$@"
-#mcq
+# El problema que describes suele ocurrir cuando un script se ejecuta a través de una tubería (|) como curl -L <link> | bash, ya que en este caso el script no tiene acceso al entorno interactivo y puede haber diferencias significativas en comparación con su ejecución local o bash<(curl -L <link>)
