@@ -16,33 +16,37 @@ NC='\033[0m'
 LOG_FILE="$HOME/arch_install.log"
 INSTALLED_PACKAGES=()
 TEMP_DIR="/tmp/arch_installer_$$"
+REQUIRED_DEPENDENCIES=("curl" "less")
 
 # Crear directorio temporal
 mkdir -p "$TEMP_DIR"
-
-# Lista de dependencias
-DEPENDENCIAS=("curl" "sudo" "bash")
 
 # Función de limpieza
 cleanup() {
     local status=$?
     if [ $status -ne 0 ]; then
-        echo -e "\n${RED}Error detectado. Código de error: $status. Iniciando sistema de retroceso...${NC}" | tee -a "$LOG_FILE"
-        if [ ${#INSTALLED_PACKAGES[@]} -eq 0 ]; then
-            echo -e "${YELLOW}No se encontraron paquetes instalados.${NC}" | tee -a "$LOG_FILE"
-        else
-            echo -e "${YELLOW}Paquetes a desinstalar: ${INSTALLED_PACKAGES[*]}${NC}" | tee -a "$LOG_FILE"
-            for pkg in "${INSTALLED_PACKAGES[@]}"; do
-                echo -e "${YELLOW}Desinstalando: $pkg${NC}" | tee -a "$LOG_FILE"
-                sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
-            done
-            echo -e "${GREEN}Sistema restaurado${NC}" | tee -a "$LOG_FILE"
-        fi
+        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}"
+        for pkg in "${INSTALLED_PACKAGES[@]}"; do
+            echo -e "${YELLOW}Desinstalando: $pkg${NC}"
+            sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
+        done
+        echo -e "${GREEN}Sistema restaurado${NC}"
     fi
     rm -rf "$TEMP_DIR"
 }
 
 trap cleanup EXIT
+
+# Función para verificar dependencias
+check_dependencies() {
+    for pkg in "${REQUIRED_DEPENDENCIES[@]}"; do
+        if ! command -v "$pkg" &>/dev/null; then
+            echo -e "${YELLOW}Instalando dependencia: $pkg${NC}"
+            sudo pacman -S --noconfirm "$pkg"
+            register_package "$pkg"
+        fi
+    done
+}
 
 # Función de bienvenida
 show_welcome() {
@@ -73,43 +77,23 @@ register_package() {
     INSTALLED_PACKAGES+=("$1")
 }
 
-# Función para verificar e instalar dependencias
-check_dependencies() {
-    echo -e "${YELLOW}Verificando dependencias...${NC}" | tee -a "$LOG_FILE"
-    for dep in "${DEPENDENCIAS[@]}"; do
-        if ! command -v "$dep" &> /dev/null; then
-            echo -e "${RED}Dependencia no encontrada: $dep. Instalando...${NC}" | tee -a "$LOG_FILE"
-            sudo pacman -S --noconfirm "$dep" 2>&1 | tee -a "$LOG_FILE"
-            register_package "$dep"
-        else
-            echo -e "${GREEN}Dependencia encontrada: $dep${NC}" | tee -a "$LOG_FILE"
-        fi
-    done
-}
-
 # Función para ejecutar el script seleccionado
 execute_script() {
     local url="$1"
     local temp_script="$TEMP_DIR/script.sh"
 
-    echo -e "\n${YELLOW}Descargando script...${NC}" | tee -a "$LOG_FILE"
+    echo -e "\n${YELLOW}Descargando script...${NC}"
     if ! curl -s "$url" > "$temp_script"; then
-        echo -e "${RED}Error al descargar el script${NC}" | tee -a "$LOG_FILE"
-        return 1
-    fi
-
-    # Verificar que el script no esté vacío
-    if [ ! -s "$temp_script" ]; then
-        echo -e "${RED}El script descargado está vacío${NC}" | tee -a "$LOG_FILE"
+        echo -e "${RED}Error al descargar el script${NC}"
         return 1
     fi
 
     chmod +x "$temp_script"
-    echo -e "${GREEN}Script descargado correctamente${NC}" | tee -a "$LOG_FILE"
-    echo -e "\n${YELLOW}Ejecutando script...${NC}\n" | tee -a "$LOG_FILE"
+    echo -e "${GREEN}Script descargado correctamente${NC}"
+    echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
 
-    # Ejecutar script en modo debug y capturar su salida en el log
-    if ! bash -x "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
+    # Ejecutar script y capturar su salida en el log
+    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
         return 1
     fi
 
@@ -124,16 +108,16 @@ show_final_screen() {
     if [ "$status" -eq 0 ]; then
         echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
         echo -e "${GREEN}│      ¡Instalación completada con éxito!  │${NC}"
-        echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}" | tee -a "$LOG_FILE"
+        echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
     else
         echo -e "${RED}╭──────────────────────────────────────────╮${NC}"
         echo -e "${RED}│   ¡Error durante la instalación!         │${NC}"
         echo -e "${RED}│   Revise el archivo de registros         │${NC}"
-        echo -e "${RED}╰──────────────────────────────────────────╯${NC}" | tee -a "$LOG_FILE"
+        echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
     fi
 
     echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
-    echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n" | tee -a "$LOG_FILE"
+    echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
 
     if [ "$status" -ne 0 ]; then
         echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
@@ -160,7 +144,7 @@ main() {
     # Inicializar archivo de log
     : > "$LOG_FILE"
 
-    # Verificar e instalar dependencias
+    # Verificar dependencias antes de comenzar
     check_dependencies
 
     while true; do
@@ -194,3 +178,4 @@ main() {
 
 # Ejecutar el script
 main "$@"
+# 7:15PM
