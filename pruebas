@@ -6,13 +6,6 @@
 # Fecha de actualización: 04/02/2025
 # Versión: 5.0
 
-# Colores ANSI
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
-
 # Función para mostrar mensajes con formato
 imprimir_mensaje() {
     local mensaje="$1"
@@ -20,15 +13,26 @@ imprimir_mensaje() {
     sleep 3
 }
 
+# Función para mostrar diálogos con formato y limpiar pantalla
+mostrar_dialogo() {
+    local dialogo="$1"
+    clear
+    echo -e "\n╭─────────────────────────────────────────────────╮"
+    echo -e "│                                                 │"
+    echo -e "│$dialogo"
+    echo -e "│                                                 │"
+    echo -e "╰─────────────────────────────────────────────────╯\n"
+}
+
 # Verificar si flatpak está instalado, si no, instalarlo
 if ! command -v flatpak &> /dev/null; then
-    echo -e "${RED}Flatpak no está instalado. Instalándolo...${NC}"
+    mostrar_dialogo "Flatpak no está instalado. Instalándolo..."
     sudo pacman -S flatpak --noconfirm --needed
 fi
 
 # Agregar el repositorio flathub
 if ! flatpak remote-list | grep -q flathub; then
-    echo -e "${BLUE}Agregando el repositorio flathub...${NC}"
+    mostrar_dialogo "Agregando el repositorio flathub..."
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 fi
 
@@ -120,44 +124,33 @@ paquete_adicional="https://sober.vinegarhq.org/sober.flatpakref"
 
 # Bucle para preguntar al usuario hasta que seleccione una opción válida
 while true; do
-    echo -e "${CYAN}╭─────────────────────────────────────────────────╮${NC}"
-    echo -e "${CYAN}│                                                 │${NC}"
-    echo -e "${CYAN}│ ¿Qué lista de paquetes flatpak deseas instalar? │${NC}"
-    echo -e "${CYAN}│                                                 │${NC}"
-    echo -e "${CYAN}╰─────────────────────────────────────────────────╯${NC}"
-    echo -e "${GREEN}1) Para entorno de escritorio GNOME (instalado con script minimal por mxhectorvega)${NC}"
-    echo -e "${BLUE}2) Para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)${NC}"
+    mostrar_dialogo "¿Qué lista de paquetes flatpak deseas instalar?\n1) Para entorno de escritorio GNOME (instalado con script minimal por mxhectorvega)\n2) Para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
     read -rp "Selecciona una opción (1 o 2): " opcion
 
     # Validar la opción seleccionada y proceder con la instalación
     if [ "$opcion" -eq 1 ]; then
-        echo -e "${GREEN}Instalando paquetes de la Lista GNOME...${NC}"
+        mostrar_dialogo "Instalando paquetes de la Lista GNOME..."
         for paquete in "${paquetes_gnome[@]}"; do
             flatpak install --user -y "$paquete"
         done
         flatpak install --user -y "$paquete_adicional"
-        echo -e "${GREEN}¡Instalación completada con éxito!${NC}"
         break
     elif [ "$opcion" -eq 2 ]; then
-        echo -e "${GREEN}Instalando paquetes de la Lista KDE...${NC}"
+        mostrar_dialogo "Instalando paquetes de la Lista KDE..."
         for paquete in "${paquetes_kde[@]}"; do
             flatpak install --user -y "$paquete"
         done
         flatpak install --user -y "$paquete_adicional"
-        echo -e "${GREEN}Instalando paquetes adicionales para permisos flatpak, capturador de pantalla y gestor de particiones GUI...${NC}"
+        mostrar_dialogo "Instalando paquetes adicionales para permisos flatpak, capturador de pantalla y gestor de particiones GUI..."
         sudo pacman -Sy flatpak-kcm spectacle partitionmanager --noconfirm --needed
-        echo -e "${GREEN}¡Instalación completada con éxito!${NC}"
         break
     else
-        echo -e "${RED}Opción no válida. Por favor, selecciona una opción válida.${NC}"
-        echo -e "${RED}¡Error durante la instalación!${NC}"
+        mostrar_dialogo "Opción no válida. Por favor, selecciona una opción válida."
     fi
 done
 
 # Mensaje final
-echo -e "╭─────────────────────────────────────────────────╮"
-echo -e "│                                                 │"
-echo -e "│      ${GREEN}♥️ Suscríbete!${NC}                              │"
-echo -e "│      ${GREEN}🌐 https://www.youtube.com/mxhectorvega${NC}     │"
-echo -e "│                                                 │"
-echo -e "╰─────────────────────────────────────────────────╯"
+imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
+
+# Comando para ver la lista de aplicaciones flatpak instaladas
+# flatpak list --app --columns=application
