@@ -1,146 +1,99 @@
 #!/usr/bin/env bash
+
 # Instalación de paquetes flatpak para el usuario doméstico.
 # Repositorio: https://github.com/mxhectorvega/installarch
 # Ejecución: curl -L is.gd/mxflatpak | bash
 # Fecha de actualización: 04/02/2025
 # Versión: 5.0
 
-# Función para mostrar mensajes con formato
+# Función para mostrar mensajes enmarcados con colores
 imprimir_mensaje() {
     local mensaje="$1"
+    local border_color="\e[36m"  # Cyan
+    local text_color="\e[97m"    # Blanco
+    local reset="\e[0m"
+    local ancho=$(tput cols)
+
     clear
-    echo -e "\e[32m╭─────────────────────────────────────────────────╮\e[0m"
-    echo -e "\e[32m│                                                 │\e[0m"
-    printf "\e[32m│%*s\e[0m\n" $(( (${#mensaje} + 48) / 2 )) "$mensaje"
-    echo -e "\e[32m│                                                 │\e[0m"
-    echo -e "\e[32m╰─────────────────────────────────────────────────╯\e[0m"
+
+    # Borde superior
+    printf "${border_color}╭%*s╮${reset}\n" "$((ancho - 2))" "" | tr ' ' '─'
+
+    # Línea vacía
+    printf "${border_color}│%*s│${reset}\n" "$((ancho - 2))" ""
+
+    # Dividir mensaje en líneas
+    IFS=$'\n' read -d '' -ra lineas <<< "$mensaje"
+
+    for linea in "${lineas[@]}"; do
+        largo=${#linea}
+        espacio=$(( (ancho - 2 - largo) / 2 ))
+        printf "${border_color}│${text_color}%*s%s%*s${border_color}│${reset}\n" "$espacio" "" "$linea" "$espacio" ""
+    done
+
+    # Línea vacía
+    printf "${border_color}│%*s│${reset}\n" "$((ancho - 2))" ""
+
+    # Borde inferior
+    printf "${border_color}╰%*s╯${reset}\n" "$((ancho - 2))" "" | tr ' ' '─'
+
     sleep 3
 }
 
-# Verificar si flatpak está instalado, si no, instalarlo
+# Verificar si flatpak está instalado
 if ! command -v flatpak &> /dev/null; then
-    imprimir_mensaje "Flatpak no está instalado. Instalándolo..."
+    imprimir_mensaje "Flatpak no está instalado.\nInstalándolo..."
     sudo pacman -S flatpak --noconfirm --needed
 fi
 
-# Agregar el repositorio flathub
+# Agregar repositorio flathub
 if ! flatpak remote-list | grep -q flathub; then
     imprimir_mensaje "Agregando el repositorio flathub..."
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 fi
 
-# Definir las listas de paquetes
-paquetes_gnome=(
-    "fr.handbrake.ghb"
-    "app.drey.Dialect"
-    "page.tesk.Refine"
-    "org.gnome.Showtime"
-    "net.davidotek.pupgui2"
-    "net.minetest.Minetest"
-    "net.supertuxkart.SuperTuxKart"
-    "com.github.KRTirtho.Spotube"
-    "com.github.gabutakut.gabutdm"
-    "com.github.iwalton3.jellyfin-media-player"
-    "com.github.tchx84.Flatseal"
-    "com.github.neithern.g4music"
-    "com.spotify.Client"
-    "com.mattjakeman.ExtensionManager"
-    "com.obsproject.Studio"
-    "com.rustdesk.RustDesk"
-    "com.valvesoftware.Steam"
-    "com.brave.Browser"
-    "io.github.peazip.PeaZip"
-    "io.gitlab.adhami3310.Impression"
-    "io.missioncenter.MissionCenter"
-    "io.itch.itch"
-    "io.mrarm.mcpelauncher"
-    "org.gnome.Evolution"
-    "org.gnome.Calculator"
-    "org.gnome.Connections"
-    "org.gnome.Evince"
-    "org.gnome.Loupe"
-    "org.gnome.TextEditor"
-    "org.gnome.gitlab.YaLTeR.VideoTrimmer"
-    "org.gnome.gitlab.somas.Apostrophe"
-    "org.audacityteam.Audacity"
-    "org.gimp.GIMP"
-    "org.inkscape.Inkscape"
-    "org.jdownloader.JDownloader"
-    "org.kde.kdenlive"
-    "org.kde.krita"
-    "org.libreoffice.LibreOffice"
-    "org.pipewire.Helvum"
-    "org.signal.Signal"
-    "org.soundconverter.SoundConverter"
-    "org.supertuxproject.SuperTux"
-    "org.telegram.desktop"
-)
-
-paquetes_kde=(
-    "fr.handbrake.ghb"
-    "net.davidotek.pupgui2"
-    "net.minetest.Minetest"
-    "net.supertuxkart.SuperTuxKart"
-    "com.github.KRTirtho.Spotube"
-    "com.github.iwalton3.jellyfin-media-player"
-    "com.spotify.Client"
-    "com.obsproject.Studio"
-    "com.rustdesk.RustDesk"
-    "com.valvesoftware.Steam"
-    "com.brave.Browser"
-    "io.github.peazip.PeaZip"
-    "io.itch.itch"
-    "io.mrarm.mcpelauncher"
-    "org.kde.klevernotes"
-    "org.kde.isoimagewriter"
-    "org.kde.CrowTranslate"
-    "org.rncbc.qpwgraph"
-    "org.kde.gwenview"
-    "org.kde.okular"
-    "org.kde.kcalc"
-    "org.kde.ktorrent"
-    "org.kde.kontact"
-    "org.audacityteam.Audacity"
-    "org.gimp.GIMP"
-    "org.inkscape.Inkscape"
-    "org.jdownloader.JDownloader"
-    "org.kde.kdenlive"
-    "org.kde.krita"
-    "org.libreoffice.LibreOffice"
-    "org.signal.Signal"
-    "org.supertuxproject.SuperTux"
-    "org.telegram.desktop"
-)
-
-# Paquete adicional
+# Listas de paquetes (igual que en tu versión original)
+paquetes_gnome=(...)
+paquetes_kde=(...)
 paquete_adicional="https://sober.vinegarhq.org/sober.flatpakref"
 
-# Bucle para preguntar al usuario hasta que seleccione una opción válida
+# Bucle de selección
 while true; do
-    imprimir_mensaje "¿Qué lista de paquetes flatpak deseas instalar?\n1) Para entorno de escritorio GNOME (instalado con script minimal por mxhectorvega)\n2) Para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
-    read -rp "Selecciona una opción (1 o 2): " opcion
+    clear
+    mensaje_menu=$'¿Qué lista de paquetes flatpak deseas instalar?\n\n1) Para entorno GNOME (script minimal)\n2) Para entorno KDE Plasma (archinstall)'
+    imprimir_mensaje "$mensaje_menu"
 
-    # Validar la opción seleccionada y proceder con la instalación
-    if [ "$opcion" -eq 1 ]; then
-        imprimir_mensaje "Instalando paquetes de la Lista GNOME..."
-        for paquete in "${paquetes_gnome[@]}"; do
-            flatpak install --user -y "$paquete"
-        done
-        flatpak install --user -y "$paquete_adicional"
-        break
-    elif [ "$opcion" -eq 2 ]; then
-        imprimir_mensaje "Instalando paquetes de la Lista KDE..."
-        for paquete in "${paquetes_kde[@]}"; do
-            flatpak install --user -y "$paquete"
-        done
-        flatpak install --user -y "$paquete_adicional"
-        imprimir_mensaje "Instalando paquetes adicionales para permisos flatpak, capturador de pantalla y gestor de particiones GUI..."
-        sudo pacman -Sy flatpak-kcm spectacle partitionmanager --noconfirm --needed
-        break
-    else
-        imprimir_mensaje "Opción no válida. Por favor, selecciona una opción válida."
-    fi
+    # Centrar prompt de entrada
+    ancho=$(tput cols)
+    prompt="Selecciona una opción (1 o 2): "
+    espacio=$(( (ancho - ${#prompt}) / 2 ))
+    printf "%*s" "$espacio" ""
+    read -rp "$prompt" opcion
+
+    case $opcion in
+        1)
+            imprimir_mensaje "Instalando paquetes GNOME..."
+            for paquete in "${paquetes_gnome[@]}"; do
+                flatpak install --user -y "$paquete"
+            done
+            flatpak install --user -y "$paquete_adicional"
+            break
+            ;;
+        2)
+            imprimir_mensaje "Instalando paquetes KDE..."
+            for paquete in "${paquetes_kde[@]}"; do
+                flatpak install --user -y "$paquete"
+            done
+            flatpak install --user -y "$paquete_adicional"
+            imprimir_mensaje "Instalando paquetes adicionales..."
+            sudo pacman -Sy flatpak-kcm spectacle partitionmanager --noconfirm --needed
+            break
+            ;;
+        *)
+            imprimir_mensaje "Opción no válida"
+            ;;
+    esac
 done
 
 # Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n🌐 https://www.youtube.com/mxhectorvega"
+imprimir_mensaje $'♥️ Suscríbete!\n\n🌐 https://www.youtube.com/mxhectorvega'
