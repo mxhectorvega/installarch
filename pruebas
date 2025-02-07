@@ -24,40 +24,22 @@ mkdir -p "$TEMP_DIR"
 cleanup() {
     local status=$?
     if [ $status -ne 0 ]; then
-        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}"
-        for pkg in "${INSTALLED_PACKAGES[@]}"; do
-            echo -e "${YELLOW}Desinstalando: $pkg${NC}"
-            sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
-        done
-        echo -e "${GREEN}Sistema restaurado${NC}"
+        echo -e "\n${RED}Error detectado. Código de error: $status. Iniciando sistema de retroceso...${NC}" | tee -a "$LOG_FILE"
+        if [ ${#INSTALLED_PACKAGES[@]} -eq 0 ]; then
+            echo -e "${YELLOW}No se encontraron paquetes instalados.${NC}" | tee -a "$LOG_FILE"
+        else
+            echo -e "${YELLOW}Paquetes a desinstalar: ${INSTALLED_PACKAGES[*]}${NC}" | tee -a "$LOG_FILE"
+            for pkg in "${INSTALLED_PACKAGES[@]}"; do
+                echo -e "${YELLOW}Desinstalando: $pkg${NC}" | tee -a "$LOG_FILE"
+                sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
+            done
+            echo -e "${GREEN}Sistema restaurado${NC}" | tee -a "$LOG_FILE"
+        fi
     fi
     rm -rf "$TEMP_DIR"
 }
 
-trap cleanup EXIT SIGINT SIGTERM
-
-# Verificar dependencias
-check_dependencies() {
-    local dependencies=("curl" "sudo")
-    for dep in "${dependencies[@]}"; do
-        if ! command -v "$dep" &> /dev/null; then
-            echo -e "${RED}Error: $dep no está instalado.${NC}"
-            echo -e "${YELLOW}Instalando $dep...${NC}"
-            pacman -Sy --noconfirm "$dep" || {
-                echo -e "${RED}No se pudo instalar $dep. Abortando...${NC}"
-                exit 1
-            }
-        fi
-    done
-}
-
-# Verificar conexión a Internet
-check_internet() {
-    if ! ping -c 1 google.com &> /dev/null; then
-        echo -e "${RED}Error: No hay conexión a Internet.${NC}"
-        exit 1
-    fi
-}
+trap cleanup EXIT
 
 # Función de bienvenida
 show_welcome() {
@@ -75,25 +57,17 @@ show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
 
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
-    echo -e "   - Configura repositorios adicionales y herramientas para AUR."
     echo -e "${CYAN}2)${NC} Software flatpak para el usuario doméstico"
-    echo -e "   - Instala y configura Flatpak para aplicaciones de usuario."
     echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x"
-    echo -e "   - Instala y configura el entorno de escritorio Gnome."
     echo -e "${CYAN}4)${NC} Controladores Wifi para MacBook Pro y Air"
-    echo -e "   - Instala controladores para dispositivos WiFi en MacBooks."
     echo -e "${CYAN}5)${NC} Controladores para impresora Epson L3210"
-    echo -e "   - Configura controladores para impresoras Epson."
     echo -e "${CYAN}6)${NC} Configuraciones para Hyprland"
-    echo -e "   - Instala y configura el compositor Hyprland."
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 
 # Función para registrar paquetes instalados
 register_package() {
-    if [[ ! " ${INSTALLED_PACKAGES[@]} " =~ " $1 " ]]; then
-        INSTALLED_PACKAGES+=("$1")
-    fi
+    INSTALLED_PACKAGES+=("$1")
 }
 
 # Función para ejecutar el script seleccionado
@@ -101,19 +75,24 @@ execute_script() {
     local url="$1"
     local temp_script="$TEMP_DIR/script.sh"
 
-    echo -e "\n${YELLOW}Descargando script...${NC}"
+    echo -e "\n${YELLOW}Descargando script...${NC}" | tee -a "$LOG_FILE"
     if ! curl -s "$url" > "$temp_script"; then
-        echo -e "${RED}Error al descargar el script${NC}"
+        echo -e "${RED}Error al descargar el script${NC}" | tee -a "$LOG_FILE"
+        return 1
+    fi
+
+    # Verificar que el script no esté vacío
+    if [ ! -s "$temp_script" ]; then
+        echo -e "${RED}El script descargado está vacío${NC}" | tee -a "$LOG_FILE"
         return 1
     fi
 
     chmod +x "$temp_script"
-    echo -e "${GREEN}Script descargado correctamente${NC}"
-    echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
+    echo -e "${GREEN}Script descargado correctamente${NC}" | tee -a "$LOG_FILE"
+    echo -e "\n${YELLOW}Ejecutando script...${NC}\n" | tee -a "$LOG_FILE"
 
-    # Ejecutar script y capturar su salida en el log
-    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
-        echo -e "${RED}Error durante la ejecución del script${NC}"
+    # Ejecutar script en modo debug y capturar su salida en el log
+    if ! bash -x "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
         return 1
     fi
 
@@ -128,21 +107,21 @@ show_final_screen() {
     if [ "$status" -eq 0 ]; then
         echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
         echo -e "${GREEN}│      ¡Instalación completada con éxito!  │${NC}"
-        echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
+        echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}" | tee -a "$LOG_FILE"
     else
         echo -e "${RED}╭──────────────────────────────────────────╮${NC}"
         echo -e "${RED}│   ¡Error durante la instalación!         │${NC}"
         echo -e "${RED}│   Revise el archivo de registros         │${NC}"
-        echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
+        echo -e "${RED}╰──────────────────────────────────────────╯${NC}" | tee -a "$LOG_FILE"
     fi
 
     echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
-    echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
+    echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n" | tee -a "$LOG_FILE"
 
     if [ "$status" -ne 0 ]; then
         echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
         read -n 1
-        less -R "$LOG_FILE"
+        less "$LOG_FILE"
     fi
 
     echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
@@ -161,9 +140,6 @@ declare -A SCRIPT_URLS=(
 
 # Función principal
 main() {
-    check_dependencies
-    check_internet
-
     # Inicializar archivo de log
     : > "$LOG_FILE"
 
