@@ -3,6 +3,10 @@
 # Strict mode
 set -euo pipefail
 
+# Debug mode para encontrar errores
+exec 3>&2 2> >(tee -a "$HOME/arch_install.log" >&3)
+set -x
+
 # Colors
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -24,12 +28,12 @@ mkdir -p "$TEMP_DIR"
 cleanup() {
     local status=$?
     if [ $status -ne 0 ]; then
-        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}"
+        echo -e "\n${RED}Error detectado. Iniciando sistema de retroceso...${NC}" | tee -a "$LOG_FILE"
         for pkg in "${INSTALLED_PACKAGES[@]}"; do
-            echo -e "${YELLOW}Desinstalando: $pkg${NC}"
-            sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
+            echo -e "${YELLOW}Desinstalando: $pkg${NC}" | tee -a "$LOG_FILE"
+            sudo pacman -R --noconfirm "$pkg" 2>> "$LOG_FILE" || true
         done
-        echo -e "${GREEN}Sistema restaurado${NC}"
+        echo -e "${GREEN}Sistema restaurado${NC}" | tee -a "$LOG_FILE"
     fi
     rm -rf "$TEMP_DIR"
 }
@@ -39,18 +43,14 @@ trap cleanup EXIT
 # Función de bienvenida
 show_welcome() {
     clear
-    echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
-    echo -e "${GREEN}│     Bienvenido al instalador de          │${NC}"
-    echo -e "${GREEN}│        scripts de mxhectorvega           │${NC}"
-    echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
-    echo -e "\nArchivo de registros: ${BLUE}$LOG_FILE${NC}\n"
+    echo -e "${GREEN}Bienvenido al instalador de scripts de mxhectorvega${NC}"
+    echo -e "Archivo de registros: ${BLUE}$LOG_FILE${NC}\n"
     sleep 1
 }
 
 # Función del menú
 show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
-
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
     echo -e "${CYAN}2)${NC} Software flatpak para el usuario doméstico"
     echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x"
@@ -60,64 +60,7 @@ show_menu() {
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 
-# Función para registrar paquetes instalados
-register_package() {
-    INSTALLED_PACKAGES+=("$1")
-}
-
-# Función para ejecutar el script seleccionado
-execute_script() {
-    local url="$1"
-    local temp_script="$TEMP_DIR/script.sh"
-
-    echo -e "\n${YELLOW}Descargando script...${NC}"
-    if ! curl -s "$url" > "$temp_script"; then
-        echo -e "${RED}Error al descargar el script${NC}"
-        return 1
-    fi
-
-    chmod +x "$temp_script"
-    echo -e "${GREEN}Script descargado correctamente${NC}"
-    echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
-
-    # Ejecutar script y capturar su salida en el log
-    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
-        return 1
-    fi
-
-    return 0
-}
-
-# Función de pantalla final
-show_final_screen() {
-    local status=$1
-
-    clear
-    if [ "$status" -eq 0 ]; then
-        echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
-        echo -e "${GREEN}│      ¡Instalación completada con éxito!  │${NC}"
-        echo -e "${GREEN}╰──────────────────────────────────────────╯${NC}"
-    else
-        echo -e "${RED}╭──────────────────────────────────────────╮${NC}"
-        echo -e "${RED}│   ¡Error durante la instalación!         │${NC}"
-        echo -e "${RED}│   Revise el archivo de registros         │${NC}"
-        echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
-    fi
-
-    echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
-    echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
-
-    if [ "$status" -ne 0 ]; then
-        echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
-        read -n 1
-        less "$LOG_FILE"
-    fi
-
-    echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
-    read -n 1
-}
-
-# URLs de los scripts (ocultas del menú)
+# URLs de los scripts
 declare -A SCRIPT_URLS=(
     [1]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
     [2]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
@@ -127,39 +70,50 @@ declare -A SCRIPT_URLS=(
     [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/hyprland"
 )
 
+# Función para ejecutar el script seleccionado
+execute_script() {
+    local url="$1"
+    local temp_script="$TEMP_DIR/script.sh"
+
+    echo -e "\n${YELLOW}Descargando script...${NC}" | tee -a "$LOG_FILE"
+    if ! curl -s "$url" -o "$temp_script"; then
+        echo -e "${RED}Error al descargar el script${NC}" | tee -a "$LOG_FILE"
+        return 1
+    fi
+
+    chmod +x "$temp_script"
+    echo -e "${GREEN}Script descargado correctamente${NC}" | tee -a "$LOG_FILE"
+    echo -e "\n${YELLOW}Ejecutando script...${NC}\n" | tee -a "$LOG_FILE"
+
+    # Activar depuración en la ejecución del script
+    set -x
+    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
+        return 1
+    fi
+    set +x
+
+    return 0
+}
+
 # Función principal
 main() {
-    # Inicializar archivo de log
     : > "$LOG_FILE"
-
     while true; do
-        # Mostrar bienvenida y menú
         show_welcome
         show_menu
-
-        # Leer selección
-        read -rp $'\033[1;33mSeleccione una opción (0-6): \033[0m' selection
-
+        read -rp "Seleccione una opción (0-6): " selection
         case $selection in
-            0)
-                echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
-                exit 0
-                ;;
+            0) echo -e "\n${YELLOW}Saliendo del instalador...${NC}"; exit 0 ;;
             [1-6])
                 if execute_script "${SCRIPT_URLS[$selection]}"; then
-                    show_final_screen 0
+                    echo -e "${GREEN}Instalación completada con éxito.${NC}" | tee -a "$LOG_FILE"
                 else
-                    show_final_screen 1
+                    echo -e "${RED}Error en la instalación. Revise el log.${NC}" | tee -a "$LOG_FILE"
                 fi
                 ;;
-            *)
-                echo -e "\n${RED}Opción inválida. Por favor, seleccione un número del 0 al 6.${NC}"
-                sleep 2
-                continue
-                ;;
+            *) echo -e "\n${RED}Opción inválida. Intente de nuevo.${NC}"; sleep 2 ;;
         esac
     done
 }
 
-# Ejecutar el script
 main "$@"
