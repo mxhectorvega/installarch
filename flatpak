@@ -22,7 +22,8 @@ fi
 # Agregar el repositorio flathub
 if ! flatpak remote-list | grep -q flathub; then
     echo "Agregando el repositorio flathub..."
-    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo && flatpak -y update
+
 fi
 
 # Definir las listas de paquetes
