@@ -40,11 +40,12 @@ check_requirements() {
     fi
 
     # Verificar herramientas básicas
-    required_tools=("curl" "tee" "less")
+    required_tools=("curl" "tee" "less" "pacman")
     for tool in "${required_tools[@]}"; do
         if ! command -v "$tool" &> /dev/null; then
             echo -e "${RED}Error: Falta la herramienta requerida: $tool${NC}"
-            exit 1
+            echo -e "${YELLOW}Instalando $tool...${NC}"
+            sudo pacman -Sy --noconfirm "$tool" || { echo -e "${RED}Error al instalar $tool${NC}"; exit 1; }
         fi
     done
 
@@ -244,4 +245,3 @@ main() {
 
 # Ejecutar el script
 main "$@"
-# 10:35PM
