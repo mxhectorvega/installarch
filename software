@@ -2,7 +2,7 @@
 
 # Descripcion: Instalacion de software de uso personal en Archlinux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxsoftware | bash
+# Ejecución: bash <(curl -L is.gd/mxsoftware)
 # Fecha de actualización: 05/02/2025
 # Versión: 1.0
 

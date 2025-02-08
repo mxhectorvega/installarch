@@ -2,16 +2,9 @@
 
 # Instalación de Budgie Minimal en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxbudgie | bash
+# Ejecución: bash <(curl -L is.gd/mxbudgie)
 # Fecha de actualización: 05/02/2025
-# Versión: 1.0
-
-# Función para mostrar mensajes con formato
-imprimir_mensaje() {
-    local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
-}
+# Versión: 1.2s
 
 # Actualizar y sincronizar repositorios
 sudo pacman -Sy --noconfirm
@@ -67,16 +60,6 @@ flatpak install --user -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-
 # Crear directorios de usuario en español
 xdg-user-dirs-update
 
-# Instalar administrador de impresoras y configurar permisos
-sudo pacman -S system-config-printer cups --noconfirm --needed
-sudo gpasswd -a "$(whoami)" sys
-sudo gpasswd -a "$(whoami)" wheel
-sudo gpasswd -a "$(whoami)" root
-sudo gpasswd -a "$(whoami)" lp
-
-# Iniciar el servicio de impresión
-sudo systemctl enable --now cups
-
 # Crear enlace simbólico para el paquete ssh-askpass
 sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
 
@@ -105,9 +88,6 @@ sudo systemctl enable --now bluetooth.service
 # Instalar Java (por si acaso se requiere)
 sudo pacman -S jre8-openjdk --noconfirm --needed
 
-# Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
-
 # Activar el servicio de pantalla de inicio de sesión (GDM)
 for i in {1..8}; do
     clear
@@ -116,7 +96,3 @@ for i in {1..8}; do
 done
 
 sudo systemctl enable --now lightdm
-
-# Comandos opcionales para verificar el estado de los servicios
-# sudo systemctl status bluetooth.service
-# sudo systemctl status lightdm

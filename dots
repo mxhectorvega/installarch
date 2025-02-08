@@ -2,7 +2,7 @@
 
 # Instalación mis configuraciones personales para compositores wayland
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxdots | bash
+# Ejecución: bash <(curl -L is.gd/mxdots)
 # Fecha de actualización: 05/02/2025
 # Versión: 1.0
 

@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Instalador de scripts de mxhectorvega
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: bash <(curl -L is.gd/mxinstalador)
+# Fecha de actualización: 05/02/2025
+# Versión: 1.0
+
 # Strict mode
 set -euo pipefail
 

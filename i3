@@ -2,7 +2,7 @@
 
 # Instalación mis configuraciones personales para gestor de venrtanas i3
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxi3 | bash
+# Ejecución: bash <(curl -L is.gd/mxi3)
 # Fecha de actualización: 05/02/2025
 # Versión: 1.0
 

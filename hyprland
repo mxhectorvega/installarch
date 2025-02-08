@@ -2,7 +2,7 @@
 
 # Instalación mis configuraciones hyprland
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxhyprland | bash
+# Ejecución:  bash <(curl -L is.gd/mxhyprland)
 # Fecha de actualización: 05/02/2025
 # Versión: 1.0
 

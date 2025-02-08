@@ -2,7 +2,7 @@
 
 # Instalación drivers para computadoras AMD y WIFI USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano]).
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxdrivers | bash
+# Ejecución: bash <(curl -L is.gd/mxdrivers)
 # Fecha de actualización: 05/02/2025
 # Versión: 1.0
 

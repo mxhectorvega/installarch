@@ -2,7 +2,7 @@
 
 # Instalación de temas Colloid (MacOS) para ArchLIinux
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxtemas | bash
+# Ejecución: bash <(curl -L is.gd/mxtemas)
 # Fecha de actualización: 05/02/2025
 # Versión: 1.0
 
