@@ -86,7 +86,14 @@ EOF
 echo "Optimizando el gestor de paquetes pacman..."
 sudo sed -i 's/^#ParallelDownloads.*$/ParallelDownloads = 25/' /etc/pacman.conf
 sudo sed -i 's/^#Color/Color/' /etc/pacman.conf
-sudo sed -i 's/^#ILoveCandy/ILoveCandy/' /etc/pacman.conf
+
+# Añadir la línea ILoveCandy si no existe
+if ! grep -q "^ILoveCandy" /etc/pacman.conf; then
+    sudo sed -i '/^# Misc options/a ILoveCandy' /etc/pacman.conf
+    echo "La línea 'ILoveCandy' ha sido añadida a /etc/pacman.conf."
+else
+    echo "La línea 'ILoveCandy' ya existe en /etc/pacman.conf."
+fi
 
 # Optimizar el gestor de paquetes paru
 echo "Optimizando el gestor de paquetes paru..."
