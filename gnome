@@ -2,18 +2,11 @@
 
 # Instalación del entorno de escritorio Gnome 4.1.x minimal
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxignome | bash
-# Fecha de actualización: 04/02/2025
-# Versión: 7.3
+# Ejecución: bash <(curl -L is.gd/mxignome)
+# Fecha de actualización: 07/02/2025
+# Versión: 7.4
 
 # Nota: El sistema debe haberse instalado preferentemente con la herramienta ArchInstall desde ArchISO seleccionando el perfil minimal (sin entorno de escritorio).
-
-# Función para mostrar mensajes con formato
-imprimir_mensaje() {
-    local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
-}
 
 # Actualizar y sincronizar repositorios
 sudo pacman -Sy --noconfirm
@@ -77,16 +70,6 @@ flatpak install --user -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-
 # Crear directorios de usuario en español
 xdg-user-dirs-update
 
-# Instalar administrador de impresoras y configurar permisos
-sudo pacman -S system-config-printer cups --noconfirm --needed
-sudo gpasswd -a "$(whoami)" sys
-sudo gpasswd -a "$(whoami)" wheel
-sudo gpasswd -a "$(whoami)" root
-sudo gpasswd -a "$(whoami)" lp
-
-# Iniciar el servicio de impresión
-sudo systemctl enable --now cups
-
 # Crear enlace simbólico para el paquete ssh-askpass
 sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
 
@@ -114,9 +97,6 @@ sudo systemctl enable --now bluetooth.service
 
 # Instalar Java (por si acaso se requiere)
 sudo pacman -S jre8-openjdk --noconfirm --needed
-
-# Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
 
 # Activar el servicio de pantalla de inicio de sesión (GDM)
 for i in {1..8}; do

@@ -2,26 +2,9 @@
 
 # Instalación mis configuraciones personales para KDE Plasma
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxkde | bash
-# Fecha de actualización: 05/02/2025
-# Versión: 1.0
-
-#!/usr/bin/env bash
-
-# Instalación del entorno de escritorio Gnome 4.1.x minimal
-# Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxignome | bash
-# Fecha de actualización: 04/02/2025
-# Versión: 7.3
-
-# Nota: El sistema debe haberse instalado preferentemente con la herramienta ArchInstall desde ArchISO seleccionando el perfil minimal (sin entorno de escritorio).
-
-# Función para mostrar mensajes con formato
-imprimir_mensaje() {
-    local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
-}
+# Ejecución: bash <(curl -L is.gd/mxkde)
+# Fecha de actualización: 07/02/2025
+# Versión: 1.2
 
 # Actualizar y sincronizar repositorios
 sudo pacman -Sy --noconfirm
@@ -70,16 +53,6 @@ plasma=(
 
 sudo pacman -S "${plasma[@]}" --noconfirm --needed
 
-# Instalar administrador de impresoras y configurar permisos
-sudo pacman -S system-config-printer cups --noconfirm --needed
-sudo gpasswd -a "$(whoami)" sys
-sudo gpasswd -a "$(whoami)" wheel
-sudo gpasswd -a "$(whoami)" root
-sudo gpasswd -a "$(whoami)" lp
-
-# Iniciar el servicio de impresión
-sudo systemctl enable --now cups
-
 # Configurar ZRAM
 sudo tee -a /etc/systemd/zram-generator.conf <<EOF
 zram-size = ram
@@ -104,6 +77,3 @@ sudo systemctl enable --now bluetooth.service
 
 # Instalar Java (por si acaso se requiere)
 sudo pacman -S jre8-openjdk --noconfirm --needed
-
-# Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"

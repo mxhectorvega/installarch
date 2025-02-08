@@ -2,16 +2,9 @@
 
 # Instalación de paquetes flatpak para el usuario doméstico.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxflatpak | bash
-# Fecha de actualización: 04/02/2025
-# Versión: 5.0
-
-# Función para mostrar mensajes con formato
-imprimir_mensaje() {
-    local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
-}
+# Ejecución: bash <(curl -L is.gd/mxflatpak)
+# Fecha de actualización: 07/02/2025
+# Versión: 5.2
 
 # Verificar si flatpak está instalado, si no, instalarlo
 if ! command -v flatpak &> /dev/null; then
@@ -112,11 +105,13 @@ paquete_adicional="https://sober.vinegarhq.org/sober.flatpakref"
 
 # Bucle para preguntar al usuario hasta que seleccione una opción válida
 while true; do
-    echo "¿Qué lista de paquetes flatpak deseas instalar?"
-    echo "1) Para entorno de escritorio GNOME (instalado con script minimal por mxhectorvega)"
-    echo "2) Para entorno de escritorio KDE Plasma (instalado con archinstall desde archiso)"
+    echo "¿Para que entorno de escritorio quiere instalar los flatpaks?"
+    echo ""
+    echo "1) GNOME (instalado con script minimal por mxhectorvega)"
+    echo "2) KDE Plasma (instalado con archinstall desde archiso)"
+    echo ""
     read -rp "Selecciona una opción (1 o 2): " opcion
-
+    echo ""
     # Validar la opción seleccionada y proceder con la instalación
     if [ "$opcion" -eq 1 ]; then
         echo "Instalando paquetes de la Lista GNOME..."
@@ -131,16 +126,11 @@ while true; do
             flatpak install --user -y "$paquete"
         done
         flatpak install --user -y "${paquetes_kde[@]}"
-        echo "Instalando paquetes adicionales para permisos flatpak, capturador de pantalla y gestor de particiones GUI..."
-        sudo pacman -Sy flatpak-kcm spectacle partitionmanager --noconfirm --needed
         break
     else
         echo "Opción no válida. Por favor, selecciona una opción válida."
     fi
 done
-
-# Mensaje final
-imprimir_mensaje "♥ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
 
 # Comando para ver la lista de aplicaciones flatpak instaladas
 # flatpak list --app --columns=application

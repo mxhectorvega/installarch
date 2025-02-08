@@ -2,16 +2,10 @@
 
 # Configuración de hardware y paquetes específicos para MacBook en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxmacbook | bash
-# Fecha de actualización: 04/02/2025
+# Ejecución: bash <(curl -L is.gd/mxmacbook)
+# Fecha de actualización: 07/02/2025
 # Versión: 5.0
 
-# Función para mostrar mensajes con formato
-imprimir_mensaje() {
-    local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
-}
 
 # Actualizar y sincronizar repositorios
 sudo pacman -Sy --noconfirm
@@ -20,28 +14,11 @@ sudo pacman -Sy --noconfirm
 paquetes_macbook=(
     "linux-headers"
     "broadcom-wl-dkms"
-    "xf86-input-synaptics"
-    "mbpfan"
-    "pommed"
     "bluez"
     "bluez-utils"
 )
 
 sudo pacman -S "${paquetes_macbook[@]}" --noconfirm --needed
 
-# Configuración de mbpfan
-sudo systemctl enable --now mbpfan
-
-# Configuración de pommed
-sudo systemctl enable --now pommed
-
 # Configuración del servicio de Bluetooth
 sudo systemctl enable --now bluetooth.service
-
-# Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
-
-# Comando opcional para verificar el estado de los servicios
-# sudo systemctl status mbpfan
-# sudo systemctl status pommed
-# sudo systemctl status bluetooth.service

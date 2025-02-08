@@ -2,16 +2,10 @@
 
 # Instalación y configuración de impresoras en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mximpresora | bash
-# Fecha de actualización: 04/02/2025
-# Versión: 5.0
+# Ejecución: bash <(curl -L is.gd/mximpresora)
+# Fecha de actualización: 07/02/2025
+# Versión: 5.2
 
-# Función para mostrar mensajes con formato
-imprimir_mensaje() {
-    local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
-}
 
 # Actualizar y sincronizar repositorios
 sudo pacman -Sy --noconfirm
@@ -70,9 +64,6 @@ if [ ! -f /usr/lib/cups/filter/epson_inkjet_printer_filter ]; then
 else
     echo "El enlace simbólico para el filtro de impresión ya existe."
 fi
-
-# Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
 
 # Comando opcional para verificar el estado de los servicios de impresión
 # sudo systemctl status cups

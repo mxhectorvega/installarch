@@ -2,16 +2,9 @@
 
 # Instalación de Paru y configuración del repositorio Chaotic AUR en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: curl -L is.gd/mxrepos | bash
-# Fecha de actualización: 04/02/2025
-# Versión: 5.0
-
-# Función para mostrar mensajes con formato
-imprimir_mensaje() {
-    local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
-}
+# Ejecución: bash <(curl -L is.gd/mxrepos)
+# Fecha de actualización: 07/02/2025
+# Versión: 5.1
 
 # Verificar permisos de sudo
 if ! sudo -v; then
@@ -96,6 +89,3 @@ sudo sed -i 's/^#AurTimeout.*$/AurTimeout = 300/' /etc/paru.conf
 # Actualizar el sistema con el nuevo repositorio
 echo "Actualizando el sistema..."
 sudo pacman -Syyu --noconfirm || { imprimir_mensaje "Error al actualizar el sistema."; exit 1; }
-
-# Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
