@@ -6,6 +6,13 @@
 # Fecha de actualización: 07/02/2025
 # Versión: 5.1
 
+imprimir_mensaje() {
+    local mensaje="$1"
+    echo -e "$mensaje"
+    sleep 3
+}
+
+
 # Verificar permisos de sudo
 if ! sudo -v; then
     imprimir_mensaje "Este script requiere permisos de sudo. Ejecútalo como root o con un usuario con permisos de sudo."
