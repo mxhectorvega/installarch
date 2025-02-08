@@ -15,14 +15,6 @@ paquetes_impresora=(
     "system-config-printer"
     "cups"
     "cups-pdf"
-    "ghostscript"
-    "gsfonts"
-    "hplip"
-    "foomatic-db-engine"
-    "foomatic-db"
-    "foomatic-db-ppds"
-    "foomatic-db-nonfree"
-    "foomatic-db-nonfree-ppds"
 )
 
 sudo pacman -S "${paquetes_impresora[@]}" --noconfirm --needed
