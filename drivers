@@ -1,41 +1,288 @@
 #!/usr/bin/env bash
 
-# Instalación drivers para computadoras AMD y WIFI USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano]).
+# Instalación drivers para GNU Linux
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxdrivers)
-# Fecha de actualización: 05/02/2025
-# Versión: 1.0
+# Ejecución: bash <(curl -L is.gd/mxdrivers) o tiny.com/mxdrivers
+# Fecha de actualización: 09/02/2025
+# Versión: 2.3
 
-# Función para mostrar mensajes con formato
-imprimir_mensaje() {
-    local mensaje="$1"
-    echo -e "\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t$mensaje\n\n\n\n\n\n\n\n\n\n"
-    sleep 3
+# Configuración
+readonly AUR_HELPER="paru"
+readonly LOG_FILE="${HOME}/driver-installer.log"
+declare -a REQUIRED_DEPS=("dmidecode" "lshw" "pciutils" "usbutils" "sudo")
+
+# Colores ANSI
+readonly COLOR_VERDE='\033[0;32m'
+readonly COLOR_ROJO='\033[0;31m'
+readonly COLOR_AMARILLO='\033[1;33m'
+readonly COLOR_AZUL='\033[0;34m'
+readonly COLOR_RESET='\033[0m'
+
+# Variables globales
+declare -gA DRIVERS=(
+    ["oficial"]=""
+    ["aur"]=""
+)
+declare -gA DEPENDENCIAS=(
+    ["oficial"]=""
+    ["aur"]=""
+)
+declare -g SYS_VENDOR SYS_PRODUCT PCI_INFO
+
+# Función de registro de actividad
+registrar_log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "${LOG_FILE}" >/dev/null
 }
 
-# Actualización
-sudo pacman -Sy --noconfirm
+# Función de salida controlada
+salir() {
+    local codigo=$1
+    shift
+    echo -e "${COLOR_ROJO}$*${COLOR_RESET}" | tee -a "${LOG_FILE}"
+    exit "${codigo}"
+}
 
-# Driver bluetooth
-sudo pacman -S bluez bluez-utils --noconfirm --needed
+# Instalar dependencias básicas
+instalar_dependencias_basicas() {
+    local -a faltantes=()
+    for dep in "${REQUIRED_DEPS[@]}"; do
+        pacman -Qq "${dep}" &>/dev/null || faltantes+=("${dep}")
+    done
 
-# habilitando bluetooth
-sudo systemctl enable --now bluetooth.service
+    if (( ${#faltantes[@]} > 0 )); then
+        echo -e "${COLOR_AMARILLO}Instalando dependencias: ${faltantes[*]}${COLOR_RESET}"
+        sudo pacman -Sy --noconfirm --needed "${faltantes[@]}" || salir 1 "Error instalando dependencias"
+    fi
+}
 
-# DRIVER AMDGPU 
-sudo pacman -S xf86-video-amdgpu --noconfirm --needed
+# Instalar AUR helper (paru-bin)
+instalar_aur_helper() {
+    if ! command -v "${AUR_HELPER}" &>/dev/null; then
+        echo -e "${COLOR_AMARILLO}Instalando paru-bin desde AUR...${COLOR_RESET}"
+        sudo pacman -S --needed --noconfirm git base-devel || salir 1 "Error instalando dependencias para AUR"
 
-# VULKAN
-sudo pacman -S vulkan-radeon lib32-vulkan-radeon  --noconfirm --needed
+        local temp_dir
+        temp_dir=$(mktemp -d)
+        git clone https://aur.archlinux.org/paru-bin.git "${temp_dir}" || salir 1 "Error clonando repositorio paru-bin"
 
-# OPENCL
-sudo pacman -S opencl-mesa --noconfirm --needed
+        (cd "${temp_dir}" && makepkg -si --noconfirm) || salir 1 "Error construyendo paru-bin"
+        rm -rf "${temp_dir}"
+    fi
+}
 
-# VDPAU
-sudo pacman -S libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau --noconfirm --needed
+# Escaneo completo de hardware
+escanear_hardware() {
+    registrar_log "Iniciando escaneo de hardware"
 
-# Instalando driver USB Wifi (TP-Link AC600 wireless Realtek RTL8811AU [Archer T2U Nano])
-paru -S rtl88xxau-aircrack-dkms-git --noconfirm --needed
+    SYS_VENDOR=$(sudo dmidecode -s system-manufacturer 2>/dev/null | tr -d '\n')
+    SYS_PRODUCT=$(sudo dmidecode -s system-product-name 2>/dev/null | tr -d '\n')
+    PCI_INFO=$(lspci -vnn)
+    USB_INFO=$(lsusb)
 
-# Mensaje final
-imprimir_mensaje "♥️ Suscríbete!\n\n\t\t\t\t\t\t\t🌐 https://www.youtube.com/mxhectorvega"
+    # Detección de hardware Apple
+    if [[ "${SYS_VENDOR,,}" == *"apple"* ]]; then
+        registrar_log "Hardware Apple detectado"
+        DRIVERS["aur"]+="broadcom-wl-dkms b43-firmware apple-bce-dkms "
+    fi
+}
+
+# Detección y gestión de drivers
+detectar_drivers() {
+    registrar_log "Analizando componentes hardware"
+
+    # Migrar a PipeWire si existe PulseAudio
+    if pacman -Qq pulseaudio &>/dev/null; then
+        echo -e "${COLOR_AMARILLO}Migrando a PipeWire: Eliminando pulseaudio...${COLOR_RESET}"
+        sudo pacman -Rdd --noconfirm pulseaudio pulseaudio-alsa
+    fi
+
+    # Drivers gráficos
+    if grep -qi "VGA compatible controller: Intel" <<< "${PCI_INFO}"; then
+        DRIVERS["oficial"]+="xf86-video-intel vulkan-intel libva-intel-driver intel-media-driver "
+    elif grep -qi "VGA compatible controller: AMD" <<< "${PCI_INFO}"; then
+        DRIVERS["oficial"]+="xf86-video-amdgpu vulkan-radeon libva-mesa-driver mesa-vdpau "
+    elif grep -qi "VGA compatible controller: NVIDIA" <<< "${PCI_INFO}"; then
+        DRIVERS["oficial"]+="nvidia-dkms nvidia-utils libva-vdpau-driver "
+    fi
+
+    # Redes y Wi-Fi
+    if grep -qi "Network controller" <<< "${PCI_INFO}"; then
+        DRIVERS["oficial"]+="iwd wpa_supplicant linux-firmware "
+
+        # Detección específica de chipsets
+        if lspci -nn | grep -qE '0280:.*(Realtek|RTL)'; then
+            DRIVERS["aur"]+="rtw89-dkms rtl88xxau-aircrack-dkms "
+        fi
+    fi
+
+    # Audio con PipeWire
+    DRIVERS["oficial"]+="pipewire pipewire-pulse pipewire-alsa wireplumber "
+}
+
+# Verificación de dependencias
+verificar_dependencias() {
+    registrar_log "Verificando paquetes necesarios"
+
+    for categoria in "oficial" "aur"; do
+        for pkg in ${DRIVERS[$categoria]}; do
+            if ! pacman -Qq "${pkg}" &>/dev/null; then
+                DEPENDENCIAS[$categoria]+="${pkg} "
+            fi
+        done
+    done
+}
+
+# Instalación con manejo de conflictos
+instalar_paquetes() {
+    local categoria=$1
+    local lista_paquetes=$2
+    local -a paquetes_validos=()
+    local intentos=0
+
+    # Filtrar paquetes válidos
+    for pkg in ${lista_paquetes}; do
+        case $categoria in
+            "oficial")
+                if pacman -Si "${pkg}" &>/dev/null; then
+                    paquetes_validos+=("${pkg}")
+                else
+                    echo -e "${COLOR_AMARILLO}Paquete no disponible: ${pkg}${COLOR_RESET}"
+                fi
+                ;;
+            "aur")
+                if "${AUR_HELPER}" -Si "${pkg}" &>/dev/null; then
+                    paquetes_validos+=("${pkg}")
+                else
+                    echo -e "${COLOR_ROJO}Paquete AUR no encontrado: ${pkg}${COLOR_RESET}"
+                fi
+                ;;
+        esac
+    done
+
+    (( ${#paquetes_validos[@]} == 0 )) && return
+
+    while :; do
+        case $categoria in
+            "oficial")
+                echo -e "${COLOR_VERDE}Instalando desde repositorios oficiales...${COLOR_RESET}"
+                sudo pacman -Sy --noconfirm --needed "${paquetes_validos[@]}"
+                ;;
+            "aur")
+                echo -e "${COLOR_VERDE}Instalando desde AUR...${COLOR_RESET}"
+                "${AUR_HELPER}" -Sy --noconfirm --needed "${paquetes_validos[@]}"
+                ;;
+        esac
+
+        local resultado=$?
+        case $resultado in
+            0) return 0 ;;
+            1)
+                echo -e "\n${COLOR_ROJO}CONFLICTOS DETECTADOS${COLOR_RESET}"
+                echo -e "${COLOR_AMARILLO}Opciones disponibles:${COLOR_RESET}"
+                echo "1) Eliminar paquetes conflictivos y continuar"
+                echo "2) Omitir paquetes problemáticos"
+                echo "3) Cancelar instalación"
+
+                read -rp "Elección [1-3]: " opcion
+                case $opcion in
+                    1)
+                        sudo pacman -Qq | grep -E 'pipewire-pulse|pulseaudio' | xargs sudo pacman -Rdd --noconfirm
+                        ((intentos++ < 2)) && continue
+                        ;;
+                    2)
+                        paquetes_validos=($(printf '%s\n' "${paquetes_validos[@]}" | grep -Ev 'pulseaudio|pipewire-pulse'))
+                        continue
+                        ;;
+                    3)
+                        salir 1 "Instalación cancelada por el usuario"
+                        ;;
+                    *)
+                        echo -e "${COLOR_ROJO}Opción no válida${COLOR_RESET}"
+                        ;;
+                esac
+                ;;
+            *)
+                return $resultado
+                ;;
+        esac
+        break
+    done
+}
+
+# Configuración del sistema
+configurar_sistema() {
+    registrar_log "Aplicando configuraciones finales"
+
+    # Configuración de audio
+    systemctl --user enable --now pipewire pipewire-pulse wireplumber
+
+    # Configuración VAAPI
+    local va_conf="/etc/environment"
+    sudo tee -a "${va_conf}" >/dev/null <<EOF
+LIBVA_DRIVER_NAME=${LIBVA_DRIVER:-radeonsi}
+VDPAU_DRIVER=${VDPAU_DRIVER:-radeonsi}
+EOF
+
+    # Configuración DRM
+    echo "options drm modeset=1" | sudo tee /etc/modprobe.d/modesetting.conf >/dev/null
+
+    # Optimización de red
+    echo -e "${COLOR_VERDE}Aplicando optimizaciones de red...${COLOR_RESET}"
+    sudo tee /etc/sysctl.d/99-network.conf >/dev/null <<EOF
+net.core.rmem_max=16777216
+net.core.wmem_max=16777216
+net.ipv4.tcp_fastopen=3
+EOF
+    sudo sysctl --system
+}
+
+# Mostrar resumen
+mostrar_resumen() {
+    local total=0
+    echo -e "\n${COLOR_VERDE}=== RESUMEN DE INSTALACIÓN ==="
+    echo -e "Sistema: ${COLOR_AZUL}${SYS_VENDOR} ${SYS_PRODUCT}${COLOR_VERDE}"
+
+    for categoria in "oficial" "aur"; do
+        count=$(wc -w <<< "${DEPENDENCIAS[$categoria]}")
+        ((total += count))
+        echo -e "\n${COLOR_AMARILLO}${categoria^^}: ${count} paquetes${COLOR_VERDE}"
+        tr ' ' '\n' <<< "${DEPENDENCIAS[$categoria]}" | sed 's/^/• /'
+    done
+
+    echo -e "\nTotal paquetes instalados: ${COLOR_AZUL}${total}${COLOR_RESET}"
+}
+
+# Función principal
+main() {
+    trap 'salir 1 "Interrupción detectada"' SIGINT
+    set -eo pipefail
+
+    instalar_dependencias_basicas
+    instalar_aur_helper
+    escanear_hardware
+    detectar_drivers
+    verificar_dependencias
+
+    if [[ -z "${DEPENDENCIAS[oficial]}${DEPENDENCIAS[aur]}" ]]; then
+        echo -e "${COLOR_VERDE}El sistema ya tiene todos los drivers necesarios.${COLOR_RESET}"
+        exit 0
+    fi
+
+    mostrar_resumen
+
+    read -rp $'\n'"${COLOR_AMARILLO}¿Desea continuar con la instalación? [s/N]: ${COLOR_RESET}" respuesta
+    [[ "${respuesta,,}" != "s" ]] && salir 0 "Instalación cancelada"
+
+    for categoria in "oficial" "aur"; do
+        [[ -n "${DEPENDENCIAS[$categoria]}" ]] && instalar_paquetes "${categoria}" "${DEPENDENCIAS[$categoria]}"
+    done
+
+    configurar_sistema
+    registrar_log "Instalación completada exitosamente"
+    echo -e "\n${COLOR_VERDE}¡Proceso completado con éxito!${COLOR_RESET}\n"
+    echo -e "${COLOR_AMARILLO}Recomendación: Reinicie el sistema para aplicar todos los cambios.${COLOR_RESET}"
+}
+
+# Punto de entrada
+main "$@"
+
