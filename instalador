@@ -60,6 +60,7 @@ show_menu() {
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y AUR Helper"
     echo -e "${CYAN}2)${NC} Paqueteria flatpak para el usuario doméstico/avanzado"
     echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x (solo escenciales)"
+    echo -e "${CYAN}3)${NC} Complementos de KDE PLasma (post archinstall/archiso)"
     echo -e "${CYAN}4)${NC} Instalacion de controladores para Linux automatizado"
     echo -e "${CYAN}5)${NC} Controladores para impresora Epson L3210 Ecotank"
     echo -e "${CYAN}6)${NC} Instalacion de QEMU + Virt Manager + Optimizaciones"
@@ -128,9 +129,10 @@ declare -A SCRIPT_URLS=(
     [1]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
     [2]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
     [3]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome"
-    [4]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers"
-    [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
-    [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/qemu"
+    [4]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/kde"
+    [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers"
+    [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
+    [7]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/qemu"
 )
 
 # Función principal
@@ -144,7 +146,7 @@ main() {
         show_menu
 
         # Leer selección
-        read -rp $'\033[1;33mSeleccione una opción (0-6): \033[0m' selection
+        read -rp $'\033[1;33mSeleccione una opción (0-7): \033[0m' selection
 
         case $selection in
             0)
@@ -169,3 +171,4 @@ main() {
 
 # Ejecutar el script
 main "$@"
+# test1
