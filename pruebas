@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-
 # Configuración
 readonly AUR_HELPER="paru"  # Usamos paru como AUR helper
 readonly LOG_FILE="${HOME}/driver-installer.log"
 declare -a REQUIRED_DEPS=("dmidecode" "lshw" "pciutils" "usbutils" "sudo")
-
 # Colores (ANSI)
 readonly COLOR_VERDE='\033[0;32m'
 readonly COLOR_ROJO='\033[0;31m'
@@ -35,14 +33,19 @@ salir() {
     exit "${codigo}"
 }
 
+# Limpiar pantalla
+limpiar_pantalla() {
+    clear
+}
+
 # Verificar e instalar dependencias básicas
 instalar_dependencias_basicas() {
     local -a faltantes=()
     for dep in "${REQUIRED_DEPS[@]}"; do
         pacman -Qq "${dep}" &>/dev/null || faltantes+=("${dep}")
     done
-
     if [[ ${#faltantes[@]} -gt 0 ]]; then
+        limpiar_pantalla
         echo -e "${COLOR_AMARILLO}Instalando dependencias: ${faltantes[*]}${COLOR_RESET}"
         sudo pacman -Sy --noconfirm --needed "${faltantes[@]}" || salir 1 "Error instalando dependencias"
     fi
@@ -51,6 +54,7 @@ instalar_dependencias_basicas() {
 # Instalar paru-bin si no está presente
 instalar_aur_helper() {
     if ! command -v "${AUR_HELPER}" &>/dev/null; then
+        limpiar_pantalla
         echo -e "${COLOR_AMARILLO}Instalando paru-bin desde AUR...${COLOR_RESET}"
         sudo pacman -S --needed --noconfirm git base-devel || salir 1 "Error instalando dependencias para AUR"
         git clone https://aur.archlinux.org/paru-bin.git /tmp/paru-bin
@@ -63,9 +67,8 @@ instalar_aur_helper() {
 
 # Escaneo de hardware profesional
 escanear_hardware() {
-    local -g SYS_VENDOR SYS_PRODUCT PCI_INFO
+    local -g SYS_VENDOR SYS_PRODUCT PCI_INFO USB_INFO
     registrar_log "Iniciando escaneo de hardware"
-
     SYS_VENDOR=$(sudo dmidecode -s system-manufacturer 2>/dev/null | tr -d '\n')
     SYS_PRODUCT=$(sudo dmidecode -s system-product-name 2>/dev/null | tr -d '\n')
     PCI_INFO=$(lspci -vnn)
@@ -75,6 +78,18 @@ escanear_hardware() {
     if [[ "${SYS_VENDOR,,}" == *"apple"* ]]; then
         registrar_log "Detección de hardware Apple"
         DRIVERS["aur"]+="broadcom-wl-dkms b43-firmware apple-bce-dkms "
+    fi
+
+    # Detección específica de chipsets Realtek
+    detectar_realtek
+}
+
+# Detección específica de chipsets Realtek
+detectar_realtek() {
+    if grep -qi "Realtek" <<< "${PCI_INFO}"; then
+        registrar_log "Detección de chipset Realtek"
+        DRIVERS["oficial"]+="rtl8192ce rtl8192cu rtl8192eu rtl8812au "
+        DRIVERS["aur"]+="rtl88x2bu-dkms-git "
     fi
 }
 
@@ -97,9 +112,9 @@ detectar_drivers() {
         DRIVERS["aur"]+="rtw89-dkms rtl88xxau-aircrack-dkms "
     fi
 
-    # Audio
+    # Audio (priorizar PipeWire)
     if grep -qi "Audio device" <<< "${PCI_INFO}"; then
-        DRIVERS["oficial"]+="alsa-firmware alsa-utils pulseaudio pulseaudio-alsa "
+        DRIVERS["oficial"]+="alsa-firmware alsa-utils pipewire pipewire-pulse wireplumber "
     fi
 
     # Optimización Wayland
@@ -109,7 +124,6 @@ detectar_drivers() {
 # Gestión de dependencias
 verificar_dependencias() {
     registrar_log "Verificando paquetes necesarios"
-
     for categoria in "oficial" "aur"; do
         for pkg in ${DRIVERS[$categoria]}; do
             if ! pacman -Qq "${pkg}" &>/dev/null; then
@@ -117,6 +131,14 @@ verificar_dependencias() {
             fi
         done
     done
+}
+
+# Configuración profesional de PipeWire
+configurar_pipewire() {
+    registrar_log "Configurando PipeWire"
+    sudo systemctl enable --now pipewire pipewire-pulse wireplumber
+    sudo sed -i 's/^load-module module-suspend-on-idle/#load-module module-suspend-on-idle/' /etc/pipewire/pipewire.conf
+    echo -e "${COLOR_VERDE}PipeWire configurado correctamente.${COLOR_RESET}"
 }
 
 # Función mejorada de instalación con manejo de conflictos
@@ -128,11 +150,13 @@ instalar_paquetes() {
     while :; do
         case $categoria in
             "oficial")
+                limpiar_pantalla
                 echo -e "${COLOR_VERDE}Instalando desde repositorios oficiales...${COLOR_RESET}"
                 sudo pacman -Sy --noconfirm --needed ${lista_paquetes}
                 ;;
             "aur")
                 if command -v "${AUR_HELPER}" &>/dev/null; then
+                    limpiar_pantalla
                     echo -e "${COLOR_VERDE}Instalando desde AUR...${COLOR_RESET}"
                     "${AUR_HELPER}" -Sy --noconfirm --needed ${lista_paquetes}
                 fi
@@ -143,12 +167,12 @@ instalar_paquetes() {
         case $resultado in
             0) return 0 ;;
             1)  # Conflictos detectados
+                limpiar_pantalla
                 echo -e "\n${COLOR_ROJO}CONFLICTOS DETECTADOS${COLOR_RESET}"
                 echo -e "${COLOR_AMARILLO}Se requiere intervención manual:${COLOR_RESET}"
                 echo "1. Eliminar paquetes conflictivos y continuar"
                 echo "2. Omitir estos paquetes"
                 echo "3. Cancelar instalación"
-
                 read -rp "Elección [1-3]: " opcion
                 case $opcion in
                     1)
@@ -171,34 +195,18 @@ instalar_paquetes() {
     done
 }
 
-# Configuraciones avanzadas
-configurar_sistema() {
-    registrar_log "Aplicando optimizaciones"
-
-    # Configuración VAAPI
-    local va_conf="/etc/environment"
-    sudo tee -a "${va_conf}" >/dev/null << EOF
-LIBVA_DRIVER_NAME=${LIBVA_DRIVER:-radeonsi}
-VDPAU_DRIVER=${VDPAU_DRIVER:-radeonsi}
-EOF
-
-    # Configuración DRM
-    echo "options drm modeset=1" | sudo tee /etc/modprobe.d/modesetting.conf >/dev/null
-}
-
 # Mostrar resumen profesional
 mostrar_resumen() {
+    limpiar_pantalla
     local total=0
     echo -e "\n${COLOR_VERDE}=== RESUMEN DE INSTALACIÓN ==="
     echo -e "Sistema: ${SYS_VENDOR} ${SYS_PRODUCT}"
-
     for categoria in "oficial" "aur"; do
         count=$(wc -w <<< "${DEPENDENCIAS[$categoria]}")
         total=$((total + count))
         echo -e "\n${COLOR_AMARILLO}${categoria^^}: ${count} paquetes${COLOR_VERDE}"
         tr ' ' '\n' <<< "${DEPENDENCIAS[$categoria]}" | sed 's/^/• /'
     done
-
     echo -e "\nTotal paquetes instalados: ${total}${COLOR_RESET}"
 }
 
@@ -219,7 +227,6 @@ main() {
     fi
 
     mostrar_resumen
-
     read -rp $'\n'"${COLOR_AMARILLO}¿Desea continuar con la instalación? [s/N]: ${COLOR_RESET}" respuesta
     [[ "${respuesta,,}" != "s" ]] && salir 0 "Instalación cancelada"
 
@@ -227,10 +234,12 @@ main() {
         [[ -n "${DEPENDENCIAS[$categoria]}" ]] && instalar_paquetes "${categoria}" "${DEPENDENCIAS[$categoria]}"
     done
 
-    configurar_sistema
+    configurar_pipewire
     registrar_log "Instalación completada exitosamente"
+    limpiar_pantalla
     echo -e "\n${COLOR_VERDE}¡Proceso completado con éxito!${COLOR_RESET}"
 }
 
 # Ejecución principal
 main "$@"
+#loco
