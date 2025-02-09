@@ -60,10 +60,10 @@ show_menu() {
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y AUR Helper"
     echo -e "${CYAN}2)${NC} Paqueteria flatpak para el usuario doméstico/avanzado"
     echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x (solo escenciales)"
-    echo -e "${CYAN}3)${NC} Complementos de KDE PLasma (post archinstall/archiso)"
-    echo -e "${CYAN}4)${NC} Instalacion de controladores para Linux automatizado"
-    echo -e "${CYAN}5)${NC} Controladores para impresora Epson L3210 Ecotank"
-    echo -e "${CYAN}6)${NC} Instalacion de QEMU + Virt Manager + Optimizaciones"
+    echo -e "${CYAN}4)${NC} Complementos de KDE PLasma (post archinstall/archiso)"
+    echo -e "${CYAN}5)${NC} Instalacion de controladores para Linux automatizado"
+    echo -e "${CYAN}6)${NC} Controladores para impresora Epson L3210 Ecotank"
+    echo -e "${CYAN}7)${NC} Instalacion de QEMU + Virt Manager + Optimizaciones"
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 
