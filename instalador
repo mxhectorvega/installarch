@@ -57,12 +57,12 @@ show_welcome() {
 show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
 
-    echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y Paru - AUR Helper"
-    echo -e "${CYAN}2)${NC} Software flatpak para el usuario doméstico"
-    echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x"
-    echo -e "${CYAN}4)${NC} Controladores Wifi para MacBook Pro y Air"
-    echo -e "${CYAN}5)${NC} Controladores para impresora Epson L3210"
-    echo -e "${CYAN}6)${NC} Configuraciones para Hyprland"
+    echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y AUR Helper"
+    echo -e "${CYAN}2)${NC} Paqueteria flatpak para el usuario doméstico/avanzado"
+    echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x (solo escenciales)"
+    echo -e "${CYAN}4)${NC} Instalacion de controladores para Linux automatizado"
+    echo -e "${CYAN}5)${NC} Controladores para impresora Epson L3210 Ecotank"
+    echo -e "${CYAN}6)${NC} Instalacion de QEMU + Virt Manager + Optimizaciones"
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 
@@ -128,9 +128,9 @@ declare -A SCRIPT_URLS=(
     [1]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
     [2]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
     [3]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome"
-    [4]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/macbook"
+    [4]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers"
     [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
-    [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/hyprland"
+    [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/qemu"
 )
 
 # Función principal
