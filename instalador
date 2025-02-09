@@ -153,7 +153,7 @@ main() {
                 echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
                 exit 0
                 ;;
-            [1-6])
+            [1-7])
                 if execute_script "${SCRIPT_URLS[$selection]}"; then
                     show_final_screen 0
                 else
@@ -171,4 +171,4 @@ main() {
 
 # Ejecutar el script
 main "$@"
-# test4
+# test5
