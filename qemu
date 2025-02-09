@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Instalación de QEMU + Virt-Manager + Optimizaciones
+# Repositorio: https://github.com/mxhectorvega/installarch
+# Ejecución: bash <(curl -L is.gd/mxqemu) o tiny.com/mxvirtmanager
+# Fecha de actualización: 09/02/2025
+# Versión: 3.0
+
 # Configuración de colores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
