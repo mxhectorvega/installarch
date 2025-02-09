@@ -77,3 +77,7 @@ sudo systemctl enable --now bluetooth.service
 
 # Instalar Java (por si acaso se requiere)
 sudo pacman -S jre8-openjdk --noconfirm --needed
+
+# Crear enlace simbólico para el paquete ssh-askpass
+sudo ln -s /usr/bin/ksshaskpass /usr/lib/ssh/ssh-askpass
+
