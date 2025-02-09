@@ -135,11 +135,11 @@ main() {
 
     # Configuración de libvirt
     info "Configurando libvirt..."
-    sudo sed -i 's/#unix_sock_group/unix_sock_group/' /etc/libvirt/libvirtd.conf
-    sudo sed -i 's/#unix_sock_rw_perms/unix_sock_rw_perms/' /etc/libvirt/libvirtd.conf
-
     sudo usermod -aG libvirt "$(whoami)" || error "Error al agregar usuario al grupo"
     newgrp libvirt
+
+    sudo sed -i 's/#unix_sock_group/unix_sock_group/' /etc/libvirt/libvirtd.conf
+    sudo sed -i 's/#unix_sock_rw_perms/unix_sock_rw_perms/' /etc/libvirt/libvirtd.conf
 
     # Configurar red por defecto
     info "Configurando red NAT..."
@@ -166,4 +166,4 @@ main() {
 }
 
 main "$@"
-#test2
+#test3
