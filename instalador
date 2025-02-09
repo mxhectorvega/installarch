@@ -3,8 +3,8 @@
 # Instalador de scripts de mxhectorvega
 # Repositorio: https://github.com/mxhectorvega/installarch
 # Ejecución: bash <(curl -L is.gd/mxinstalador)
-# Fecha de actualización: 05/02/2025
-# Versión: 1.0
+# Fecha de actualización: 09/02/2025
+# Versión: 1.4
 
 # Strict mode
 set -euo pipefail
@@ -146,7 +146,7 @@ main() {
         show_menu
 
         # Leer selección
-        read -rp $'\033[1;33mSeleccione una opción (0-7): \033[0m' selection
+        read -rp $'\033[1;33mSeleccione una opción (0-6): \033[0m' selection
 
         case $selection in
             0)
