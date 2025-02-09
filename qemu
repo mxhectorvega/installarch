@@ -130,20 +130,70 @@ main() {
         install_packages $missing
     fi
 
+    # Configuración previa de libvirt
+    info "Configurando libvirt..."
+    sudo sed -i 's/#unix_sock_group = "libvirt"/unix_sock_group = "libvirt"/' /etc/libvirt/libvirtd.conf
+    sudo sed -i 's/#unix_sock_rw_perms = "0770"/unix_sock_rw_perms = "0770"/' /etc/libvirt/libvirtd.conf
+
+    # Agregar usuario al grupo y refrescar
+    sudo usermod -aG libvirt,kvm "$(whoami)" || error "Error al agregar usuario al grupo"
+    if ! groups | grep -q libvirt; then
+        exec sg libvirt newgrp $(id -gn)  # Refrescar grupos en sesión actual
+    fi
+
     # Instalación principal
     install_packages "${QEMU_PKGS[@]}" "${GUI_PKGS[@]}" "${ADDITIONAL_PKGS[@]}"
 
-    # Configurar red por defecto
-    info "Configurando red NAT..."
-    sudo virsh net-define /etc/libvirt/qemu/networks/default.xml
-    sudo virsh net-autostart default
-    sudo virsh net-start default
-
-    # Iniciar servicios
+    # Reiniciar servicios para aplicar configuración
     info "Iniciando servicios..."
-    sudo systemctl enable --now libvirtd.service
+    sudo systemctl restart libvirtd.service
+    sudo systemctl enable libvirtd.service
+
+    # Configurar red NAT
+    info "Configurando red NAT..."
+    export LIBVIRT_DEFAULT_URI=qemu:///system  # Establecer URI por defecto
+
+    # Verificar si la red existe
+    if ! sudo virsh net-list --all | grep -q default; then
+        # Intentar definir desde archivo o crear manualmente
+        if [ -f /etc/libvirt/qemu/networks/default.xml ]; then
+            sudo virsh net-define /etc/libvirt/qemu/networks/default.xml || {
+                warning "Falló definición desde archivo, creando manualmente..."
+                sudo virsh net-define <<EOF
+<network>
+  <name>default</name>
+  <forward mode='nat'/>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <ip address='192.168.122.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.122.2' end='192.168.122.254'/>
+    </dhcp>
+  </ip>
+</network>
+EOF
+            }
+        else
+            sudo virsh net-define <<EOF
+<network>
+  <name>default</name>
+  <uuid>$(uuidgen)</uuid>
+  <forward mode='nat'/>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <ip address='192.168.122.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.122.2' end='192.168.122.254'/>
+    </dhcp>
+  </ip>
+</network>
+EOF
+        fi
+    fi
+
+    sudo virsh net-autostart default
+    sudo virsh net-start default || warning "La red podría estar ya iniciada"
 
     # Configurar SSH-Askpass
+    info "Configurando SSH-Askpass..."
     if [ -x /usr/lib/seahorse/ssh-askpass ]; then
         sudo ln -sf /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
     elif [ -x /usr/bin/ksshaskpass ]; then
@@ -153,17 +203,14 @@ main() {
     # Configurar SSH
     configure_ssh
 
-    # Configuración de libvirt
-    info "Configurando libvirt..."
-    sudo usermod -aG libvirt "$(whoami)" || error "Error al agregar usuario al grupo"
-    newgrp libvirt
-
-    sudo sed -i 's/#unix_sock_group/unix_sock_group/' /etc/libvirt/libvirtd.conf
-    sudo sed -i 's/#unix_sock_rw_perms/unix_sock_rw_perms/' /etc/libvirt/libvirtd.conf
-
     info "Instalación completada con éxito!"
-    info "Recomendación: Reinicia el sistema para aplicar todos los cambios"
+    echo -e "${YELLOW}Recomendaciones importantes:${NC}"
+    echo "1. Cierra sesión y vuelve a ingresar para refrescar los grupos de usuario"
+    echo "2. Verifica la red virtual con: virsh net-list --all"
+    echo "3. Para usar Virt-Manager como usuario normal:"
+    echo "   - Asegúrate de tener polkit configurado correctamente"
+    echo "   - Prueba con: virt-manager --connect qemu:///system"
 }
 
 main "$@"
-#test5
+#test 6
