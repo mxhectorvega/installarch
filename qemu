@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+
+# Configuración de colores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuración inicial
+DEPENDENCIES=()
+INSTALLED_PKGS=()
+TEMP_FILE=$(mktemp)
+trap 'rm -f $TEMP_FILE' EXIT
+
+# Funciones de utilidad
+error() {
+    printf "${RED}[ERROR]${NC} %s\n" "$1" >&2
+    exit 1
+}
+
+info() {
+    printf "${GREEN}[INFO]${NC} %s\n" "$1"
+}
+
+warning() {
+    printf "${YELLOW}[WARNING]${NC} %s\n" "$1"
+}
+
+clean_screen() {
+    clear
+}
+
+check_dependencies() {
+    local pkg missing=()
+    for pkg in "$@"; do
+        if ! pacman -Qi "$pkg" &>/dev/null; then
+            missing+=("$pkg")
+        fi
+    done
+    echo "${missing[@]}"
+}
+
+install_packages() {
+    local -a packages=("$@")
+    if [ ${#packages[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    if ! sudo pacman -S --noconfirm --needed "${packages[@]}"; then
+        error "Fallo al instalar paquetes: ${packages[*]}"
+    fi
+
+    INSTALLED_PKGS+=("${packages[@]}")
+}
+
+rollback() {
+    if [ ${#INSTALLED_PKGS[@]} -gt 0 ]; then
+        warning "Realizando rollback de paquetes instalados..."
+        sudo pacman -Rsn --noconfirm "${INSTALLED_PKGS[@]}" || warning "Error parcial en rollback"
+    fi
+    exit 1
+}
+
+configure_ssh() {
+    info "Configurando SSH..."
+    if ! pacman -Qi openssh &>/dev/null; then
+        install_packages openssh
+    fi
+
+    sudo systemctl enable --now sshd.service || error "Error al iniciar SSH"
+}
+
+ask_password() {
+    clean_screen
+    sudo -v || error "Error al autenticar con sudo"
+    while true; do
+        sudo -n true
+        sleep 60
+        kill -0 "$$" || exit
+    done 2>/dev/null &
+}
+
+# Configurar manejador de errores
+trap rollback ERR
+
+# Inicio del script
+main() {
+    ask_password
+    clean_screen
+
+    # Paso 1: Selección de componentes QEMU
+    PS3="Selecciona el tipo de instalación QEMU: "
+    options=("QEMU Full (todas arquitecturas + GUI + CLI)"
+             "QEMU Base (solo CLI)"
+             "QEMU Desktop (solo 64 bits)")
+
+    select opt in "${options[@]}"; do
+        case $REPLY in
+            1) QEMU_PKGS=(qemu-full); break ;;
+            2) QEMU_PKGS=(qemu-base); break ;;
+            3) QEMU_PKGS=(qemu-desktop); break ;;
+            *) warning "Opción inválida";;
+        esac
+    done
+
+    # Paso 2: Selección de interfaz gráfica
+    PS3="Selecciona la interfaz gráfica: "
+    options=("Virt-Manager" "GNOME Boxes" "Ninguna")
+
+    select opt in "${options[@]}"; do
+        case $REPLY in
+            1) GUI_PKGS=(libvirt virt-manager); break ;;
+            2) GUI_PKGS=(libvirt gnome-boxes); break ;;
+            3) break ;;
+            *) warning "Opción inválida";;
+        esac
+    done
+
+    # Paso 3: Paquetes adicionales
+    ADDITIONAL_PKGS=(iptables dnsmasq dmidecode bridge-utils openbsd-netcat
+                    virglrenderer xf86-video-vmware xf86-input-vmmouse)
+
+    # Verificar dependencias
+    DEPENDENCIES+=(qemu-base libvirt iptables dnsmasq)
+    missing=$(check_dependencies "${DEPENDENCIES[@]}")
+
+    if [ -n "$missing" ]; then
+        info "Instalando dependencias faltantes: $missing"
+        install_packages $missing
+    fi
+
+    # Instalación principal
+    install_packages "${QEMU_PKGS[@]}" "${GUI_PKGS[@]}" "${ADDITIONAL_PKGS[@]}"
+
+    # Configuración de libvirt
+    info "Configurando libvirt..."
+    sudo sed -i 's/#unix_sock_group = "libvirt"/unix_sock_group = "libvirt"/' /etc/libvirt/libvirtd.conf
+    sudo sed -i 's/#unix_sock_rw_perms = "0770"/unix_sock_rw_perms = "0770"/' /etc/libvirt/libvirtd.conf
+
+    sudo usermod -aG libvirt "$(whoami)" || error "Error al agregar usuario al grupo"
+    newgrp libvirt
+
+    # Configurar red por defecto
+    info "Configurando red NAT..."
+    sudo virsh net-define /etc/libvirt/qemu/networks/default.xml
+    sudo virsh net-autostart default
+    sudo virsh net-start default
+
+    # Iniciar servicios
+    info "Iniciando servicios..."
+    sudo systemctl enable --now libvirtd.service
+
+    # Configurar SSH-Askpass
+    if [ -x /usr/lib/seahorse/ssh-askpass ]; then
+        sudo ln -sf /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
+    elif [ -x /usr/bin/ksshaskpass ]; then
+        sudo ln -sf /usr/bin/ksshaskpass /usr/lib/ssh/ssh-askpass
+    fi
+
+    # Configurar SSH
+    configure_ssh
+
+    info "Instalación completada con éxito!"
+    info "Recomendación: Reinicia el sistema para aplicar todos los cambios"
+}
+
+main "$@"
