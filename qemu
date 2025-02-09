@@ -133,14 +133,6 @@ main() {
     # Instalación principal
     install_packages "${QEMU_PKGS[@]}" "${GUI_PKGS[@]}" "${ADDITIONAL_PKGS[@]}"
 
-    # Configuración de libvirt
-    info "Configurando libvirt..."
-    sudo usermod -aG libvirt "$(whoami)" || error "Error al agregar usuario al grupo"
-    newgrp libvirt
-
-    sudo sed -i 's/#unix_sock_group/unix_sock_group/' /etc/libvirt/libvirtd.conf
-    sudo sed -i 's/#unix_sock_rw_perms/unix_sock_rw_perms/' /etc/libvirt/libvirtd.conf
-
     # Configurar red por defecto
     info "Configurando red NAT..."
     sudo virsh net-define /etc/libvirt/qemu/networks/default.xml
@@ -161,9 +153,17 @@ main() {
     # Configurar SSH
     configure_ssh
 
+    # Configuración de libvirt
+    info "Configurando libvirt..."
+    sudo usermod -aG libvirt "$(whoami)" || error "Error al agregar usuario al grupo"
+    newgrp libvirt
+
+    sudo sed -i 's/#unix_sock_group/unix_sock_group/' /etc/libvirt/libvirtd.conf
+    sudo sed -i 's/#unix_sock_rw_perms/unix_sock_rw_perms/' /etc/libvirt/libvirtd.conf
+
     info "Instalación completada con éxito!"
     info "Recomendación: Reinicia el sistema para aplicar todos los cambios"
 }
 
 main "$@"
-#test3
+#test5
