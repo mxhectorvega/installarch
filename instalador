@@ -161,7 +161,7 @@ main() {
                 fi
                 ;;
             *)
-                echo -e "\n${RED}Opción inválida. Por favor, seleccione un número del 0 al 6.${NC}"
+                echo -e "\n${RED}Opción inválida. Por favor, seleccione un número del 0 al 7.${NC}"
                 sleep 2
                 continue
                 ;;
