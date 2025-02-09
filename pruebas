@@ -1,99 +1,239 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# Instalación de paquetes flatpak para el usuario doméstico.
-# Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxflatpak)
-# Fecha de actualización: 04/02/2025
-# Versión: 5.0
+# Configuración
+AUR_HELPER="yay"  # Puede ser yay, paru, o otro
+LOG_FILE="/var/log/driver-installer.log"
 
-# Función para mostrar mensajes enmarcados con colores
-imprimir_mensaje() {
-    local mensaje="$1"
-    local border_color="\e[36m"  # Cyan
-    local text_color="\e[97m"    # Blanco
-    local reset="\e[0m"
-    local ancho=$(tput cols)
+# Colores
+COLOR_VERDE="\e[32m"
+COLOR_ROJO="\e[31m"
+COLOR_AMARILLO="\e[33m"
+COLOR_AZUL="\e[34m"
+COLOR_RESET="\e[0m"
 
-    clear
+# Arrays globales
+DRIVERS=()
+DEPENDENCIAS=()
+MACBOOK_DETECTED=0
 
-    # Borde superior
-    printf "${border_color}╭%*s╮${reset}\n" "$((ancho - 2))" "" | tr ' ' '─'
-
-    # Línea vacía
-    printf "${border_color}│%*s│${reset}\n" "$((ancho - 2))" ""
-
-    # Dividir mensaje en líneas
-    IFS=$'\n' read -d '' -ra lineas <<< "$mensaje"
-
-    for linea in "${lineas[@]}"; do
-        largo=${#linea}
-        espacio=$(( (ancho - 2 - largo) / 2 ))
-        printf "${border_color}│${text_color}%*s%s%*s${border_color}│${reset}\n" "$espacio" "" "$linea" "$espacio" ""
-    done
-
-    # Línea vacía
-    printf "${border_color}│%*s│${reset}\n" "$((ancho - 2))" ""
-
-    # Borde inferior
-    printf "${border_color}╰%*s╯${reset}\n" "$((ancho - 2))" "" | tr ' ' '─'
-
-    sleep 3
+# Función para registrar eventos en el log
+registrar_log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
-# Verificar si flatpak está instalado
-if ! command -v flatpak &> /dev/null; then
-    imprimir_mensaje "Flatpak no está instalado.\nInstalándolo..."
-    sudo pacman -S flatpak --noconfirm --needed
-fi
+# Escaneo completo de hardware (incluyendo Apple)
+escanear_hardware() {
+    echo -e "${COLOR_AZUL}Iniciando escaneo profundo de hardware...${COLOR_RESET}"
 
-# Agregar repositorio flathub
-if ! flatpak remote-list | grep -q flathub; then
-    imprimir_mensaje "Agregando el repositorio flathub..."
-    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-fi
+    # Detectar si es una MacBook
+    if sudo dmidecode | grep -qi "Apple Inc."; then
+        MACBOOK_DETECTED=1
+        echo -e "${COLOR_VERDE}MacBook detectada. Activando drivers específicos.${COLOR_RESET}"
+    fi
 
-# Listas de paquetes (igual que en tu versión original)
-paquetes_gnome=(...)
-paquetes_kde=(...)
-paquete_adicional="https://sober.vinegarhq.org/sober.flatpakref"
+    # Obtener información detallada
+    HW_INFO=$(sudo lshw -short 2>/dev/null)
+    PCI_INFO=$(lspci -vnn)
+    USB_INFO=$(lsusb)
+    SYS_VENDOR=$(sudo dmidecode -s system-manufacturer)
+    SYS_PRODUCT=$(sudo dmidecode -s system-product-name)
 
-# Bucle de selección
-while true; do
-    clear
-    mensaje_menu=$'¿Qué lista de paquetes flatpak deseas instalar?\n\n1) Para entorno GNOME (script minimal)\n2) Para entorno KDE Plasma (archinstall)'
-    imprimir_mensaje "$mensaje_menu"
+    registrar_log "Hardware escaneado: $SYS_VENDOR $SYS_PRODUCT"
+}
 
-    # Centrar prompt de entrada
-    ancho=$(tput cols)
-    prompt="Selecciona una opción (1 o 2): "
-    espacio=$(( (ancho - ${#prompt}) / 2 ))
-    printf "%*s" "$espacio" ""
-    read -rp "$prompt" opcion
+# Detección de drivers para MacBooks
+detectar_macbook_drivers() {
+    if [ "$MACBOOK_DETECTED" -eq 1 ]; then
+        echo -e "${COLOR_VERDE}Configurando drivers para MacBook...${COLOR_RESET}"
+        DRIVERS+=(
+            "broadcom-wl-dkms"       # WiFi para Broadcom (MacBook Air/Pro)
+            "b43-firmware"           # Firmware para chips Broadcom antiguos
+            "apple-bce-dkms"         # Soporte para teclado y trackpad
+            "apple-ibridge-dkms"     # Touch Bar (si aplica)
+            "hid-apple"              # Drivers HID para dispositivos Apple
+        )
 
-    case $opcion in
-        1)
-            imprimir_mensaje "Instalando paquetes GNOME..."
-            for paquete in "${paquetes_gnome[@]}"; do
-                flatpak install --user -y "$paquete"
-            done
-            flatpak install --user -y "$paquete_adicional"
-            break
-            ;;
-        2)
-            imprimir_mensaje "Instalando paquetes KDE..."
-            for paquete in "${paquetes_kde[@]}"; do
-                flatpak install --user -y "$paquete"
-            done
-            flatpak install --user -y "$paquete_adicional"
-            imprimir_mensaje "Instalando paquetes adicionales..."
-            sudo pacman -Sy flatpak-kcm spectacle partitionmanager --noconfirm --needed
-            break
-            ;;
-        *)
-            imprimir_mensaje "Opción no válida"
-            ;;
-    esac
-done
+        # WiFi adicional para modelos específicos
+        if echo "$PCI_INFO" | grep -q "Network controller: Broadcom Inc."; then
+            DRIVERS+=("wl-dkms" "broadcom-wl-dkms")
+        fi
+    fi
+}
 
-# Mensaje final
-imprimir_mensaje $'♥️ Suscríbete!\n\n🌐 https://www.youtube.com/mxhectorvega'
+# Detectar drivers genéricos
+detectar_drivers_comunes() {
+    echo -e "${COLOR_AZUL}Detectando drivers genéricos...${COLOR_RESET}"
+
+    # Gráficos
+    if echo "$PCI_INFO" | grep -qi "VGA compatible controller: Intel"; then
+        DRIVERS+=(
+            "xf86-video-intel"
+            "vulkan-intel"
+            "libva-intel-driver"
+            "intel-media-driver"     # VAAPI para aceleración hardware
+        )
+    elif echo "$PCI_INFO" | grep -qi "VGA compatible controller: AMD"; then
+        DRIVERS+=(
+            "xf86-video-amdgpu"
+            "vulkan-radeon"
+            "libva-mesa-driver"
+            "mesa-vdpau"
+        )
+    elif echo "$PCI_INFO" | grep -qi "VGA compatible controller: NVIDIA"; then
+        DRIVERS+=(
+            "nvidia-dkms"            # DKMS para compatibilidad con kernels nuevos
+            "nvidia-utils"
+            "libva-vdpau-driver"
+            "vulkan-icd-loader"
+        )
+    fi
+
+    # WiFi (cubre chipsets comunes y Apple)
+    if echo "$PCI_INFO" | grep -qi "Network controller"; then
+        DRIVERS+=(
+            "iwd"                    # Daemon WiFi moderno para Wayland
+            "wpa_supplicant"
+            "linux-firmware"
+            "iwlwifi-firmware"       # Intel WiFi
+            "rtw89-dkms"             # Realtek 8852AE (común en laptops nuevas)
+            "ath10k-firmware"        # Qualcomm Atheros
+            "rtl88xxau-aircrack-dkms" # Realtek 8812AU/8821AU
+        )
+    fi
+
+    # Bluetooth
+    if echo "$USB_INFO" | grep -qi "Bluetooth"; then
+        DRIVERS+=("bluez" "bluez-utils")
+    fi
+
+    # Audio
+    if echo "$PCI_INFO" | grep -qi "Audio device"; then
+        DRIVERS+=(
+            "alsa-firmware"
+            "alsa-utils"
+            "pulseaudio"
+            "pulseaudio-alsa"
+        )
+    fi
+
+    # Optimizaciones para Wayland
+    if echo "$PCI_INFO" | grep -qi "VGA compatible controller"; then
+        DRIVERS+=(
+            "mesa"                   # Drivers gráficos modernos
+            "libva-mesa-driver"      # VAAPI para aceleración hardware
+            "vulkan-icd-loader"      # Soporte Vulkan
+        )
+    fi
+}
+
+# Verificar dependencias faltantes
+verificar_dependencias() {
+    echo -e "${COLOR_AZUL}Verificando paquetes...${COLOR_RESET}"
+    for pkg in "${DRIVERS[@]}"; do
+        if ! pacman -Qi "$pkg" &>/dev/null; then
+            DEPENDENCIAS+=("$pkg")
+            echo -e "${COLOR_AMARILLO}Falta: $pkg${COLOR_RESET}"
+        fi
+    done
+}
+
+# Instalar desde repos oficiales
+instalar_oficial() {
+    if [ ${#DEPENDENCIAS[@]} -gt 0 ]; then
+        echo -e "${COLOR_VERDE}Instalando desde repositorios oficiales...${COLOR_RESET}"
+        sudo pacman -S --needed --noconfirm "${DEPENDENCIAS[@]}" || {
+            echo -e "${COLOR_ROJO}Error al instalar: ${DEPENDENCIAS[@]}${COLOR_RESET}"
+            registrar_log "Error instalando: ${DEPENDENCIAS[@]}"
+            exit 1
+        }
+    fi
+}
+
+# Instalar desde AUR (usando yay/paru)
+instalar_aur() {
+    if command -v "$AUR_HELPER" &>/dev/null; then
+        echo -e "${COLOR_VERDE}Instalando desde AUR...${COLOR_RESET}"
+        "$AUR_HELPER" -S --needed --noconfirm \
+            broadcom-wl-dkms \
+            rtw89-dkms \
+            apple-bce-dkms \
+            rtl88xxau-aircrack-dkms || {
+            echo -e "${COLOR_ROJO}Error en AUR. Revisa $LOG_FILE.${COLOR_RESET}"
+            registrar_log "Error en AUR"
+            exit 1
+        }
+    else
+        echo -e "${COLOR_ROJO}Instala $AUR_HELPER para drivers de MacBook/AUR.${COLOR_RESET}"
+    fi
+}
+
+# Configuraciones y optimizaciones para Wayland
+configurar_wayland() {
+    echo -e "${COLOR_AZUL}Aplicando configuraciones para Wayland...${COLOR_RESET}"
+
+    # Configuración de VAAPI para aceleración hardware
+    if echo "$PCI_INFO" | grep -qi "VGA compatible controller: Intel"; then
+        echo -e "${COLOR_VERDE}Configurando VAAPI para Intel...${COLOR_RESET}"
+        sudo tee /etc/environment >/dev/null <<EOL
+LIBVA_DRIVER_NAME=iHD
+VDPAU_DRIVER=va_gl
+EOL
+    elif echo "$PCI_INFO" | grep -qi "VGA compatible controller: AMD"; then
+        echo -e "${COLOR_VERDE}Configurando VAAPI para AMD...${COLOR_RESET}"
+        sudo tee /etc/environment >/dev/null <<EOL
+LIBVA_DRIVER_NAME=radeonsi
+VDPAU_DRIVER=radeonsi
+EOL
+    elif echo "$PCI_INFO" | grep -qi "VGA compatible controller: NVIDIA"; then
+        echo -e "${COLOR_VERDE}Configurando VAAPI para NVIDIA...${COLOR_RESET}"
+        sudo tee /etc/environment >/dev/null <<EOL
+LIBVA_DRIVER_NAME=nvidia
+VDPAU_DRIVER=nvidia
+EOL
+    fi
+
+    # Habilitar modosetting para evitar tearing
+    if echo "$PCI_INFO" | grep -qi "VGA compatible controller"; then
+        echo -e "${COLOR_VERDE}Habilitando modosetting...${COLOR_RESET}"
+        sudo tee /etc/modprobe.d/modesetting.conf >/dev/null <<EOL
+options drm modeset=1
+EOL
+    fi
+}
+
+# Mostrar resumen
+mostrar_resumen() {
+    echo -e "\n${COLOR_VERDE}Resumen de la instalación:${COLOR_RESET}"
+    echo -e " - Hardware detectado: ${COLOR_AZUL}$SYS_VENDOR $SYS_PRODUCT${COLOR_RESET}"
+    echo -e " - Drivers instalados: ${COLOR_VERDE}${#DRIVERS[@]} paquetes${COLOR_RESET}"
+    echo -e " - Configuraciones aplicadas: ${COLOR_VERDE}VAAPI, modosetting${COLOR_RESET}"
+}
+
+# Función principal
+main() {
+    escanear_hardware
+    detectar_macbook_drivers
+    detectar_drivers_comunes
+    verificar_dependencias
+
+    if [ ${#DEPENDENCIAS[@]} -gt 0 ]; then
+        echo -e "${COLOR_AMARILLO}Se instalarán ${#DEPENDENCIAS[@]} paquetes.${COLOR_RESET}"
+        read -p "¿Continuar? (s/n): " respuesta
+        if [[ "$respuesta" =~ ^[Ss]$ ]]; then
+            instalar_oficial
+            instalar_aur
+            configurar_wayland
+        else
+            echo -e "${COLOR_ROJO}Instalación cancelada.${COLOR_RESET}"
+            exit 0
+        fi
+    else
+        echo -e "${COLOR_VERDE}Todos los drivers están actualizados.${COLOR_RESET}"
+    fi
+
+    mostrar_resumen
+    registrar_log "Instalación completada."
+}
+
+# Ejecutar
+main
