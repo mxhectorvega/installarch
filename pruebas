@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Configuración
-readonly AUR_HELPER="yay"  # Cambiar por paru si se prefiere
+readonly AUR_HELPER="paru"  # Usamos paru como AUR helper
 readonly LOG_FILE="${HOME}/driver-installer.log"
 declare -a REQUIRED_DEPS=("dmidecode" "lshw" "pciutils" "usbutils" "sudo")
 
@@ -45,6 +45,19 @@ instalar_dependencias_basicas() {
     if [[ ${#faltantes[@]} -gt 0 ]]; then
         echo -e "${COLOR_AMARILLO}Instalando dependencias: ${faltantes[*]}${COLOR_RESET}"
         sudo pacman -Sy --noconfirm --needed "${faltantes[@]}" || salir 1 "Error instalando dependencias"
+    fi
+}
+
+# Instalar paru-bin si no está presente
+instalar_aur_helper() {
+    if ! command -v "${AUR_HELPER}" &>/dev/null; then
+        echo -e "${COLOR_AMARILLO}Instalando paru-bin desde AUR...${COLOR_RESET}"
+        sudo pacman -S --needed --noconfirm git base-devel || salir 1 "Error instalando dependencias para AUR"
+        git clone https://aur.archlinux.org/paru-bin.git /tmp/paru-bin
+        cd /tmp/paru-bin || salir 1 "No se pudo acceder al directorio temporal"
+        makepkg -si --noconfirm || salir 1 "Error instalando paru-bin"
+        cd - >/dev/null || salir 1 "No se pudo regresar al directorio anterior"
+        rm -rf /tmp/paru-bin
     fi
 }
 
@@ -106,26 +119,56 @@ verificar_dependencias() {
     done
 }
 
-# Instalación profesional
+# Función mejorada de instalación con manejo de conflictos
 instalar_paquetes() {
     local categoria=$1
     local lista_paquetes=$2
+    local intentos=0
 
-    case $categoria in
-        "oficial")
-            echo -e "${COLOR_VERDE}Instalando desde repositorios oficiales...${COLOR_RESET}"
-            sudo pacman -Sy --noconfirm --needed ${lista_paquetes} || return 1
-            ;;
-        "aur")
-            if command -v "${AUR_HELPER}" &>/dev/null; then
-                echo -e "${COLOR_VERDE}Instalando desde AUR...${COLOR_RESET}"
-                "${AUR_HELPER}" -Sy --noconfirm --needed ${lista_paquetes} || return 1
-            else
-                echo -e "${COLOR_AMARILLO}Instale ${AUR_HELPER} para paquetes AUR${COLOR_RESET}"
-                return 2
-            fi
-            ;;
-    esac
+    while :; do
+        case $categoria in
+            "oficial")
+                echo -e "${COLOR_VERDE}Instalando desde repositorios oficiales...${COLOR_RESET}"
+                sudo pacman -Sy --noconfirm --needed ${lista_paquetes}
+                ;;
+            "aur")
+                if command -v "${AUR_HELPER}" &>/dev/null; then
+                    echo -e "${COLOR_VERDE}Instalando desde AUR...${COLOR_RESET}"
+                    "${AUR_HELPER}" -Sy --noconfirm --needed ${lista_paquetes}
+                fi
+                ;;
+        esac
+
+        local resultado=$?
+        case $resultado in
+            0) return 0 ;;
+            1)  # Conflictos detectados
+                echo -e "\n${COLOR_ROJO}CONFLICTOS DETECTADOS${COLOR_RESET}"
+                echo -e "${COLOR_AMARILLO}Se requiere intervención manual:${COLOR_RESET}"
+                echo "1. Eliminar paquetes conflictivos y continuar"
+                echo "2. Omitir estos paquetes"
+                echo "3. Cancelar instalación"
+
+                read -rp "Elección [1-3]: " opcion
+                case $opcion in
+                    1)
+                        sudo pacman -Qq | grep -E 'pipewire-pulse|pulseaudio' | xargs sudo pacman -Rdd --noconfirm
+                        ((intentos++))
+                        [[ $intentos -lt 2 ]] && continue
+                        ;;
+                    2)
+                        lista_paquetes=$(sed -E 's/(pulseaudio|pipewire-pulse)//g' <<< "$lista_paquetes")
+                        continue
+                        ;;
+                    3)
+                        salir 1 "Instalación cancelada por el usuario"
+                        ;;
+                esac
+                ;;
+            *) return $resultado ;;
+        esac
+        break
+    done
 }
 
 # Configuraciones avanzadas
@@ -165,6 +208,7 @@ main() {
     set -eo pipefail
 
     instalar_dependencias_basicas
+    instalar_aur_helper
     escanear_hardware
     detectar_drivers
     verificar_dependencias
