@@ -2,7 +2,7 @@
 
 # Configuración
 AUR_HELPER="yay"  # Puede ser yay, paru, o otro
-LOG_FILE="/var/log/driver-installer.log"
+LOG_FILE="$HOME/driver-installer.log"  # Cambiamos la ubicación del log
 
 # Colores
 COLOR_VERDE="\e[32m"
@@ -19,6 +19,15 @@ MACBOOK_DETECTED=0
 # Función para registrar eventos en el log
 registrar_log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+# Instalar dependencias necesarias
+instalar_dependencias_basicas() {
+    echo -e "${COLOR_AZUL}Instalando dependencias básicas...${COLOR_RESET}"
+    sudo pacman -S --noconfirm dmidecode lshw pciutils usbutils || {
+        echo -e "${COLOR_ROJO}Error al instalar dependencias básicas.${COLOR_RESET}"
+        exit 1
+    }
 }
 
 # Escaneo completo de hardware (incluyendo Apple)
@@ -211,6 +220,7 @@ mostrar_resumen() {
 
 # Función principal
 main() {
+    instalar_dependencias_basicas
     escanear_hardware
     detectar_macbook_drivers
     detectar_drivers_comunes
