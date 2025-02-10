@@ -53,7 +53,7 @@ trap 'manejar_error ${LINENO} "$BASH_COMMAND"' ERR
 verificar_subvolumenes() {
     log "INFO" "🔍 Verificando estructura de subvolúmenes..."
 
-    local subvolumenes=("@home" "@.snapshots" "@log" "@pkgs")
+    local subvolumenes=("@home" "@.snapshots" "@log" "@pkg")
     local dispositivo_raiz=$(findmnt / -o SOURCE -n | sed 's/\[.*\]//')
 
     # Crear directorio temporal
@@ -264,4 +264,4 @@ main() {
 }
 
 main "$@"
-#update21
+#update22
