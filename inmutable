@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
-# Script para transformar Arch Linux en un sistema inmutable con actualizaciones transaccionales utilizando systemd-boot
+# Script para transformar Arch Linux en un
+# sistema inmutable con actualizaciones
+# transaccionales utilizando systemd-boot
+# Adaptado para instalaciones con archinstall
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxinmutable)
-# Fecha de actualización: 10/02/2025
-# Versión: 0.3
-
+# Ejecución: bash <(curl -L tinyurl.com/mxinmutable)
+# Fecha de actualización: 09/02/2025
+# Versión: 1.0
 
 # Limpiamos la pantalla al inicio
 clear
@@ -42,6 +44,27 @@ error() {
 }
 
 #####################
+# Obtener nombre de usuario
+#####################
+obtener_usuario() {
+    # Obtener el nombre de usuario real que ejecutó el script
+    if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+        USERNAME="$SUDO_USER"
+    else
+        USERNAME=$(logname 2>/dev/null)
+        if [ -z "$USERNAME" ]; then
+            USERNAME=$(who | awk '{print $1}' | head -n1)
+        fi
+    fi
+
+    if [ -z "$USERNAME" ] || [ "$USERNAME" == "root" ]; then
+        error "No se pudo determinar el nombre de usuario no root. Por favor, ejecuta este script con 'sudo' desde tu usuario regular."
+    else
+        exito "Nombre de usuario obtenido: $USERNAME"
+    fi
+}
+
+#####################
 # Verificar si es root
 #####################
 verificar_root() {
@@ -69,13 +92,13 @@ instalar_paquetes() {
 
     # Lista de paquetes necesarios
     paquetes=(
-        "btrfs-progs"      # Soporte para Btrfs
-        "snapper"          # Gestión de snapshots
-        "snap-pac"         # Integración de Snapper con pacman
-        "dracut"           # Generador de initramfs
-        "rollback-trigger" # Manejo de rollbacks
-        "haveged"          # Generador de entropía
-        "systemd-boot"     # Bootloader systemd-boot
+        "btrfs-progs"
+        "snapper"
+        "snap-pac"
+        "dracut"
+        "haveged"
+        "efibootmgr"
+        "dosfstools"
     )
 
     # Actualizar la lista de paquetes
@@ -106,108 +129,44 @@ comprobar_conexion() {
 }
 
 #####################
-# Configurar sistema de archivos Btrfs
-#####################
-configurar_btrfs() {
-    info "Configurando sistema de archivos Btrfs..."
-
-    # Verificar si la raíz es Btrfs
-    if findmnt -n -o FSTYPE / | grep -q btrfs; then
-        exito "El sistema de archivos raíz es Btrfs."
-    else
-        error "El sistema de archivos raíz no es Btrfs. Se requiere Btrfs para continuar."
-    fi
-
-    # Obtener dispositivo de la raíz
-    DEVICE=$(findmnt -n -o SOURCE /)
-    UUID=$(blkid -s UUID -o value "$DEVICE")
-
-    # Montar la raíz en subvolid=0 temporalmente
-    mkdir -p /mnt/btrfs_root
-    mount -o subvolid=0 "$DEVICE" /mnt/btrfs_root || error "No se pudo montar la raíz en /mnt/btrfs_root."
-
-    # Crear subvolúmenes si no existen
-    subvolumes=("@" "@home" "@snapshots")
-
-    for subvol in "${subvolumes[@]}"; do
-        if [ ! -d "/mnt/btrfs_root/$subvol" ]; then
-            info "Creando subvolumen $subvol..."
-            btrfs subvolume create "/mnt/btrfs_root/$subvol" || error "No se pudo crear el subvolumen $subvol."
-            exito "Subvolumen $subvol creado."
-        else
-            advertencia "El subvolumen $subvol ya existe."
-        fi
-    done
-
-    # Mover datos existentes a los nuevos subvolúmenes
-    info "Moviendo datos a los nuevos subvolúmenes..."
-
-    # Mover raíz al subvolumen @
-    rsync -aAXv --exclude={"/mnt/*","/proc/*","/sys/*","/tmp/*","/dev/*","/run/*","/media/*","/lost+found","/home","/.snapshots"} /* /mnt/btrfs_root/@/ || error "Fallo al mover datos a @."
-
-    # Mover /home al subvolumen @home
-    if [ -d "/home" ]; then
-        rsync -aAXv /home/ /mnt/btrfs_root/@home/ || error "Fallo al mover /home a @home."
-    fi
-
-    # Crear directorio .snapshots en @
-    mkdir -p /mnt/btrfs_root/@/.snapshots
-
-    # Desmontar y volver a montar con los subvolúmenes
-    umount /mnt/btrfs_root
-
-    # Realizar copia de seguridad de /etc/fstab
-    cp /etc/fstab /etc/fstab.bak
-
-    # Actualizar /etc/fstab
-    info "Actualizando /etc/fstab..."
-    cat << EOF > /etc/fstab
-UUID=$UUID /          btrfs subvol=@,defaults,noatime,compress=zstd 0 1
-UUID=$UUID /home      btrfs subvol=@home,defaults,noatime,compress=zstd 0 2
-UUID=$UUID /.snapshots btrfs subvol=@/.snapshots,defaults,noatime,compress=zstd 0 2
-tmpfs       /tmp      tmpfs defaults,noatime,mode=1777 0 0
-EOF
-
-    exito "/etc/fstab actualizado."
-
-    # Re-montar el sistema de archivos
-    info "Re-montando el sistema de archivos con los nuevos subvolúmenes..."
-    mount -a || error "Fallo al montar los nuevos subvolúmenes."
-
-    exito "Sistema de archivos Btrfs configurado correctamente."
-}
-
-#####################
 # Configurar Snapper
 #####################
 configurar_snapper() {
     info "Configurando Snapper..."
 
-    # Obtener nombre de usuario actual
-    USERNAME=$(logname)
-
-    # Crear configuración para root
-    if ! snapper -c root list-configs &>/dev/null; then
-        snapper -c root create-config / || error "No se pudo crear la configuración de Snapper para root."
-        exito "Configuración de Snapper para root creada."
+    # Verificar si /.snapshots es un subvolumen
+    if btrfs subvolume show /.snapshots &> /dev/null; then
+        exito "El subvolumen /.snapshots ya existe."
     else
-        advertencia "La configuración de Snapper para root ya existe."
+        error "El directorio /.snapshots existe pero no es un subvolumen. Por favor, conviértelo en subvolumen antes de continuar."
     fi
 
     # Establecer permisos adecuados
-    mkdir -p /.snapshots
     chmod 750 /.snapshots
     chown :root /.snapshots
 
-    # Configurar Snapper
-    sed -i "s|^ALLOW_USERS=\"\"|ALLOW_USERS=\"$USERNAME\"|" /etc/snapper/configs/root
-    sed -i 's|^TIMELINE_CREATE="no"|TIMELINE_CREATE="yes"|' /etc/snapper/configs/root
-    sed -i 's|^NUMBER_CLEANUP="no"|NUMBER_CLEANUP="yes"|' /etc/snapper/configs/root
-    sed -i 's|^TIMELINE_CLEANUP="no"|TIMELINE_CLEANUP="yes"|' /etc/snapper/configs/root
-    sed -i 's|^TIMELINE_LIMIT_HOURLY="10"|TIMELINE_LIMIT_HOURLY="10"|' /etc/snapper/configs/root
-    sed -i 's|^TIMELINE_LIMIT_DAILY="10"|TIMELINE_LIMIT_DAILY="10"|' /etc/snapper/configs/root
-    sed -i 's|^TIMELINE_LIMIT_MONTHLY="10"|TIMELINE_LIMIT_MONTHLY="10"|' /etc/snapper/configs/root
-    sed -i 's|^TIMELINE_LIMIT_YEARLY="10"|TIMELINE_LIMIT_YEARLY="10"|' /etc/snapper/configs/root
+    # Crear configuración para root si no existe
+    if [ ! -f /etc/snapper/configs/root ]; then
+        info "Creando configuración de Snapper para root..."
+        cp -a /usr/share/snapper/config-templates/default /etc/snapper/configs/root || error "No se pudo copiar la plantilla de configuración de Snapper."
+        exito "Configuración de Snapper copiada desde la plantilla."
+
+        # Especificar manualmente el directorio de snapshots
+        sed -i 's|^SNAPSHOT_ROOT=".*"|SNAPSHOT_ROOT="/.snapshots"|' /etc/snapper/configs/root
+
+        # Configurar Snapper
+        sed -i "s|^ALLOW_USERS=\".*\"|ALLOW_USERS=\"$USERNAME\"|" /etc/snapper/configs/root
+        sed -i 's|^TIMELINE_CREATE="no"|TIMELINE_CREATE="yes"|' /etc/snapper/configs/root
+        sed -i 's|^TIMELINE_CLEANUP="no"|TIMELINE_CLEANUP="yes"|' /etc/snapper/configs/root
+        sed -i 's|^TIMELINE_LIMIT_HOURLY="10"|TIMELINE_LIMIT_HOURLY="10"|' /etc/snapper/configs/root
+        sed -i 's|^TIMELINE_LIMIT_DAILY="10"|TIMELINE_LIMIT_DAILY="10"|' /etc/snapper/configs/root
+        sed -i 's|^TIMELINE_LIMIT_MONTHLY="10"|TIMELINE_LIMIT_MONTHLY="10"|' /etc/snapper/configs/root
+        sed -i 's|^TIMELINE_LIMIT_YEARLY="10"|TIMELINE_LIMIT_YEARLY="10"|' /etc/snapper/configs/root
+
+        exito "Configuración de Snapper para root creada y ajustada."
+    else
+        advertencia "La configuración de Snapper para root ya existe."
+    fi
 
     # Habilitar y arrancar servicios y timers
     systemctl enable --now snapper-timeline.timer snapper-cleanup.timer || error "No se pudieron habilitar los timers de Snapper."
@@ -225,78 +184,39 @@ configurar_snapper() {
 configurar_systemd_boot() {
     info "Configurando systemd-boot..."
 
-    # Instalar systemd-boot (si no está instalado)
+    # Instalar systemd-boot
     bootctl install || error "No se pudo instalar systemd-boot."
 
-    # Crear script para actualizar entradas de arranque con snapshots
-    info "Creando script para actualizar entradas de systemd-boot con snapshots..."
+    # Obtener el UUID del sistema de archivos Btrfs
+    BTRFS_UUID=$(findmnt -no UUID -T /)
+    if [ -z "$BTRFS_UUID" ]; then
+        error "No se pudo obtener el UUID del sistema de archivos Btrfs."
+    else
+        exito "UUID del sistema de archivos Btrfs: $BTRFS_UUID"
+    fi
 
-    cat << 'EOF' > /usr/local/bin/update-boot-entries
-#!/usr/bin/env bash
+    # Crear entrada de arranque para el sistema actual
+    info "Creando entrada de arranque para el sistema actual..."
 
-# Script para generar entradas de systemd-boot para snapshots de Snapper
-
-SNAPPER_CONFIG="root"
-BOOT_DIR="/boot"
-SNAPSHOT_DIR="/.snapshots"
-
-for SNAPSHOT in $(ls "$SNAPSHOT_DIR"); do
-    SNAPSHOT_NUM=$(basename "$SNAPSHOT")
-    SNAPSHOT_SUBVOL="${SNAPSHOT_DIR}/${SNAPSHOT}/snapshot"
-
-    ENTRY_NAME="snapshot-${SNAPSHOT_NUM}.conf"
-    ENTRY_PATH="${BOOT_DIR}/loader/entries/${ENTRY_NAME}"
-
-    if [ ! -f "$ENTRY_PATH" ]; then
-        echo "Creando entrada de arranque para snapshot $SNAPSHOT_NUM..."
-
-        cat << EOL > "$ENTRY_PATH"
-title   Arch Linux (Snapshot ${SNAPSHOT_NUM})
+    cat << EOF > /boot/loader/entries/arch.conf
+title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
-options root=UUID=$(blkid -s UUID -o value $(findmnt -no SOURCE /)) rw rootflags=subvol=${SNAPSHOT_SUBVOL} quiet splash
-EOL
-    fi
-done
+options root=UUID=$BTRFS_UUID rw rootflags=subvol=@ quiet splash
 EOF
 
-    chmod +x /usr/local/bin/update-boot-entries || error "No se pudo establecer permisos ejecutables."
-    exito "Script de actualización de entradas de systemd-boot creado."
+    exito "Entrada de arranque creada."
 
-    # Ejecutar el script por primera vez
-    /usr/local/bin/update-boot-entries || error "No se pudo actualizar las entradas de systemd-boot."
+    # Configurar el loader
+    info "Configurando loader de systemd-boot..."
 
-    # Crear servicio para actualizar las entradas automáticamente
-    info "Creando servicio systemd para actualizar entradas de systemd-boot..."
-
-    cat << EOF > /etc/systemd/system/update-boot-entries.service
-[Unit]
-Description=Actualizar entradas de systemd-boot con snapshots de Snapper
-After=snapper-cleanup.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/update-boot-entries
+    cat << EOF > /boot/loader/loader.conf
+default arch.conf
+timeout 5
+editor  no
 EOF
 
-    # Crear timer para ejecutar el servicio después de los snapshots
-    cat << EOF > /etc/systemd/system/update-boot-entries.timer
-[Unit]
-Description=Timer para ejecutar update-boot-entries después de Snapper
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=15min
-
-[Install]
-WantedBy=timers.target
-EOF
-
-    # Habilitar el timer
-    systemctl enable --now update-boot-entries.timer || error "No se pudo habilitar el timer para update-boot-entries."
-    exito "Servicio y timer para actualizar entradas de systemd-boot creados y habilitados."
-
-    exito "Configuración de systemd-boot completada."
+    exito "Loader de systemd-boot configurado."
 }
 
 #####################
@@ -309,7 +229,6 @@ crear_script_actualizacion() {
 #!/usr/bin/env bash
 
 # Script para actualizaciones transaccionales
-# Crea un snapshot antes de actualizar y permite rollback en caso de fallo
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -317,24 +236,38 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 echo -e "${CYAN}[INFO]${NC} Creando snapshot antes de actualizar..."
-snapper -c root create --type pre --description "Antes de actualización" || { echo -e "${RED}[ERROR]${NC} Fallo al crear snapshot."; exit 1; }
-
-pre_number=$(snapper -c root list | tail -n1 | awk '{print $1}')
+pre_number=$(snapper -c root create --type pre --print-number --description "Antes de actualización") || { echo -e "${RED}[ERROR]${NC} Fallo al crear snapshot."; exit 1; }
 
 echo -e "${CYAN}[INFO]${NC} Actualizando el sistema..."
 if ! pacman -Syu --noconfirm; then
     echo -e "${RED}[ERROR]${NC} Fallo en la actualización."
     echo -e "${CYAN}[INFO]${NC} Revirtiendo cambios..."
-    snapper -c root undochange $pre_number..0
+    snapper -c root undochange "$pre_number"..0
     exit 1
 else
     echo -e "${GREEN}[ÉXITO]${NC} Actualización exitosa."
     echo -e "${CYAN}[INFO]${NC} Creando snapshot después de actualizar..."
-    snapper -c root create --type post --pre-number "$pre_number" --description "Después de actualización"
+    post_number=$(snapper -c root create --type post --pre-number "$pre_number" --description "Después de actualización" --print-number)
 
-    # Actualizar entradas de systemd-boot
-    echo -e "${CYAN}[INFO]${NC} Actualizando entradas de systemd-boot..."
-    /usr/local/bin/update-boot-entries
+    # Crear nueva entrada de arranque para el snapshot
+    echo -e "${CYAN}[INFO]${NC} Creando entrada de arranque para el snapshot $post_number..."
+    SNAPSHOT_SUBVOL="@/.snapshots/$post_number/snapshot"
+
+    # Obtener UUID del sistema de archivos Btrfs
+    BTRFS_UUID=$(findmnt -no UUID -T /)
+    if [ -z "$BTRFS_UUID" ]; then
+        echo -e "${RED}[ERROR]${NC} No se pudo obtener el UUID del sistema de archivos Btrfs."
+        exit 1
+    fi
+
+    cat << EOL > "/boot/loader/entries/arch-snapshot-$post_number.conf"
+title   Arch Linux (Snapshot $post_number)
+linux   /vmlinuz-linux
+initrd  /initramfs-linux.img
+options root=UUID=$BTRFS_UUID rw rootflags=subvol=$SNAPSHOT_SUBVOL quiet splash
+EOL
+
+    echo -e "${GREEN}[ÉXITO]${NC} Entrada de arranque para el snapshot $post_number creada."
 fi
 EOF
 
@@ -351,7 +284,6 @@ establecer_inmutable() {
     # Lista de directorios para establecer inmutabilidad
     inmutables=(
         "/usr"
-        "/boot"
         "/etc"
         # Puedes agregar más directorios si es necesario
     )
@@ -395,11 +327,25 @@ echo -e "${CYAN}[INFO]${NC} Realizando rollback al snapshot $snapshot_id..."
 
 snapper -c root rollback "$snapshot_id" || { echo -e "${RED}[ERROR]${NC} Fallo al realizar rollback."; exit 1; }
 
-# Actualizar entradas de systemd-boot
-echo -e "${CYAN}[INFO]${NC} Actualizando entradas de systemd-boot..."
-/usr/local/bin/update-boot-entries
+# Crear entrada de arranque para el snapshot
+echo -e "${CYAN}[INFO]${NC} Creando entrada de arranque para el snapshot $snapshot_id..."
+SNAPSHOT_SUBVOL="@/.snapshots/$snapshot_id/snapshot"
 
-echo -e "${GREEN}[ÉXITO]${NC} Sistema revertido al snapshot $snapshot_id."
+# Obtener UUID del sistema de archivos Btrfs
+BTRFS_UUID=$(findmnt -no UUID -T /)
+if [ -z "$BTRFS_UUID" ]; then
+    echo -e "${RED}[ERROR]${NC} No se pudo obtener el UUID del sistema de archivos Btrfs."
+    exit 1
+fi
+
+cat << EOL > "/boot/loader/entries/arch-snapshot-$snapshot_id.conf"
+title   Arch Linux (Snapshot $snapshot_id)
+linux   /vmlinuz-linux
+initrd  /initramfs-linux.img
+options root=UUID=$BTRFS_UUID rw rootflags=subvol=$SNAPSHOT_SUBVOL quiet splash
+EOL
+
+echo -e "${GREEN}[ÉXITO]${NC} Entrada de arranque para el snapshot $snapshot_id creada."
 echo -e "${YELLOW}[ADVERTENCIA]${NC} Reinicie el sistema para aplicar los cambios."
 EOF
 
@@ -411,12 +357,11 @@ EOF
 # Función principal
 #####################
 main() {
-    clear
     verificar_root
+    obtener_usuario
     comprobar_conexion
     actualizar_sistema
     instalar_paquetes
-    configurar_btrfs
     configurar_snapper
     configurar_systemd_boot
     crear_script_actualizacion
@@ -428,4 +373,4 @@ main() {
 
 # Ejecutar función principal
 main
-#test2
+#test10
