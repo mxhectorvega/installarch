@@ -1,76 +1,230 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Comentario: Obteniendo variables de entorno del sistema anfitrión
-echo "🟢 Obteniendo variables de entorno del sistema..."
-source /etc/environment
+# Colores para mensajes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # Sin color
 
-# Comentario: Configurando Snapper para los subvolúmenes @, @home
-echo "🟢 Configurando Snapper para los subvolúmenes @, @home..."
-snapper -c root create-config /
-snapper -c home create-config /home
+# Configuración global ajustada a estructura archinstall
+LOG_FILE="/var/log/transactional-update.log"
+BOOT_ENTRY="/boot/loader/entries/arch.conf"
+SNAPPER_CONFIG="root"
+SNAPSHOT_MOUNT="/mnt/snapshot"
+CURRENT_ROOT_SUBVOL="@"
 
-# Comentario: Configurando SystemdBoot
-echo "🟢 Configurando SystemdBoot..."
-bootctl --path=/boot install
-cat << EOF > /boot/loader/loader.conf
-default arch-latest
-timeout 3
-editor no
-EOF
+# Subvolúmenes específicos de archinstall
+SUBVOLUMES=(
+    "@/@.snapshots"
+    "@/@home"
+    "@/@log"
+    "@/@pkg"
+)
 
-cat << EOF > /boot/loader/entries/arch.conf
-title Arch Linux
-linux /vmlinuz-linux
-initrd /initramfs-linux.img
-options root=UUID=$(findmx PARTUUID / btrfs) rw rootflags=subvol=@
-EOF
+# Inicialización de logging
+init_logging() {
+    exec > >(tee -a "${LOG_FILE}") 2>&1
+    echo -e "${BLUE}== Registro de ejecución iniciado: $(date) ==${NC}"
+    echo -e "${YELLOW}Estructura de subvolúmenes detectada:${NC}"
+    btrfs subvolume list -p / | awk '{print "  "$NF}'
+}
 
-# Comentario: Configurando Timers y Servicios de Snapper
-echo "🟢 Configurando Timers y Servicios de Snapper..."
-systemctl enable --now snapper-timeline.timer
-systemctl enable --now snapper-cleanup.timer
+# Función para salida controlada
+clean_exit() {
+    local exit_code=$1
+    echo -e "${BLUE}== Limpieza final ==${NC}"
+    sync
+    umount -R "${SNAPSHOT_MOUNT}" 2>/dev/null
+    echo -e "${BLUE}== Registro disponible en: ${LOG_FILE} ==${NC}"
+    exit "${exit_code}"
+}
 
-# Comentario: Creando servicio de actualización transaccional
-echo "🟢 Creando servicio de actualización transaccional..."
-cat << EOF > /etc/systemd/system/transactional-update.service
-[Unit]
-Description=Transactional Updates
-After=network-online.target
-Wants=network-online.target
+# Verificar dependencias
+check_dependencies() {
+    local -a dependencies=("btrfs-progs" "snapper" "pacman-contrib" "systemd")
+    local missing=()
 
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/transactional-update.sh
+    echo -e "${YELLOW}Verificando dependencias...${NC}"
+    for dep in "${dependencies[@]}"; do
+        if ! pacman -Qi "${dep}" &>/dev/null; then
+            missing+=("${dep}")
+        fi
+    done
 
-[Install]
-WantedBy=multi-user.target
-EOF
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo -e "${YELLOW}Instalando dependencias faltantes: ${missing[*]}${NC}"
+        if ! pacman -Sy --noconfirm --needed "${missing[@]}"; then
+            echo -e "${RED}Error crítico: Fallo al instalar dependencias${NC}"
+            return 1
+        fi
+    fi
+}
 
-cat << EOF > /usr/local/bin/transactional-update.sh
-#!/bin/bash
+# Configurar Snapper con estructura archinstall
+configure_snapper() {
+    echo -e "${YELLOW}Configurando Snapper para subvolumen @.snapshots...${NC}"
+    if ! snapper list-configs | grep -q "${SNAPPER_CONFIG}"; then
+        snapper -v create-config --fstype btrfs --template simple "/" || {
+            echo -e "${RED}Error: No se pudo crear configuración de Snapper${NC}"
+            return 1
+        }
+        # Optimizar política de snapshots
+        sed -i '/^TIMELINE_LIMIT_/d' /etc/snapper/configs/root
+        echo -e "TIMELINE_LIMIT_HOURLY=\"0\"\nTIMELINE_LIMIT_DAILY=\"7\"\nTIMELINE_LIMIT_WEEKLY=\"4\"" >> /etc/snapper/configs/root
+        systemctl enable --now snapper-timeline.timer snapper-cleanup.timer
+    fi
+}
 
-# Comentario: Actualizando el sistema
-echo "🟢 Actualizando el sistema..."
-pacman -Syu --noconfirm
+# Crear nueva entrada en systemd-boot
+create_boot_entry() {
+    local snapshot_path=$1
+    echo -e "${YELLOW}Actualizando entrada de systemd-boot...${NC}"
 
-# Comentario: Creando instantáneas de Snapper
-echo "🟢 Creando instantáneas de Snapper..."
-snapper -c root create --description "System Update"
-snapper -c home create --description "System Update"
+    local root_device
+    root_device=$(findmnt -n -o SOURCE / | sed 's/\[.*\]//')
 
-# Comentario: Reiniciando el sistema
-echo "🟢 Reiniciando el sistema..."
-systemctl reboot
-EOF
+    cat <<- EOF > "${BOOT_ENTRY}.new"
+        title Arch Linux (Actualización Transaccional)
+        linux /vmlinuz-linux
+        initrd /initramfs-linux.img
+        options root="${root_device}" rootflags=subvol=${snapshot_path} rw
+    EOF
 
-# Comentario: Dando permisos de ejecución al script de actualización
-echo "🟢 Dando permisos de ejecución al script de actualización..."
-chmod +x /usr/local/bin/transactional-update.sh
+    mv "${BOOT_ENTRY}.new" "${BOOT_ENTRY}" || {
+        echo -e "${RED}Error crítico: Fallo al actualizar entrada de boot${NC}"
+        return 1
+    }
+}
 
-# Comentario: Habilitando y activando el servicio de actualización transaccional
-echo "🟢 Habilitando y activando el servicio de actualización transaccional..."
-systemctl enable --now transactional-update.service
+# Montar estructura completa para transacción
+mount_snapshot_environment() {
+    echo -e "${YELLOW}Montando entorno transaccional...${NC}"
+    mkdir -p "${SNAPSHOT_MOUNT}"
 
-# Comentario: Proceso completado
-echo "🟢 Proceso completado. El sistema ahora tiene actualizaciones transaccionales integradas."
-#test1
+    # Montar subvolumen raíz
+    mount -o subvol="${1}" /dev/mapper/archvg-root "${SNAPSHOT_MOUNT}" || return 1
+
+    # Montar subvolúmenes específicos
+    mount --bind /home "${SNAPSHOT_MOUNT}/home" || return 1     # @home
+    mount --bind /var/log "${SNAPSHOT_MOUNT}/var/log" || return 1  # @log
+    mount --bind /var/cache/pacman/pkg "${SNAPSHOT_MOUNT}/var/cache/pacman/pkg" || return 1  # @pkg
+
+    # Montar sistemas de archivos virtuales
+    mount -t proc proc "${SNAPSHOT_MOUNT}/proc" || return 1
+    mount -t sysfs sys "${SNAPSHOT_MOUNT}/sys" || return 1
+    mount -t devtmpfs dev "${SNAPSHOT_MOUNT}/dev" || return 1
+}
+
+# Proceso de actualización transaccional
+transactional_update() {
+    echo -e "${BLUE}== Iniciando actualización transaccional ==${NC}"
+
+    # Crear snapshot pre-update
+    local pre_snapshot
+    pre_snapshot=$(snapper -v create -t pre --cleanup-algorithm=number --description "Pre_Update_$(date +%Y%m%d)" | awk '/#/{print $2}') || {
+        echo -e "${RED}Error: Fallo al crear snapshot previo${NC}"
+        return 1
+    }
+
+    # Crear snapshot de trabajo
+    local work_snapshot="@.snapshots/${pre_snapshot}/snapshot"
+    local new_snapshot_path="@.snapshots/${pre_snapshot}_transactional"
+
+    btrfs subvolume snapshot -r "${work_snapshot}" "${new_snapshot_path}" || {
+        echo -e "${RED}Error: Fallo al crear snapshot de trabajo${NC}"
+        return 1
+    }
+
+    # Montar entorno completo
+    mount_snapshot_environment "${new_snapshot_path}" || {
+        echo -e "${RED}Error: Fallo al montar entorno transaccional${NC}"
+        return 1
+    }
+
+    # Ejecutar actualización en entorno aislado
+    echo -e "${YELLOW}Ejecutando actualización del sistema...${NC}"
+    chroot "${SNAPSHOT_MOUNT}" /bin/bash -c \
+        "pacman -Syu --noconfirm && paccache -rk1 && kernel-install -v all $(ls /usr/lib/modules)" || {
+        echo -e "${RED}Error crítico: Fallo durante la actualización${NC}"
+        return 1
+    }
+
+    # Crear snapshot post-update
+    snapper -v create -t post --pre-number "${pre_snapshot}" --description "Post_Update_$(date +%Y%m%d)" --cleanup-algorithm=number || {
+        echo -e "${YELLOW}Advertencia: No se pudo crear snapshot post-update${NC}"
+    }
+
+    # Actualizar entrada de boot
+    create_boot_entry "${new_snapshot_path}" || return 1
+
+    echo -e "${GREEN}¡Actualización transaccional completada con éxito!${NC}"
+    echo -e "${YELLOW}Nueva entrada de boot: ${new_snapshot_path}${NC}"
+}
+
+# Configurar servicio systemd
+setup_systemd_units() {
+    echo -e "${YELLOW}Configurando unidades systemd...${NC}"
+
+    cat <<- EOF > /etc/systemd/system/transactional-update.service
+        [Unit]
+        Description=Transactional System Update
+        After=network-online.target
+        RequiresMountsFor=/var/cache/pacman/pkg /var/log
+
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/local/bin/transactional-update
+        ProtectSystem=strict
+        ProtectControlGroups=yes
+        ProtectKernelTunables=yes
+    EOF
+
+    cat <<- EOF > /etc/systemd/system/transactional-update.timer
+        [Unit]
+        Description=Actualizaciones Transaccionales Diarias
+
+        [Timer]
+        OnCalendar=daily
+        Persistent=true
+        RandomizedDelaySec=1h
+
+        [Install]
+        WantedBy=timers.target
+    EOF
+
+    systemctl daemon-reload
+    systemctl enable --now transactional-update.timer
+}
+
+# Función principal
+main() {
+    [[ $EUID -ne 0 ]] && {
+        echo -e "${RED}Este script debe ejecutarse como root${NC}"
+        exit 1
+    }
+
+    init_logging
+    check_dependencies || clean_exit 1
+    configure_snapper || clean_exit 1
+
+    # Instalar script en sistema
+    if ! cmp -s "$0" "/usr/local/bin/transactional-update"; then
+        cp -v "$0" "/usr/local/bin/transactional-update"
+        chmod +x "/usr/local/bin/transactional-update"
+    fi
+
+    [[ ! -f "/etc/systemd/system/transactional-update.timer" ]] && setup_systemd_units
+
+    transactional_update || {
+        echo -e "${RED}¡Fallo en la actualización! Realizando rollback...${NC}"
+        snapper undochange "${pre_snapshot}"-
+        btrfs subvolume delete "${new_snapshot_path}"
+        clean_exit 1
+    }
+
+    clean_exit 0
+}
+
+main
+#test11
