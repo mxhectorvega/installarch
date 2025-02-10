@@ -89,63 +89,49 @@ install_dependencies() {
 # Configuración de Snapper
 configure_snapper() {
     log "INFO" "Configurando Snapper..."
-
-    # Obtener el dispositivo raíz
     local root_dev=$(findmnt / -o SOURCE -n | sed 's/\[.*\]//;s/ //')
-    if [ -z "$root_dev" ]; then
-        log "ERROR" "No se pudo detectar el dispositivo raíz."
-        return 1
-    fi
+    local subvol_path="/.snapshots"
 
-    # Verificar si el subvolumen .snapshots ya existe
-    if btrfs subvolume list / | grep -q "path \.snapshots$"; then
-        log "ADVERTENCIA" "Subvolumen .snapshots existente detectado. Intentando eliminar..."
-        if ! btrfs subvolume delete /.snapshots; then
-            log "ERROR" "No se pudo eliminar el subvolumen .snapshots. Verifica si está en uso."
-            return 1
+    # Manejar subvolumen existente
+    if btrfs subvolume list / | grep -q "path ${subvol_path}$"; then
+        log "ADVERTENCIA" "Subvolumen existente detectado"
+
+        mkdir -p /mnt/root
+        log "INFO" "Montando ${root_dev}..."
+        mount -t btrfs -o noatime,compress=zstd "${root_dev}" /mnt/root
+
+        if [ -d "/mnt/root/${subvol_path}" ]; then
+            log "ADVERTENCIA" "Eliminando subvolumen..."
+            btrfs subvolume delete "/mnt/root/${subvol_path}" | tee -a "$LOG_FILE"
+            sync
         fi
+
+        log "INFO" "Creando nuevo subvolumen..."
+        btrfs subvolume create "/mnt/root/${subvol_path}" | tee -a "$LOG_FILE"
+
+        umount /mnt/root
+        rm -rf /mnt/root
     fi
 
-    # Crear el subvolumen .snapshots
-    log "INFO" "Creando subvolumen .snapshots..."
-    if ! btrfs subvolume create /.snapshots; then
-        log "ERROR" "No se pudo crear el subvolumen .snapshots."
-        return 1
-    fi
-
-    # Eliminar configuración previa de Snapper
+    # Eliminar configuración previa
     if snapper list-configs | grep -q "root"; then
-        log "ADVERTENCIA" "Eliminando configuración antigua de Snapper..."
-        if ! snapper -c root delete-config; then
-            log "ERROR" "No se pudo eliminar la configuración antigua de Snapper."
-            return 1
-        fi
+        log "ADVERTENCIA" "Eliminando configuración antigua..."
+        snapper -c root delete-config | tee -a "$LOG_FILE"
     fi
 
-    # Crear nueva configuración de Snapper
-    log "INFO" "Creando nueva configuración de Snapper..."
-    if ! snapper -c root create-config -f btrfs /; then
-        log "ERROR" "No se pudo crear la configuración de Snapper."
-        return 1
-    fi
+    # Nueva configuración
+    log "INFO" "Creando configuración Snapper..."
+    snapper -c root create-config -f btrfs / | tee -a "$LOG_FILE"
 
-    # Ajustar configuración de Snapper
-    log "INFO" "Ajustando configuración de Snapper..."
+    # Ajustes
     snapper -c root set-config \
         ALLOW_USERS=root \
         TIMELINE_LIMIT_HOURLY="5" \
-        TIMELINE_LIMIT_DAILY="7"
+        TIMELINE_LIMIT_DAILY="7" | tee -a "$LOG_FILE"
 
-    # Ajustar permisos del subvolumen .snapshots
-    log "INFO" "Ajustando permisos del subvolumen .snapshots..."
     chmod 750 /.snapshots
-    chown root:root /.snapshots
-
-    # Habilitar servicios de Snapper
-    log "INFO" "Habilitando servicios de Snapper..."
+    chown :wheel /.snapshots
     systemctl enable --now snapper-timeline.timer snapper-cleanup.timer
-
-    log "INFO" "Configuración de Snapper completada exitosamente."
 }
 
 # Actualizaciones transaccionales
@@ -301,4 +287,4 @@ main() {
 }
 
 main "$@"
-#update17
+#update18
