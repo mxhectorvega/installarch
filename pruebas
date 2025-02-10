@@ -1,213 +1,76 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# Script para implementar actualizaciones transaccionales en Arch Linux
-# Versión 1.0
+# Comentario: Obteniendo variables de entorno del sistema anfitrión
+echo "🟢 Obteniendo variables de entorno del sistema..."
+source /etc/environment
 
-set -euo pipefail
+# Comentario: Configurando Snapper para los subvolúmenes @, @home
+echo "🟢 Configurando Snapper para los subvolúmenes @, @home..."
+snapper -c root create-config /
+snapper -c home create-config /home
 
-# Colores
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-# Funciones de log
-log() { echo -e "${BLUE}[INFO]${NC} $1"; }
-success() { echo -e "${GREEN}[OK]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
-
-# Verificar root
-[[ $EUID -ne 0 ]] && error "Este script requiere privilegios root"
-
-# Verificar sistema de archivos BTRFS
-[[ $(findmnt -no FSTYPE /) != "btrfs" ]] && error "Se requiere sistema de archivos BTRFS en /"
-
-# Obtener usuario real
-REAL_USER=$(logname || who | awk '{print $1}' | head -n1)
-[[ -z "$REAL_USER" ]] && error "No se pudo determinar el usuario real"
-
-# Verificar conexión a internet
-ping -c 1 archlinux.org &>/dev/null || error "Sin conexión a internet"
-
-# Instalar dependencias
-log "Instalando dependencias..."
-pacman -Sy --needed --noconfirm \
-    btrfs-progs snapper snap-pac grub-btrfs \
-    dracut haveged efibootmgr dosfstools \
-    arch-install-scripts pacman-contrib || error "Fallo al instalar dependencias"
-
-# Configurar Snapper
-configure_snapper() {
-    log "Configurando Snapper..."
-
-    # Ya que @.snapshots existe, solo verificamos permisos
-    chmod 750 /.snapshots
-    chown :root /.snapshots
-
-    # Crear configuración de snapper
-    if [[ ! -f /etc/snapper/configs/root ]]; then
-        # Usamos el subvolumen existente
-        snapper -c root create-config / || error "No se pudo crear la configuración de snapper"
-
-        sed -i -e "s|^ALLOW_USERS=.*|ALLOW_USERS=\"$REAL_USER\"|" \
-               -e 's|^TIMELINE_CREATE=.*|TIMELINE_CREATE="yes"|' \
-               -e 's|^TIMELINE_CLEANUP=.*|TIMELINE_CLEANUP="yes"|' \
-               -e 's|^TIMELINE_LIMIT_HOURLY=.*|TIMELINE_LIMIT_HOURLY="5"|' \
-               -e 's|^TIMELINE_LIMIT_DAILY=.*|TIMELINE_LIMIT_DAILY="7"|' \
-               -e 's|^TIMELINE_LIMIT_WEEKLY=.*|TIMELINE_LIMIT_WEEKLY="4"|' \
-               -e 's|^TIMELINE_LIMIT_MONTHLY=.*|TIMELINE_LIMIT_MONTHLY="6"|' \
-               /etc/snapper/configs/root
-    fi
-
-    systemctl enable --now snapper-timeline.timer snapper-cleanup.timer
-}
-
-# Configurar systemd-boot
-configure_boot() {
-    log "Configurando systemd-boot..."
-
-    bootctl install
-
-    BTRFS_UUID=$(findmnt -no UUID -T /)
-
-    # Entrada principal
-    cat > /boot/loader/entries/arch.conf << EOF
-title   Arch Linux
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options root=UUID=$BTRFS_UUID rw rootflags=subvol=@ quiet
+# Comentario: Configurando SystemdBoot
+echo "🟢 Configurando SystemdBoot..."
+bootctl --path=/boot install
+cat << EOF > /boot/loader/loader.conf
+default arch-latest
+timeout 3
+editor no
 EOF
 
-    # Entrada fallback
-    cat > /boot/loader/entries/arch-fallback.conf << EOF
-title   Arch Linux (Fallback)
-linux   /vmlinuz-linux
-initrd  /initramfs-linux-fallback.img
-options root=UUID=$BTRFS_UUID rw rootflags=subvol=@ quiet
+cat << EOF > /boot/loader/entries/arch.conf
+title Arch Linux
+linux /vmlinuz-linux
+initrd /initramfs-linux.img
+options root=UUID=$(findmx PARTUUID / btrfs) rw rootflags=subvol=@
 EOF
 
-    # Configuración del loader
-    cat > /boot/loader/loader.conf << EOF
-default arch.conf
-timeout 5
-editor  no
-EOF
-}
+# Comentario: Configurando Timers y Servicios de Snapper
+echo "🟢 Configurando Timers y Servicios de Snapper..."
+systemctl enable --now snapper-timeline.timer
+systemctl enable --now snapper-cleanup.timer
 
-# Crear script de actualización transaccional
-create_update_script() {
-    cat > /usr/local/bin/transactional-update << 'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
+# Comentario: Creando servicio de actualización transaccional
+echo "🟢 Creando servicio de actualización transaccional..."
+cat << EOF > /etc/systemd/system/transactional-update.service
+[Unit]
+Description=Transactional Updates
+After=network-online.target
+Wants=network-online.target
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/transactional-update.sh
 
-log() { echo -e "${BLUE}[INFO]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
-
-# Verificar espacio
-df_root=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
-[[ $df_root -gt 90 ]] && error "Espacio insuficiente en disco (${df_root}%)"
-
-# Verificar base de datos
-pacman -Qk &>/dev/null || error "Base de datos de pacman corrupta"
-
-# Crear snapshot pre-actualización
-log "Creando snapshot pre-actualización..."
-pre_num=$(snapper -c root create -t pre -p -d "Pre-actualización" --print-number)
-
-# Actualizar
-if ! pacman -Syu --noconfirm; then
-    log "Fallo en actualización, revirtiendo..."
-    snapper -c root undochange $pre_num..0
-    error "Actualización fallida"
-fi
-
-# Crear snapshot post-actualización
-post_num=$(snapper -c root create -t post -p -d "Post-actualización" --pre-number "$pre_num" --print-number)
-
-# Crear entrada de arranque
-BTRFS_UUID=$(findmnt -no UUID -T /)
-cat > "/boot/loader/entries/arch-snapshot-${post_num}.conf" << EOL
-title   Arch Linux (Snapshot ${post_num})
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options root=UUID=$BTRFS_UUID rw rootflags=subvol=@/.snapshots/${post_num}/snapshot quiet
-EOL
-
-# Limpiar snapshots antiguos
-snapper -c root list-configs | while read -r config; do
-    snapper -c "$config" delete $(snapper -c "$config" list --type single |
-        awk 'NR>3 {print $1}' | sort -n | head -n -5)
-done
-
-log "Actualización completada (snapshot ${post_num})"
+[Install]
+WantedBy=multi-user.target
 EOF
 
-    chmod +x /usr/local/bin/transactional-update
-}
+cat << EOF > /usr/local/bin/transactional-update.sh
+#!/bin/bash
 
-# Crear script de rollback
-create_rollback_script() {
-    cat > /usr/local/bin/system-rollback << 'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
+# Comentario: Actualizando el sistema
+echo "🟢 Actualizando el sistema..."
+pacman -Syu --noconfirm
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Comentario: Creando instantáneas de Snapper
+echo "🟢 Creando instantáneas de Snapper..."
+snapper -c root create --description "System Update"
+snapper -c home create --description "System Update"
 
-[[ $# -ne 1 ]] && echo "Uso: $0 <número-snapshot>" && exit 1
-
-snapshot_num="$1"
-log() { echo -e "${BLUE}[INFO]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
-
-# Verificar snapshot
-snapper -c root list "$snapshot_num" &>/dev/null || error "Snapshot $snapshot_num no existe"
-
-# Realizar rollback
-log "Realizando rollback a snapshot $snapshot_num..."
-snapper -c root rollback "$snapshot_num"
-
-# Crear entrada de arranque
-BTRFS_UUID=$(findmnt -no UUID -T /)
-cat > "/boot/loader/entries/arch-snapshot-${snapshot_num}.conf" << EOL
-title   Arch Linux (Snapshot ${snapshot_num})
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options root=UUID=$BTRFS_UUID rw rootflags=subvol=@/.snapshots/${snapshot_num}/snapshot quiet
-EOL
-
-log "Rollback completado. Reinicie el sistema."
+# Comentario: Reiniciando el sistema
+echo "🟢 Reiniciando el sistema..."
+systemctl reboot
 EOF
 
-    chmod +x /usr/local/bin/system-rollback
-}
+# Comentario: Dando permisos de ejecución al script de actualización
+echo "🟢 Dando permisos de ejecución al script de actualización..."
+chmod +x /usr/local/bin/transactional-update.sh
 
-# Ejecución principal
-main() {
-    clear
-    log "Iniciando configuración de sistema transaccional..."
+# Comentario: Habilitando y activando el servicio de actualización transaccional
+echo "🟢 Habilitando y activando el servicio de actualización transaccional..."
+systemctl enable --now transactional-update.service
 
-    configure_snapper
-    configure_boot
-    create_update_script
-    create_rollback_script
-
-    success "Configuración completada"
-    log "Comandos disponibles:"
-    echo "  - transactional-update : Realizar actualización del sistema"
-    echo "  - system-rollback : Revertir a un snapshot específico"
-    log "Reinicie el sistema para aplicar los cambios"
-}
-
-main
-#test3
+# Comentario: Proceso completado
+echo "🟢 Proceso completado. El sistema ahora tiene actualizaciones transaccionales integradas."
+#test1
