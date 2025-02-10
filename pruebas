@@ -1,0 +1,364 @@
+#!/usr/bin/env bash
+
+# ==============================================
+#  Script para transformar Arch Linux en un
+#  sistema inmutable con actualizaciones
+#  transaccionales
+#  Autor: Tu Nombre
+#  Fecha: $(date +%d/%m/%Y)
+# ==============================================
+
+# Limpiamos la pantalla al inicio
+clear
+
+#####################
+# Definición de colores
+#####################
+RED='\033[0;31m'       # Rojo
+GREEN='\033[0;32m'     # Verde
+YELLOW='\033[0;33m'    # Amarillo
+BLUE='\033[0;34m'      # Azul
+MAGENTA='\033[0;35m'   # Magenta
+CYAN='\033[0;36m'      # Cian
+NC='\033[0m'           # Sin color
+
+#####################
+# Funciones de mensajes
+#####################
+info() {
+    echo -e "${CYAN}[INFO]${NC} $1"
+}
+
+exito() {
+    echo -e "${GREEN}[ÉXITO]${NC} $1"
+}
+
+advertencia() {
+    echo -e "${YELLOW}[ADVERTENCIA]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+    exit 1
+}
+
+#####################
+# Verificar si es root
+#####################
+verificar_root() {
+    if [ "$(id -u)" -ne 0 ]; then
+        error "Este script debe ejecutarse como root."
+    else
+        exito "Privilegios de root verificados."
+    fi
+}
+
+#####################
+# Actualizar sistema
+#####################
+actualizar_sistema() {
+    info "Actualizando el sistema..."
+    pacman -Syu --noconfirm --needed || error "Fallo al actualizar el sistema."
+    exito "Sistema actualizado correctamente."
+}
+
+#####################
+# Instalar paquetes esenciales
+#####################
+instalar_paquetes() {
+    info "Instalando paquetes esenciales..."
+
+    # Lista de paquetes necesarios
+    paquetes=(
+        "btrfs-progs"      # Soporte para Btrfs
+        "snapper"          # Gestión de snapshots
+        "grub-btrfs"       # Integración de Btrfs con GRUB
+        "dracut"           # Generador de initramfs
+        "rollback-trigger" # Manejo de rollbacks
+        "haveged"          # Generador de entropía
+    )
+
+    # Actualizar la lista de paquetes
+    pacman -Sy --noconfirm
+
+    # Instalar paquetes faltantes
+    for paquete in "${paquetes[@]}"; do
+        if ! pacman -Qi "$paquete" &>/dev/null; then
+            info "Instalando $paquete..."
+            pacman -S --noconfirm "$paquete" || error "Fallo al instalar $paquete."
+            exito "Paquete $paquete instalado."
+        else
+            exito "El paquete $paquete ya está instalado."
+        fi
+    done
+}
+
+#####################
+# Comprobar conexión a Internet
+#####################
+comprobar_conexion() {
+    info "Comprobando conexión a Internet..."
+    if ! ping -c 1 archlinux.org &>/dev/null; then
+        error "No hay conexión a Internet. Comprueba tu conexión y vuelve a intentarlo."
+    else
+        exito "Conexión a Internet verificada."
+    fi
+}
+
+#####################
+# Configurar sistema de archivos Btrfs
+#####################
+configurar_btrfs() {
+    info "Configurando sistema de archivos Btrfs..."
+
+    # Verificar si la raíz es Btrfs
+    if findmnt -n -o FSTYPE / | grep -q btrfs; then
+        exito "El sistema de archivos raíz es Btrfs."
+    else
+        error "El sistema de archivos raíz no es Btrfs. Se requiere Btrfs para continuar."
+    fi
+
+    # Obtener dispositivo de la raíz
+    DEVICE=$(findmnt -n -o SOURCE /)
+    UUID=$(blkid -s UUID -o value "$DEVICE")
+
+    # Montar la raíz en subvolid=0 temporalmente
+    mkdir -p /mnt/btrfs_root
+    mount -o subvolid=0 "$DEVICE" /mnt/btrfs_root || error "No se pudo montar la raíz en /mnt/btrfs_root."
+
+    # Crear subvolúmenes si no existen
+    subvolumes=("@" "@home" "@snapshots")
+
+    for subvol in "${subvolumes[@]}"; do
+        if [ ! -d "/mnt/btrfs_root/$subvol" ]; then
+            info "Creando subvolumen $subvol..."
+            btrfs subvolume create "/mnt/btrfs_root/$subvol" || error "No se pudo crear el subvolumen $subvol."
+            exito "Subvolumen $subvol creado."
+        else
+            advertencia "El subvolumen $subvol ya existe."
+        fi
+    done
+
+    # Mover datos existentes a los nuevos subvolúmenes
+    info "Moviendo datos a los nuevos subvolúmenes..."
+
+    # Mover raíz al subvolumen @
+    rsync -aAXv --exclude={"/mnt/*","/proc/*","/sys/*","/tmp/*","/dev/*","/run/*","/media/*","/lost+found","/home","/.snapshots"} /* /mnt/btrfs_root/@/ || error "Fallo al mover datos a @."
+
+    # Mover /home al subvolumen @home
+    if [ -d "/home" ]; then
+        rsync -aAXv /home/ /mnt/btrfs_root/@home/ || error "Fallo al mover /home a @home."
+    fi
+
+    # Crear directorio .snapshots en @
+    mkdir -p /mnt/btrfs_root/@/.snapshots
+
+    # Desmontar y volver a montar con los subvolúmenes
+    umount /mnt/btrfs_root
+
+    # Realizar copia de seguridad de /etc/fstab
+    cp /etc/fstab /etc/fstab.bak
+
+    # Actualizar /etc/fstab
+    info "Actualizando /etc/fstab..."
+    cat << EOF > /etc/fstab
+UUID=$UUID /          btrfs subvol=@,defaults,noatime,compress=zstd 0 1
+UUID=$UUID /home      btrfs subvol=@home,defaults,noatime,compress=zstd 0 2
+UUID=$UUID /.snapshots btrfs subvol=@/.snapshots,defaults,noatime,compress=zstd 0 2
+tmpfs       /tmp      tmpfs defaults,noatime,mode=1777 0 0
+EOF
+
+    exito "/etc/fstab actualizado."
+
+    # Re-montar el sistema de archivos
+    info "Re-montando el sistema de archivos con los nuevos subvolúmenes..."
+    mount -a || error "Fallo al montar los nuevos subvolúmenes."
+
+    exito "Sistema de archivos Btrfs configurado correctamente."
+}
+
+#####################
+# Configurar Snapper
+#####################
+configurar_snapper() {
+    info "Configurando Snapper..."
+
+    # Obtener nombre de usuario actual
+    USERNAME=$(logname)
+
+    # Crear configuración para root
+    if ! snapper -c root list-configs &>/dev/null; then
+        snapper -c root create-config / || error "No se pudo crear la configuración de Snapper para root."
+        exito "Configuración de Snapper para root creada."
+    else
+        advertencia "La configuración de Snapper para root ya existe."
+    fi
+
+    # Establecer permisos adecuados
+    mkdir -p /.snapshots
+    chmod 750 /.snapshots
+    chown :root /.snapshots
+
+    # Configurar Snapper
+    sed -i "s|^ALLOW_USERS=\"\"|ALLOW_USERS=\"$USERNAME\"|" /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_CREATE="no"|TIMELINE_CREATE="yes"|' /etc/snapper/configs/root
+    sed -i 's|^NUMBER_CLEANUP="no"|NUMBER_CLEANUP="yes"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_CLEANUP="no"|TIMELINE_CLEANUP="yes"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_LIMIT_HOURLY="10"|TIMELINE_LIMIT_HOURLY="10"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_LIMIT_DAILY="10"|TIMELINE_LIMIT_DAILY="10"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_LIMIT_MONTHLY="10"|TIMELINE_LIMIT_MONTHLY="10"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_LIMIT_YEARLY="10"|TIMELINE_LIMIT_YEARLY="10"|' /etc/snapper/configs/root
+
+    # Habilitar y arrancar servicios y timers
+    systemctl enable --now snapper-timeline.timer snapper-cleanup.timer || error "No se pudieron habilitar los timers de Snapper."
+    exito "Timers de Snapper habilitados y activos."
+
+    # Configurar grub-btrfs
+    info "Configurando grub-btrfs..."
+    systemctl enable --now grub-btrfs.path || error "No se pudo habilitar grub-btrfs."
+    exito "grub-btrfs configurado correctamente."
+
+    # Actualizar permisos de los snapshots para acceso del usuario
+    chmod a+rx /.snapshots
+
+    exito "Configuración de Snapper completada."
+}
+
+#####################
+# Configurar GRUB
+#####################
+configurar_grub() {
+    info "Configurando GRUB..."
+
+    # Actualizar GRUB para soportar Btrfs y Snapper
+    sed -i 's/^GRUB_TIMEOUT_STYLE=hidden/#GRUB_TIMEOUT_STYLE=hidden/' /etc/default/grub
+    sed -i 's/^#GRUB_TIMEOUT=.*/GRUB_TIMEOUT=10/' /etc/default/grub
+    sed -i 's|^GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet rootflags=subvol=@|" /etc/default/grub
+
+    # Generar configuración de GRUB
+    grub-mkconfig -o /boot/grub/grub.cfg || error "No se pudo generar la configuración de GRUB."
+    exito "Configuración de GRUB generada correctamente."
+}
+
+#####################
+# Crear script de actualización transaccional
+#####################
+crear_script_actualizacion() {
+    info "Creando script para actualizaciones transaccionales..."
+
+    cat << 'EOF' > /usr/local/bin/transactional-update
+#!/usr/bin/env bash
+
+# Script para actualizaciones transaccionales
+# Crea un snapshot antes de actualizar y permite rollback en caso de fallo
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo -e "${CYAN}[INFO]${NC} Creando snapshot antes de actualizar..."
+snapper -c root create --type pre --description "Antes de actualización" || { echo -e "${RED}[ERROR]${NC} Fallo al crear snapshot."; exit 1; }
+
+pre_number=$(snapper -c root list | tail -n1 | awk '{print $1}')
+
+echo -e "${CYAN}[INFO]${NC} Actualizando el sistema..."
+if ! pacman -Syu --noconfirm; then
+    echo -e "${RED}[ERROR]${NC} Fallo en la actualización."
+    echo -e "${CYAN}[INFO]${NC} Revirtiendo cambios..."
+    snapper -c root undochange $pre_number..0
+    exit 1
+else
+    echo -e "${GREEN}[ÉXITO]${NC} Actualización exitosa."
+    echo -e "${CYAN}[INFO]${NC} Creando snapshot después de actualizar..."
+    snapper -c root create --type post --pre-number "$pre_number" --description "Después de actualización"
+fi
+EOF
+
+    chmod +x /usr/local/bin/transactional-update || error "No se pudo establecer permisos ejecutables."
+    exito "Script de actualización transaccional creado en /usr/local/bin/transactional-update."
+}
+
+#####################
+# Establecer el sistema como inmutable
+#####################
+establecer_inmutable() {
+    info "Estableciendo el sistema como inmutable..."
+
+    # Lista de directorios para establecer inmutabilidad
+    inmutables=(
+        "/usr"
+        "/boot"
+        "/etc"
+        # Puedes agregar más directorios si es necesario
+    )
+
+    for dir in "${inmutables[@]}"; do
+        if [ -d "$dir" ]; then
+            chattr -R +i "$dir" || advertencia "No se pudo establecer inmutabilidad en $dir."
+            exito "Inmutabilidad establecida en $dir."
+        else
+            advertencia "El directorio $dir no existe."
+        fi
+    done
+
+    exito "Sistema establecido como inmutable."
+}
+
+#####################
+# Sistema de rollback manual
+#####################
+establecer_rollback_manual() {
+    info "Configurando sistema de rollback manual..."
+
+    cat << 'EOF' > /usr/local/bin/rollback-system
+#!/usr/bin/env bash
+
+# Script para realizar rollback a un snapshot específico
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+if [ -z "$1" ]; then
+    echo -e "${RED}[ERROR]${NC} Debe proporcionar el número del snapshot al que desea revertir."
+    exit 1
+fi
+
+snapshot_id="$1"
+
+echo -e "${CYAN}[INFO]${NC} Realizando rollback al snapshot $snapshot_id..."
+
+snapper -c root rollback "$snapshot_id" || { echo -e "${RED}[ERROR]${NC} Fallo al realizar rollback."; exit 1; }
+
+echo -e "${GREEN}[ÉXITO]${NC} Sistema revertido al snapshot $snapshot_id."
+echo -e "${YELLOW}[ADVERTENCIA]${NC} Reinicie el sistema para aplicar los cambios."
+EOF
+
+    chmod +x /usr/local/bin/rollback-system || error "No se pudo establecer permisos ejecutables."
+    exito "Script de rollback manual creado en /usr/local/bin/rollback-system."
+}
+
+#####################
+# Función principal
+#####################
+main() {
+    clear
+    verificar_root
+    comprobar_conexion
+    actualizar_sistema
+    instalar_paquetes
+    configurar_btrfs
+    configurar_snapper
+    configurar_grub
+    crear_script_actualizacion
+    establecer_rollback_manual
+    establecer_inmutable
+    exito "Proceso completado. Tu Arch Linux ahora es inmutable con actualizaciones transaccionales."
+    info "Reinicia el sistema para aplicar todos los cambios."
+}
+
+# Ejecutar función principal
+main
+#test1
