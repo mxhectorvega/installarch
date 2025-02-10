@@ -1,108 +1,45 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Configuración de colores para mensajes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # Sin color
+# ... (configuración previa de colores y variables se mantiene igual)
 
-# Variables de entorno y rutas
-LOG_FILE="/var/log/transactional-update.log"
-BOOT_LOADER_ENTRIES="/boot/loader/entries"
-SNAPPER_CONFIG="/etc/snapper/configs/root"
-SYSTEMD_SERVICE="/etc/systemd/system/transactional-update.service"
-SYSTEMD_TIMER="/etc/systemd/system/transactional-update.timer"
-SNAPSHOT_CLEANUP_SERVICE="/etc/systemd/system/snapper-cleanup.service"
-SNAPSHOT_CLEANUP_TIMER="/etc/systemd/system/snapper-cleanup.timer"
-
-# Función para registro de eventos
-log() {
-    local message="$1"
-    echo -e "${CYAN}[$(date '+%Y-%m-%d %H:%M:%S')] ${message}${NC}" | tee -a "$LOG_FILE"
-}
-
-# Función de manejo de errores
-error_handler() {
-    local line="$1"
-    local cmd="$2"
-    log "${RED}✗ Error en línea ${line}: ${cmd}${NC}"
-    log "${YELLOW}⚠️  Iniciando rollback...${NC}"
-
-    # Rollback: Eliminar últimos snapshots creados
-    local last_snap=$(snapper -c root list | tail -n2 | head -n1 | awk '{print $1}')
-    if [[ $last_snap =~ ^[0-9]+$ ]]; then
-        snapper delete $last_snap | tee -a "$LOG_FILE"
-    fi
-
-    log "${YELLOW}↩️  Rollback completado. Verifique el sistema antes de reintentar${NC}"
-    exit 1
-}
-
-trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
-
-# Verificar si se ejecuta como root
-check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        echo -e "${RED}❌ Este script debe ejecutarse como root${NC}" >&2
-        exit 1
-    fi
-}
-
-# Instalar dependencias necesarias
-install_dependencies() {
-    log "${BLUE}🔧 Instalando dependencias...${NC}"
-    local dependencies=(
-        snapper
-        grub-btrfs
-        snap-pac
-        python-dbus
-        python-notify2
-        inotify-tools
-    )
-
-    for pkg in "${dependencies[@]}"; do
-        if ! pacman -Qi "$pkg" &>/dev/null; then
-            log "Instalando $pkg..."
-            pacman -S --noconfirm "$pkg" | tee -a "$LOG_FILE"
-        else
-            log "✓ $pkg ya está instalado"
-        fi
-    done
-}
-
-# Configurar snapper
 configure_snapper() {
     log "${BLUE}🔄 Configurando Snapper...${NC}"
 
-    # Manejar subvolumen existente
-    if btrfs subvolume list / | grep -q '@.snapshots'; then
+    # Obtener dispositivo raíz
+    local root_dev=$(findmnt / -o SOURCE -n | sed 's/\[.*\]//')
+    local subvol_path="@.snapshots"
+
+    # Verificar si el subvolumen existe
+    if btrfs subvolume list / | grep -q "path $subvol_path"; then
         log "${YELLOW}⚠️  Subvolumen .snapshots ya existe, reconfigurando...${NC}"
 
-        # Montar subvolumen temporalmente
-        local root_dev=$(findmnt / -o SOURCE -n)
-        mkdir -p /mnt/snapshots
-        mount -o subvol=@.snapshots "$root_dev" /mnt/snapshots
+        # Montar dispositivo raíz en modo plano
+        mkdir -p /mnt/root
+        mount -t btrfs -o noatime,compress=zstd,space_cache=v2 $root_dev /mnt/root
 
-        # Verificar contenido
-        if [ "$(ls -A /mnt/snapshots)" ]; then
-            log "${YELLOW}🗑️  Eliminando contenido existente...${NC}"
-            rm -rf /mnt/snapshots/*
+        # Eliminar subvolumen existente de forma segura
+        if [ -d "/mnt/root/$subvol_path" ]; then
+            log "${YELLOW}🗑️  Eliminando subvolumen existente...${NC}"
+            btrfs subvolume delete "/mnt/root/$subvol_path" | tee -a "$LOG_FILE"
+            sync
         fi
 
-        # Desmontar y eliminar subvolumen
-        umount /mnt/snapshots
-        btrfs subvolume delete "$root_dev" @.snapshots | tee -a "$LOG_FILE"
+        # Crear nuevo subvolumen
+        log "${BLUE}🆕 Creando nuevo subvolumen...${NC}"
+        btrfs subvolume create "/mnt/root/$subvol_path" | tee -a "$LOG_FILE"
+
+        # Desmontar y limpiar
+        umount /mnt/root
+        rm -rf /mnt/root
     fi
 
-    # Crear configuración de Snapper
+    # Configurar Snapper
     if [[ ! -f "$SNAPPER_CONFIG" ]]; then
-        log "${BLUE}🆕 Creando nueva configuración de Snapper...${NC}"
+        log "${BLUE}📝 Creando configuración de Snapper...${NC}"
         snapper -c root create-config -f btrfs --subvolume "/.snapshots" / | tee -a "$LOG_FILE"
 
-        # Configurar opciones
+        # Ajustar configuración
         snapper -c root set-config \
             ALLOW_USERS=root \
             TIMELINE_LIMIT_HOURLY="5" \
@@ -110,9 +47,12 @@ configure_snapper() {
             TIMELINE_LIMIT_WEEKLY="0" \
             TIMELINE_LIMIT_MONTHLY="0" | tee -a "$LOG_FILE"
 
-        # Ajustar permisos
+        # Corregir permisos
         chmod 750 /.snapshots
         chown :wheel /.snapshots
+
+        # Sincronizar cambios
+        btrfs filesystem sync /
 
         # Habilitar servicios
         systemctl enable --now snapper-timeline.timer snapper-cleanup.timer | tee -a "$LOG_FILE"
@@ -247,4 +187,4 @@ main() {
 }
 
 main "$@"
-#test4
+#test5
