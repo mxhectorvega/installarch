@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
-# Script para transformar Arch Linux en un sistema inmutable con actualizaciones transaccionales utilizando systemd-boot
-# Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxinmutable)
-# Fecha de actualización: 10/02/2025
-# Versión: 0.6
+# ==============================================
+#  Script para transformar Arch Linux en un
+#  sistema inmutable con actualizaciones
+#  transaccionales utilizando systemd-boot
+#  Adaptado para instalaciones con archinstall
+#  Autor: Tu Nombre
+#  Fecha: $(date '+%d/%m/%Y')
+# ==============================================
 
 # Limpiamos la pantalla al inicio
 clear
@@ -131,6 +134,17 @@ comprobar_conexion() {
 configurar_snapper() {
     info "Configurando Snapper..."
 
+    # Verificar si el directorio /.snapshots ya existe
+    if [ ! -d /.snapshots ]; then
+        info "Creando directorio /.snapshots..."
+        mkdir -p /.snapshots
+        chmod 750 /.snapshots
+        chown :root /.snapshots
+        exito "Directorio /.snapshots creado."
+    else
+        advertencia "El directorio /.snapshots ya existe."
+    fi
+
     # Crear configuración para root si no existe
     if [ ! -f /etc/snapper/configs/root ]; then
         snapper -c root create-config / || error "No se pudo crear la configuración de Snapper para root."
@@ -139,13 +153,8 @@ configurar_snapper() {
         advertencia "La configuración de Snapper para root ya existe."
     fi
 
-    # Establecer permisos adecuados
-    mkdir -p /.snapshots
-    chmod 750 /.snapshots
-    chown :root /.snapshots
-
     # Configurar Snapper
-    sed -i "s/^ALLOW_USERS=\"\"/ALLOW_USERS=\"$USERNAME\"/" /etc/snapper/configs/root
+    sed -i "s/^ALLOW_USERS=\".*\"/ALLOW_USERS=\"$USERNAME\"/" /etc/snapper/configs/root
     sed -i 's/^TIMELINE_CREATE="no"/TIMELINE_CREATE="yes"/' /etc/snapper/configs/root
     sed -i 's/^TIMELINE_CLEANUP="no"/TIMELINE_CLEANUP="yes"/' /etc/snapper/configs/root
     sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="10"/' /etc/snapper/configs/root
@@ -321,7 +330,7 @@ BTRFS_UUID=$(findmnt -no UUID -T /)
 if [ -z "$BTRFS_UUID" ]; then
     echo -e "${RED}[ERROR]${NC} No se pudo obtener el UUID del sistema de archivos Btrfs."
     exit 1
-    fi
+fi
 
 cat << EOL > "/boot/loader/entries/arch-snapshot-$snapshot_id.conf"
 title   Arch Linux (Snapshot $snapshot_id)
@@ -358,4 +367,3 @@ main() {
 
 # Ejecutar función principal
 main
-#test6
