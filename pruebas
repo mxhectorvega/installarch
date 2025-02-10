@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-#test8
+# ==============================================
+#  Script para transformar Arch Linux en un
+#  sistema inmutable con actualizaciones
+#  transaccionales utilizando systemd-boot
+#  Adaptado para instalaciones con archinstall
+#  Autor: Tu Nombre
+#  Fecha: $(date '+%d/%m/%Y')
+# ==============================================
 
 # Limpiamos la pantalla al inicio
 clear
@@ -140,7 +147,7 @@ configurar_snapper() {
 
     # Crear configuración para root si no existe
     if [ ! -f /etc/snapper/configs/root ]; then
-        snapper -c root create-config / || error "No se pudo crear la configuración de Snapper para root."
+        snapper -c root --no-create-subvolume create-config / || error "No se pudo crear la configuración de Snapper para root."
         exito "Configuración de Snapper para root creada."
     else
         advertencia "La configuración de Snapper para root ya existe."
@@ -154,6 +161,9 @@ configurar_snapper() {
     sed -i 's|^TIMELINE_LIMIT_DAILY="10"|TIMELINE_LIMIT_DAILY="10"|' /etc/snapper/configs/root
     sed -i 's|^TIMELINE_LIMIT_MONTHLY="10"|TIMELINE_LIMIT_MONTHLY="10"|' /etc/snapper/configs/root
     sed -i 's|^TIMELINE_LIMIT_YEARLY="10"|TIMELINE_LIMIT_YEARLY="10"|' /etc/snapper/configs/root
+
+    # Especificar manualmente el directorio de snapshots
+    sed -i 's|^SNAPSHOT_ROOT=".*"|SNAPSHOT_ROOT="/.snapshots"|' /etc/snapper/configs/root
 
     # Habilitar y arrancar servicios y timers
     systemctl enable --now snapper-timeline.timer snapper-cleanup.timer || error "No se pudieron habilitar los timers de Snapper."
@@ -360,4 +370,4 @@ main() {
 
 # Ejecutar función principal
 main
-#test8
+#test9
