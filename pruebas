@@ -1,174 +1,160 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# ========================================================================================
-# 🌐 Script de Actualizaciones Transaccionales para Arch Linux
-# ========================================================================================
-# 📝 Descripción:
-# Este script configura un sistema de actualizaciones transaccionales en Arch Linux,
-# utilizando Btrfs, Snapper y SystemD-Boot. Automatiza la creación y gestión de snapshots,
-# integra las entradas en el bootloader y configura servicios y timers para la automatización.
-# ========================================================================================
-
-# -----------------------------------------
-# 🎨 Colores para los mensajes
-# -----------------------------------------
+# Configuración de colores para mensajes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # Sin color
 
-echo -e "${GREEN}Iniciando el script de configuración...${NC}"
+# Variables de entorno y rutas
+LOG_FILE="/var/log/transactional-update.log"
+BOOT_LOADER_ENTRIES="/boot/loader/entries"
+SNAPPER_CONFIG="/etc/snapper/configs/root"
+SYSTEMD_SERVICE="/etc/systemd/system/transactional-update.service"
+SYSTEMD_TIMER="/etc/systemd/system/transactional-update.timer"
+SNAPSHOT_CLEANUP_SERVICE="/etc/systemd/system/snapper-cleanup.service"
+SNAPSHOT_CLEANUP_TIMER="/etc/systemd/system/snapper-cleanup.timer"
 
-# -----------------------------------------
-# 🛠 Funciones de utilidad
-# -----------------------------------------
-
-# Función para mostrar mensajes de información
-info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+# Función para registro de eventos
+log() {
+    local message="$1"
+    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] ${message}${NC}" | tee -a "$LOG_FILE"
 }
 
-# Función para mostrar mensajes de advertencia
-warning() {
-    echo -e "${YELLOW}[ADVERTENCIA]${NC} $1"
-}
-
-# Función para mostrar mensajes de error
-error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+# Función de manejo de errores
+error_handler() {
+    local line="$1"
+    local cmd="$2"
+    log "${RED}Error en línea ${line}: ${cmd}${NC}"
+    log "${YELLOW}Iniciando rollback...${NC}"
+    # Lógica de rollback (ejemplo)
+    snapper undochange 2-3  # Ajustar según configuración
     exit 1
 }
 
-# -----------------------------------------
-# 🚀 Verificación de permisos
-# -----------------------------------------
-if [ "$EUID" -ne 0 ]; then
-    error "Este script debe ejecutarse como root."
-fi
+trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
 
-# -----------------------------------------
-# 📦 Instalación de dependencias necesarias
-# -----------------------------------------
-info "Instalando dependencias necesarias..."
-
-DEPENDENCIAS=(
-    btrfs-progs
-    snapper
-    snap-pac
-    systemd-boot
-    grub-btrfs
-    systemd-boot-pacman-hook
-)
-
-for pkg in "${DEPENDENCIAS[@]}"; do
-    if ! pacman -Qi $pkg &>/dev/null; then
-        info "Instalando $pkg..."
-        pacman -S --noconfirm $pkg || error "No se pudo instalar $pkg."
-    else
-        info "$pkg ya está instalado."
+# Verificar si se ejecuta como root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        echo -e "${RED}Este script debe ejecutarse como root${NC}" >&2
+        exit 1
     fi
-done
+}
 
-# -----------------------------------------
-# 🗄 Configuración de subvolúmenes Btrfs
-# -----------------------------------------
-info "Configurando subvolúmenes Btrfs..."
+# Instalar dependencias necesarias
+install_dependencies() {
+    log "Instalando dependencias..."
+    local dependencies=(
+        snapper
+        grub-btrfs
+        snap-pac
+        python-dbus
+        python-notify2
+        inotify-tools
+    )
 
-ROOT_MOUNTPOINT="/"
-BTRFS_DEVICE=$(findmnt -no SOURCE --target $ROOT_MOUNTPOINT)
+    for pkg in "${dependencies[@]}"; do
+        if ! pacman -Qi "$pkg" &>/dev/null; then
+            pacman -S --noconfirm "$pkg" | tee -a "$LOG_FILE"
+        fi
+    done
+}
 
-if [ -z "$BTRFS_DEVICE" ]; then
-    error "No se pudo determinar el dispositivo Btrfs."
-fi
-
-SUBVOLUMENES=(
-    "@"
-    "@.snapshots"
-    "@home"
-    "@log"
-    "@pkgs"
-)
-
-for subvol in "${SUBVOLUMENES[@]}"; do
-    if ! btrfs subvolume list / | grep -q "$subvol"; then
-        info "Creando subvolumen $subvol..."
-        btrfs subvolume create /$subvol || error "No se pudo crear el subvolumen $subvol."
-    else
-        info "El subvolumen $subvol ya existe."
+# Configurar snapper
+configure_snapper() {
+    log "Configurando snapper..."
+    if [[ ! -f "$SNAPPER_CONFIG" ]]; then
+        snapper -c root create-config / | tee -a "$LOG_FILE"
+        sed -i 's/^ALLOW_USERS=.*/ALLOW_USERS="root"/' /etc/snapper/configs/root
+        sed -i 's/^TIMELINE_LIMIT_HOURLY=.*/TIMELINE_LIMIT_HOURLY="5"/' /etc/snapper/configs/root
+        sed -i 's/^TIMELINE_LIMIT_DAILY=.*/TIMELINE_LIMIT_DAILY="7"/' /etc/snapper/configs/root
+        systemctl enable snapper-timeline.timer snapper-cleanup.timer | tee -a "$LOG_FILE"
+        systemctl start snapper-timeline.timer snapper-cleanup.timer | tee -a "$LOG_FILE"
     fi
-done
+}
 
-# -----------------------------------------
-# 📝 Configuración de Snapper
-# -----------------------------------------
-info "Configurando Snapper..."
-
-snapper -c root create-config / || warning "La configuración de Snapper ya existe."
-chmod a+rx /.snapshots
-chown :users /.snapshots
-
-# -----------------------------------------
-# 🔄 Creación del script de actualización transaccional
-# -----------------------------------------
-info "Creando el script de actualización transaccional..."
-
-cat << 'EOF' > /usr/local/bin/transactional-update
-#!/bin/bash
-
-# -----------------------------------------
-# 🌐 Actualización Transaccional
-# -----------------------------------------
-
-# Colores
-GREEN='\033[0;32m'
-NC='\033[0m' # Sin color
-
-echo -e "${GREEN}Iniciando actualización transaccional...${NC}"
-
-# Crear snapshot
-SNAPSHOT_NUM=$(snapper -c root create --description "Actualización del sistema" | awk '/created snapshot/ {print $3}')
-
-# Montar snapshot
-MOUNT_POINT="/mnt/snapshot"
-mkdir -p $MOUNT_POINT
-mount -o subvol=.snapshots/$SNAPSHOT_NUM/snapshot / $MOUNT_POINT
-
-# Actualizar el sistema en el snapshot
-arch-chroot $MOUNT_POINT pacman -Syu --noconfirm
-
-# Generar nuevas entradas del bootloader
-bootctl update
-
-# Desmontar y limpiar
-umount $MOUNT_POINT
-rmdir $MOUNT_POINT
-
-echo -e "${GREEN}Actualización transaccional completada. Puedes reiniciar y seleccionar el nuevo snapshot.${NC}"
-EOF
-
-chmod +x /usr/local/bin/transactional-update
-
-# -----------------------------------------
-# ⏲ Configuración de servicios y timers
-# -----------------------------------------
-info "Configurando servicios y timers..."
-
-# Servicio systemd
-cat << 'EOF' > /etc/systemd/system/transactional-update.service
+# Configurar actualizaciones transaccionales
+setup_transactional_updates() {
+    log "Configurando actualizaciones transaccionales..."
+    cat <<EOF > "$SYSTEMD_SERVICE"
 [Unit]
-Description=Actualización Transaccional del Sistema
-After=network.target
+Description=Transactional System Update
+After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/transactional-update
+ExecStart=/usr/bin/transactional-update run
+ExecStartPost=/usr/bin/systemctl reboot
 EOF
 
-# Timer systemd
-cat << 'EOF' > /etc/systemd/system/transactional-update.timer
+    cat <<EOF > "$SYSTEMD_TIMER"
 [Unit]
-Description=Timer para Actualización Transaccional
+Description=Run transactional updates daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+    # Crear script de actualización transaccional
+    cat <<'EOF' > /usr/bin/transactional-update
+#!/bin/bash
+set -euo pipefail
+
+SNAPSHOT_ID=$(snapper create -t pre --print-number --description "Actualización transaccional")
+btrfs subvolume snapshot /.snapshots/$SNAPSHOT_ID/snapshot /.snapshots/$SNAPSHOT_ID/writable
+mount --bind / /.snapshots/$SNAPSHOT_ID/writable
+
+cleanup() {
+    umount /.snapshots/$SNAPSHOT_ID/writable
+    snapper delete $SNAPSHOT_ID
+}
+trap cleanup EXIT
+
+arch-chroot /.snapshots/$SNAPSHOT_ID/writable pacman -Syu --noconfirm
+snapper create -t post --pre-number $SNAPSHOT_ID --description "Post actualización"
+EOF
+
+    chmod +x /usr/bin/transactional-update
+    systemctl daemon-reload
+    systemctl enable transactional-update.timer | tee -a "$LOG_FILE"
+}
+
+# Configurar entradas de arranque en SystemDBoot
+setup_systemdboot() {
+    log "Configurando SystemDBoot..."
+    current_kernel=$(ls /usr/lib/modules | grep -v extramodules | sort -V | tail -n1)
+    root_partuuid=$(blkid -s PARTUUID -o value $(findmnt / -o SOURCE -n))
+
+    cat <<EOF > "$BOOT_LOADER_ENTRIES/arch-snapshot.conf"
+title Arch Linux (Snapshot)
+linux /vmlinuz-$current_kernel
+initrd /initramfs-$current_kernel.img
+options root=PARTUUID=$root_partuuid rootflags=subvol=@.snapshots rw
+EOF
+}
+
+# Configurar limpieza automática de snapshots
+setup_snapshot_cleanup() {
+    log "Configurando limpieza de snapshots..."
+    cat <<EOF > "$SNAPSHOT_CLEANUP_SERVICE"
+[Unit]
+Description=Cleanup old snapper snapshots
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/snapper cleanup number
+EOF
+
+    cat <<EOF > "$SNAPSHOT_CLEANUP_TIMER"
+[Unit]
+Description=Weekly snapshot cleanup
 
 [Timer]
 OnCalendar=weekly
@@ -178,45 +164,22 @@ Persistent=true
 WantedBy=timers.target
 EOF
 
-# Habilitar y iniciar el timer
-systemctl enable --now transactional-update.timer
+    systemctl daemon-reload
+    systemctl enable snapper-cleanup.timer | tee -a "$LOG_FILE"
+}
 
-# -----------------------------------------
-# 📝 Configuración del registro de errores
-# -----------------------------------------
-info "Configurando el sistema de registro de errores..."
+# Función principal
+main() {
+    check_root
+    install_dependencies
+    configure_snapper
+    setup_transactional_updates
+    setup_systemdboot
+    setup_snapshot_cleanup
 
-LOG_FILE="/var/log/transactional-update.log"
-touch $LOG_FILE
-chmod 644 $LOG_FILE
+    log "${GREEN}Configuración completada con éxito!${NC}"
+    log "${YELLOW}Recomendado: Reiniciar el sistema para aplicar los cambios${NC}"
+}
 
-# Modificar el script para registrar errores
-sed -i '1i exec 2>>'"$LOG_FILE" /usr/local/bin/transactional-update
-
-# -----------------------------------------
-# ♻️ Sistema de mantenimiento de snapshots
-# -----------------------------------------
-info "Configurando el mantenimiento de snapshots..."
-
-# Configuración en /etc/snapper/configs/root
-sed -i 's/^\(#\)\?\(TIMELINE_CREATE=.*\)/TIMELINE_CREATE="yes"/' /etc/snapper/configs/root
-sed -i 's/^\(#\)\?\(TIMELINE_CLEANUP=.*\)/TIMELINE_CLEANUP="yes"/' /etc/snapper/configs/root
-sed -i 's/^\(#\)\?\(TIMELINE_LIMIT_DAILY=.*\)/TIMELINE_LIMIT_DAILY="7"/' /etc/snapper/configs/root
-sed -i 's/^\(#\)\?\(TIMELINE_LIMIT_WEEKLY=.*\)/TIMELINE_LIMIT_WEEKLY="0"/' /etc/snapper/configs/root
-sed -i 's/^\(#\)\?\(TIMELINE_LIMIT_MONTHLY=.*\)/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root
-sed -i 's/^\(#\)\?\(TIMELINE_LIMIT_YEARLY=.*\)/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
-
-# -----------------------------------------
-# 🔄 Sistema de retroceso (Rollback)
-# -----------------------------------------
-info "Configurando el sistema de retroceso..."
-
-# Asumiendo que SystemD-Boot detecta automáticamente los snapshots creados por Snapper
-bootctl update
-
-# -----------------------------------------
-# ✅ Finalización
-# -----------------------------------------
-echo -e "${GREEN}Configuración completada con éxito. El sistema ahora soporta actualizaciones transaccionales.${NC}"
-echo -e "${GREEN}Puedes ver los logs en $LOG_FILE si necesitas revisar algún error.${NC}"
-#loco1
+main "$@"
+#test3
