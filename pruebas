@@ -42,21 +42,16 @@ pacman -Sy --needed --noconfirm \
 configure_snapper() {
     log "Configurando Snapper..."
 
-    # Crear subvolumen si no existe
-    if ! btrfs subvolume show /.snapshots &>/dev/null; then
-        rm -rf /.snapshots
-        btrfs subvolume create /.snapshots
-    fi
-
+    # Ya que @.snapshots existe, solo verificamos permisos
     chmod 750 /.snapshots
     chown :root /.snapshots
 
-    # Configuración de Snapper
+    # Crear configuración de snapper
     if [[ ! -f /etc/snapper/configs/root ]]; then
-    snapper -c root create-config / || error "No se pudo crear la configuración de snapper"
+        # Usamos el subvolumen existente
+        snapper -c root create-config / || error "No se pudo crear la configuración de snapper"
 
-    sed -i -e "s|^SNAPSHOT_ROOT=.*|SNAPSHOT_ROOT=\"/.snapshots\"|" \
-               -e "s|^ALLOW_USERS=.*|ALLOW_USERS=\"$REAL_USER\"|" \
+        sed -i -e "s|^ALLOW_USERS=.*|ALLOW_USERS=\"$REAL_USER\"|" \
                -e 's|^TIMELINE_CREATE=.*|TIMELINE_CREATE="yes"|' \
                -e 's|^TIMELINE_CLEANUP=.*|TIMELINE_CLEANUP="yes"|' \
                -e 's|^TIMELINE_LIMIT_HOURLY=.*|TIMELINE_LIMIT_HOURLY="5"|' \
@@ -215,4 +210,4 @@ main() {
 }
 
 main
-#test1
+#test3
