@@ -119,7 +119,7 @@ configure_snapper() {
     # Configurar Snapper si no existe
     if [[ ! -f "$SNAPPER_CONFIG" ]]; then
         log "${BLUE}📝 Generando configuración de Snapper...${NC}"
-        snapper -c root create-config -f btrfs subvolume "/.snapshots" / | tee -a "$LOG_FILE"
+        snapper -c root create-config -f btrfs / | tee -a "$LOG_FILE"
 
         # Optimizar configuración
         snapper -c root set-config \
@@ -283,4 +283,4 @@ main() {
 }
 
 main "$@"
-#test13
+#test14
