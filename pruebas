@@ -80,7 +80,7 @@ install_dependencies() {
     for pkg in "${dependencies[@]}"; do
         if ! pacman -Qi "$pkg" &>/dev/null; then
             log "INFO" "Instalando ${pkg}..."
-            pacman -S --noconfirm "$pkg" | tee -a "$LOG_FILE"
+            paru -S --noconfirm "$pkg" | tee -a "$LOG_FILE"
         else
             log "INFO" "${pkg} ya está instalado"
         fi
@@ -299,4 +299,4 @@ main() {
 }
 
 main "$@"
-#test15
+#test16
