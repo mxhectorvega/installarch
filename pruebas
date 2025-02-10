@@ -4,8 +4,7 @@
 # Repositorio: https://github.com/mxhectorvega/installarch
 # Ejecución: bash <(curl -L is.gd/mxinmutable)
 # Fecha de actualización: 10/02/2025
-# Versión: 0.3
-
+# Versión: 0.4
 
 # Limpiamos la pantalla al inicio
 clear
@@ -73,9 +72,9 @@ instalar_paquetes() {
         "snapper"          # Gestión de snapshots
         "snap-pac"         # Integración de Snapper con pacman
         "dracut"           # Generador de initramfs
-        "rollback-trigger" # Manejo de rollbacks
         "haveged"          # Generador de entropía
-        "systemd-boot"     # Bootloader systemd-boot
+        "efibootmgr"       # Gestión de entradas UEFI
+        "dosfstools"       # Herramientas para sistemas de archivos FAT
     )
 
     # Actualizar la lista de paquetes
@@ -127,7 +126,7 @@ configurar_btrfs() {
     mount -o subvolid=0 "$DEVICE" /mnt/btrfs_root || error "No se pudo montar la raíz en /mnt/btrfs_root."
 
     # Crear subvolúmenes si no existen
-    subvolumes=("@" "@home" "@snapshots")
+    subvolumes=("@_active" "@home" "@snapshots")
 
     for subvol in "${subvolumes[@]}"; do
         if [ ! -d "/mnt/btrfs_root/$subvol" ]; then
@@ -142,16 +141,16 @@ configurar_btrfs() {
     # Mover datos existentes a los nuevos subvolúmenes
     info "Moviendo datos a los nuevos subvolúmenes..."
 
-    # Mover raíz al subvolumen @
-    rsync -aAXv --exclude={"/mnt/*","/proc/*","/sys/*","/tmp/*","/dev/*","/run/*","/media/*","/lost+found","/home","/.snapshots"} /* /mnt/btrfs_root/@/ || error "Fallo al mover datos a @."
+    # Mover raíz al subvolumen @_active
+    rsync -aAXv --exclude={"/mnt/btrfs_root/*","/proc/*","/sys/*","/tmp/*","/dev/*","/run/*","/media/*","/lost+found","/home","/mnt","/boot/*","/.snapshots"} /* /mnt/btrfs_root/@_active/ || error "Fallo al mover datos a @_active."
 
     # Mover /home al subvolumen @home
     if [ -d "/home" ]; then
         rsync -aAXv /home/ /mnt/btrfs_root/@home/ || error "Fallo al mover /home a @home."
     fi
 
-    # Crear directorio .snapshots en @
-    mkdir -p /mnt/btrfs_root/@/.snapshots
+    # Crear directorio .snapshots en @_active
+    mkdir -p /mnt/btrfs_root/@_active/.snapshots
 
     # Desmontar y volver a montar con los subvolúmenes
     umount /mnt/btrfs_root
@@ -162,9 +161,9 @@ configurar_btrfs() {
     # Actualizar /etc/fstab
     info "Actualizando /etc/fstab..."
     cat << EOF > /etc/fstab
-UUID=$UUID /          btrfs subvol=@,defaults,noatime,compress=zstd 0 1
+UUID=$UUID /          btrfs subvol=@_active,defaults,noatime,compress=zstd 0 1
 UUID=$UUID /home      btrfs subvol=@home,defaults,noatime,compress=zstd 0 2
-UUID=$UUID /.snapshots btrfs subvol=@/.snapshots,defaults,noatime,compress=zstd 0 2
+UUID=$UUID /.snapshots btrfs subvol=@_active/.snapshots,defaults,noatime,compress=zstd 0 2
 tmpfs       /tmp      tmpfs defaults,noatime,mode=1777 0 0
 EOF
 
@@ -183,9 +182,6 @@ EOF
 configurar_snapper() {
     info "Configurando Snapper..."
 
-    # Obtener nombre de usuario actual
-    USERNAME=$(logname)
-
     # Crear configuración para root
     if ! snapper -c root list-configs &>/dev/null; then
         snapper -c root create-config / || error "No se pudo crear la configuración de Snapper para root."
@@ -200,7 +196,7 @@ configurar_snapper() {
     chown :root /.snapshots
 
     # Configurar Snapper
-    sed -i "s|^ALLOW_USERS=\"\"|ALLOW_USERS=\"$USERNAME\"|" /etc/snapper/configs/root
+    sed -i 's|^ALLOW_USERS="".*|ALLOW_USERS="root"|' /etc/snapper/configs/root
     sed -i 's|^TIMELINE_CREATE="no"|TIMELINE_CREATE="yes"|' /etc/snapper/configs/root
     sed -i 's|^NUMBER_CLEANUP="no"|NUMBER_CLEANUP="yes"|' /etc/snapper/configs/root
     sed -i 's|^TIMELINE_CLEANUP="no"|TIMELINE_CLEANUP="yes"|' /etc/snapper/configs/root
@@ -228,75 +224,28 @@ configurar_systemd_boot() {
     # Instalar systemd-boot (si no está instalado)
     bootctl install || error "No se pudo instalar systemd-boot."
 
-    # Crear script para actualizar entradas de arranque con snapshots
-    info "Creando script para actualizar entradas de systemd-boot con snapshots..."
+    # Crear entrada de arranque para el sistema actual
+    info "Creando entrada de arranque para el sistema actual..."
 
-    cat << 'EOF' > /usr/local/bin/update-boot-entries
-#!/usr/bin/env bash
-
-# Script para generar entradas de systemd-boot para snapshots de Snapper
-
-SNAPPER_CONFIG="root"
-BOOT_DIR="/boot"
-SNAPSHOT_DIR="/.snapshots"
-
-for SNAPSHOT in $(ls "$SNAPSHOT_DIR"); do
-    SNAPSHOT_NUM=$(basename "$SNAPSHOT")
-    SNAPSHOT_SUBVOL="${SNAPSHOT_DIR}/${SNAPSHOT}/snapshot"
-
-    ENTRY_NAME="snapshot-${SNAPSHOT_NUM}.conf"
-    ENTRY_PATH="${BOOT_DIR}/loader/entries/${ENTRY_NAME}"
-
-    if [ ! -f "$ENTRY_PATH" ]; then
-        echo "Creando entrada de arranque para snapshot $SNAPSHOT_NUM..."
-
-        cat << EOL > "$ENTRY_PATH"
-title   Arch Linux (Snapshot ${SNAPSHOT_NUM})
+    cat << EOF > /boot/loader/entries/arch.conf
+title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
-options root=UUID=$(blkid -s UUID -o value $(findmnt -no SOURCE /)) rw rootflags=subvol=${SNAPSHOT_SUBVOL} quiet splash
-EOL
-    fi
-done
+options root=UUID=$UUID rw rootflags=subvol=@_active quiet splash
 EOF
 
-    chmod +x /usr/local/bin/update-boot-entries || error "No se pudo establecer permisos ejecutables."
-    exito "Script de actualización de entradas de systemd-boot creado."
+    exito "Entrada de arranque creada."
 
-    # Ejecutar el script por primera vez
-    /usr/local/bin/update-boot-entries || error "No se pudo actualizar las entradas de systemd-boot."
+    # Configurar el loader
+    info "Configurando loader de systemd-boot..."
 
-    # Crear servicio para actualizar las entradas automáticamente
-    info "Creando servicio systemd para actualizar entradas de systemd-boot..."
-
-    cat << EOF > /etc/systemd/system/update-boot-entries.service
-[Unit]
-Description=Actualizar entradas de systemd-boot con snapshots de Snapper
-After=snapper-cleanup.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/update-boot-entries
+    cat << EOF > /boot/loader/loader.conf
+default arch.conf
+timeout 5
+editor  no
 EOF
 
-    # Crear timer para ejecutar el servicio después de los snapshots
-    cat << EOF > /etc/systemd/system/update-boot-entries.timer
-[Unit]
-Description=Timer para ejecutar update-boot-entries después de Snapper
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=15min
-
-[Install]
-WantedBy=timers.target
-EOF
-
-    # Habilitar el timer
-    systemctl enable --now update-boot-entries.timer || error "No se pudo habilitar el timer para update-boot-entries."
-    exito "Servicio y timer para actualizar entradas de systemd-boot creados y habilitados."
-
-    exito "Configuración de systemd-boot completada."
+    exito "Loader de systemd-boot configurado."
 }
 
 #####################
@@ -317,24 +266,31 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 echo -e "${CYAN}[INFO]${NC} Creando snapshot antes de actualizar..."
-snapper -c root create --type pre --description "Antes de actualización" || { echo -e "${RED}[ERROR]${NC} Fallo al crear snapshot."; exit 1; }
-
-pre_number=$(snapper -c root list | tail -n1 | awk '{print $1}')
+pre_number=$(snapper -c root create --type pre --print-number --description "Antes de actualización") || { echo -e "${RED}[ERROR]${NC} Fallo al crear snapshot."; exit 1; }
 
 echo -e "${CYAN}[INFO]${NC} Actualizando el sistema..."
 if ! pacman -Syu --noconfirm; then
     echo -e "${RED}[ERROR]${NC} Fallo en la actualización."
     echo -e "${CYAN}[INFO]${NC} Revirtiendo cambios..."
-    snapper -c root undochange $pre_number..0
+    snapper -c root undochange "$pre_number"..0
     exit 1
 else
     echo -e "${GREEN}[ÉXITO]${NC} Actualización exitosa."
     echo -e "${CYAN}[INFO]${NC} Creando snapshot después de actualizar..."
-    snapper -c root create --type post --pre-number "$pre_number" --description "Después de actualización"
+    post_number=$(snapper -c root create --type post --pre-number "$pre_number" --description "Después de actualización" --print-number)
 
-    # Actualizar entradas de systemd-boot
-    echo -e "${CYAN}[INFO]${NC} Actualizando entradas de systemd-boot..."
-    /usr/local/bin/update-boot-entries
+    # Crear nueva entrada de arranque para el snapshot
+    echo -e "${CYAN}[INFO]${NC} Creando entrada de arranque para el snapshot $post_number..."
+    SNAPSHOT_SUBVOL="/.snapshots/$post_number/snapshot"
+
+    cat << EOL > "/boot/loader/entries/arch-snapshot-$post_number.conf"
+title   Arch Linux (Snapshot $post_number)
+linux   /vmlinuz-linux
+initrd  /initramfs-linux.img
+options root=UUID=$(blkid -s UUID -o value $(findmnt -no SOURCE /)) rw rootflags=subvol=$SNAPSHOT_SUBVOL quiet splash
+EOL
+
+    echo -e "${GREEN}[ÉXITO]${NC} Entrada de arranque para el snapshot $post_number creada."
 fi
 EOF
 
@@ -351,7 +307,6 @@ establecer_inmutable() {
     # Lista de directorios para establecer inmutabilidad
     inmutables=(
         "/usr"
-        "/boot"
         "/etc"
         # Puedes agregar más directorios si es necesario
     )
@@ -395,11 +350,18 @@ echo -e "${CYAN}[INFO]${NC} Realizando rollback al snapshot $snapshot_id..."
 
 snapper -c root rollback "$snapshot_id" || { echo -e "${RED}[ERROR]${NC} Fallo al realizar rollback."; exit 1; }
 
-# Actualizar entradas de systemd-boot
-echo -e "${CYAN}[INFO]${NC} Actualizando entradas de systemd-boot..."
-/usr/local/bin/update-boot-entries
+# Crear entrada de arranque para el snapshot
+echo -e "${CYAN}[INFO]${NC} Creando entrada de arranque para el snapshot $snapshot_id..."
+SNAPSHOT_SUBVOL="/.snapshots/$snapshot_id/snapshot"
 
-echo -e "${GREEN}[ÉXITO]${NC} Sistema revertido al snapshot $snapshot_id."
+cat << EOL > "/boot/loader/entries/arch-snapshot-$snapshot_id.conf"
+title   Arch Linux (Snapshot $snapshot_id)
+linux   /vmlinuz-linux
+initrd  /initramfs-linux.img
+options root=UUID=$(blkid -s UUID -o value $(findmnt -no SOURCE /)) rw rootflags=subvol=$SNAPSHOT_SUBVOL quiet splash
+EOL
+
+echo -e "${GREEN}[ÉXITO]${NC} Entrada de arranque para el snapshot $snapshot_id creada."
 echo -e "${YELLOW}[ADVERTENCIA]${NC} Reinicie el sistema para aplicar los cambios."
 EOF
 
@@ -428,4 +390,4 @@ main() {
 
 # Ejecutar función principal
 main
-#test2
+#test4
