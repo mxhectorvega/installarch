@@ -10,186 +10,172 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 NC='\033[0m' # Sin color
 
-# Variables de entorno y rutas
-LOG_FILE="/var/log/transactional-update.log"
+# Variables de configuración
+LOG_FILE="/var/log/transactional-setup.log"
 BOOT_LOADER_ENTRIES="/boot/loader/entries"
 SNAPPER_CONFIG="/etc/snapper/configs/root"
 SYSTEMD_SERVICE="/etc/systemd/system/transactional-update.service"
 SYSTEMD_TIMER="/etc/systemd/system/transactional-update.timer"
-SNAPSHOT_CLEANUP_SERVICE="/etc/systemd/system/snapper-cleanup.service"
-SNAPSHOT_CLEANUP_TIMER="/etc/systemd/system/snapper-cleanup.timer"
+HOOK_SCRIPT="/usr/local/bin/update-systemd-boot-entries"
 
-# Función para registro de eventos
+# Función de registro mejorada
 log() {
-    local message="$1"
-    echo -e "${MAGENTA}[$(date '+%Y-%m-%d %H:%M:%S')] ${message}${NC}" | tee -a "$LOG_FILE"
+    local level="$1"
+    local message="$2"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local color
+
+    case $level in
+        "INFO") color="${BLUE}" ;;
+        "SUCCESS") color="${GREEN}" ;;
+        "WARNING") color="${YELLOW}" ;;
+        "ERROR") color="${RED}" ;;
+        *) color="${NC}" ;;
+    esac
+
+    echo -e "${MAGENTA}[${timestamp}] ${color}${level}: ${message}${NC}" | tee -a "$LOG_FILE"
 }
 
-# Función de manejo de errores mejorada
+# Manejo de errores robusto
 error_handler() {
-    local line="$1"
-    local cmd="$2"
-    log "${RED}✗ Error crítico en línea ${line}: ${cmd}${NC}"
-    log "${YELLOW}⚠️  Iniciando proceso de recuperación...${NC}"
+    log "ERROR" "Fallo en línea $1: $2"
+    log "WARNING" "Iniciando proceso de recuperación..."
 
-    # Intentar eliminar montajes residuales
+    # Rollback de montajes
     if mountpoint -q /mnt/root; then
         umount -l /mnt/root || true
         rm -rf /mnt/root
     fi
 
-    # Rollback de snapshots
+    # Eliminar última configuración generada
     local last_snap=$(snapper -c root list 2>/dev/null | tail -n2 | head -n1 | awk '{print $1}')
     if [[ $last_snap =~ ^[0-9]+$ ]]; then
-        log "${YELLOW}↩️  Eliminando snapshot fallido #${last_snap}...${NC}"
+        log "WARNING" "Eliminando snapshot fallido #${last_snap}"
         snapper delete $last_snap 2>/dev/null || true
     fi
 
-    log "${YELLOW}🔄 Sistema estabilizado. Verifique el log: ${LOG_FILE}${NC}"
+    log "ERROR" "Proceso abortado. Verifique el log: ${LOG_FILE}"
     exit 1
 }
 
 trap 'error_handler ${LINENO} "$BASH_COMMAND"' ERR
 
-# Verificar si se ejecuta como root
+# Verificar ejecución como root
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        echo -e "${RED}❌ Este script debe ejecutarse como root${NC}" >&2
+        log "ERROR" "Este script debe ejecutarse como root"
         exit 1
     fi
 }
 
 # Instalación inteligente de dependencias
 install_dependencies() {
-    log "${BLUE}🔍 Verificando dependencias...${NC}"
+    log "INFO" "Verificando dependencias del sistema..."
     local dependencies=(
-        snapper
-        grub-btrfs
-        snap-pac
-        python-dbus
-        python-notify2
-        inotify-tools
-        btrfs-progs
+        snapper grub-btrfs snap-pac python-dbus
+        python-notify2 inotify-tools btrfs-progs
+        systemd-boot-manager mkinitcpio
     )
 
     for pkg in "${dependencies[@]}"; do
         if ! pacman -Qi "$pkg" &>/dev/null; then
-            log "Instalando ${CYAN}${pkg}${NC}..."
+            log "INFO" "Instalando ${pkg}..."
             pacman -S --noconfirm "$pkg" | tee -a "$LOG_FILE"
         else
-            log "✓ ${GREEN}${pkg}${NC} ya está instalado"
+            log "INFO" "${pkg} ya está instalado"
         fi
     done
 }
 
 # Configuración robusta de Snapper
 configure_snapper() {
-    log "${BLUE}🛠️  Configurando Snapper...${NC}"
-
-    # Obtener dispositivo raíz limpio
+    log "INFO" "Configurando Snapper..."
     local root_dev=$(findmnt / -o SOURCE -n | sed 's/\[.*\]//;s/^ //')
     local subvol_path="@.snapshots"
 
-    # Verificar y manejar subvolumen existente
+    # Manejo de subvolumen existente
     if btrfs subvolume list / | grep -q "path ${subvol_path}$"; then
-        log "${YELLOW}⚠️  Subvolumen .snapshots existente detectado...${NC}"
+        log "WARNING" "Subvolumen .snapshots existente detectado"
 
-        # Montar dispositivo raíz
         mkdir -p /mnt/root
-        log "Montando ${root_dev} en /mnt/root..."
-        mount -t btrfs -o noatime,compress=zstd,space_cache=v2 "${root_dev}" /mnt/root
+        log "INFO" "Montando dispositivo raíz ${root_dev}"
+        mount -t btrfs -o noatime,compress=zstd "${root_dev}" /mnt/root
 
-        # Eliminar subvolumen existente de forma segura
         if [ -d "/mnt/root/${subvol_path}" ]; then
-            log "${YELLOW}🗑️  Eliminando subvolumen conflictivo...${NC}"
+            log "WARNING" "Eliminando subvolumen conflictivo..."
             btrfs subvolume delete "/mnt/root/${subvol_path}" | tee -a "$LOG_FILE"
             sync
-            sleep 2
         fi
 
-        # Crear nuevo subvolumen
-        log "${BLUE}🆕 Creando subvolumen limpio...${NC}"
+        log "INFO" "Creando nuevo subvolumen..."
         btrfs subvolume create "/mnt/root/${subvol_path}" | tee -a "$LOG_FILE"
 
-        # Desmontar y limpiar
         umount /mnt/root
         rm -rf /mnt/root
     fi
 
-    # Configurar Snapper si no existe
-    if [[ ! -f "$SNAPPER_CONFIG" ]]; then
-        log "${BLUE}📝 Generando configuración de Snapper...${NC}"
-        snapper -c root create-config -f btrfs / | tee -a "$LOG_FILE"
-
-        # Optimizar configuración
-        snapper -c root set-config \
-            ALLOW_USERS=root \
-            TIMELINE_LIMIT_HOURLY="5" \
-            TIMELINE_LIMIT_DAILY="7" \
-            TIMELINE_LIMIT_WEEKLY="0" \
-            TIMELINE_LIMIT_MONTHLY="0" | tee -a "$LOG_FILE"
-
-        # Ajustar permisos
-        chmod 750 /.snapshots
-        chown :wheel /.snapshots
-
-        # Sincronizar cambios
-        btrfs filesystem sync /
-
-        # Habilitar servicios
-        systemctl enable --now snapper-timeline.timer snapper-cleanup.timer | tee -a "$LOG_FILE"
-        log "${GREEN}✅ Servicios de Snapper activados${NC}"
+    # Eliminar configuración existente
+    if snapper list-configs | grep -q "root"; then
+        log "WARNING" "Eliminando configuración previa de Snapper..."
+        snapper -c root delete-config | tee -a "$LOG_FILE"
     fi
+
+    # Nueva configuración
+    log "INFO" "Creando configuración de Snapper..."
+    snapper -c root create-config -f btrfs / | tee -a "$LOG_FILE"
+
+    # Optimizar configuración
+    snapper -c root set-config \
+        ALLOW_USERS=root \
+        TIMELINE_LIMIT_HOURLY="5" \
+        TIMELINE_LIMIT_DAILY="7" \
+        TIMELINE_LIMIT_WEEKLY="0" | tee -a "$LOG_FILE"
+
+    # Permisos y servicios
+    chmod 750 /.snapshots
+    chown :wheel /.snapshots
+    systemctl enable --now snapper-timeline.timer snapper-cleanup.timer
 }
 
 # Sistema de actualizaciones transaccionales
 setup_transactional_updates() {
-    log "${BLUE}⚙️  Configurando actualizaciones transaccionales...${NC}"
+    log "INFO" "Configurando actualizaciones transaccionales..."
 
-    # Crear script de actualización
     cat <<'EOF' > /usr/bin/transactional-update
 #!/bin/bash
 set -euo pipefail
 
-# Generar ID de snapshot
-SNAPSHOT_ID=$(snapper create -t pre --print-number --description "[AUTO] Pre-actualización")
+SNAPSHOT_ID=$(snapper create -t pre --print-number --description "Actualización automática")
 LOG_FILE="/var/log/transactional-update.log"
-
-# Registrar inicio
-echo -e "\n[$(date '+%Y-%m-%d %H:%M:%S')] Iniciando actualización transaccional (#${SNAPSHOT_ID})" >> $LOG_FILE
 
 # Crear entorno de actualización
 btrfs subvolume snapshot /.snapshots/${SNAPSHOT_ID}/snapshot /.snapshots/${SNAPSHOT_ID}/writable
 mount --bind / /.snapshots/${SNAPSHOT_ID}/writable
 
-# Función de limpieza
 cleanup() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Iniciando limpieza..." >> $LOG_FILE
-    umount -l /.snapshots/${SNAPSHOT_ID}/writable 2>/dev/null || true
-    btrfs subvolume delete /.snapshots/${SNAPSHOT_ID}/writable 2>>$LOG_FILE
-    snapper delete ${SNAPSHOT_ID} 2>>$LOG_FILE
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Limpieza completada" >> $LOG_FILE
+    umount -l /.snapshots/${SNAPSHOT_ID}/writable
+    btrfs subvolume delete /.snapshots/${SNAPSHOT_ID}/writable
+    snapper delete ${SNAPSHOT_ID}
+    exit 1
 }
-trap cleanup EXIT
+trap cleanup ERR
 
 # Ejecutar actualización
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Actualizando sistema..." >> $LOG_FILE
-arch-chroot /.snapshots/${SNAPSHOT_ID}/writable pacman -Syu --noconfirm 2>>$LOG_FILE
+arch-chroot /.snapshots/${SNAPSHOT_ID}/writable pacman -Syu --noconfirm
 
 # Crear snapshot post-actualización
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Creando snapshot post-actualización..." >> $LOG_FILE
-snapper create -t post --pre-number ${SNAPSHOT_ID} --description "[AUTO] Post-actualización" 2>>$LOG_FILE
+snapper create -t post --pre-number ${SNAPSHOT_ID} --description "Post-actualización"
 
-# Registrar éxito
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Actualización completada exitosamente" >> $LOG_FILE
+# Actualizar entradas de arranque
+/usr/local/bin/update-systemd-boot-entries
 EOF
 
     chmod +x /usr/bin/transactional-update
 
     # Configurar servicio systemd
-    cat <<EOF > "$SYSTEMD_SERVICE"
+    cat <<EOF > ${SYSTEMD_SERVICE}
 [Unit]
-Description=Actualización Transaccional del Sistema
+Description=Actualización Transaccional
 After=network-online.target
 
 [Service]
@@ -197,9 +183,9 @@ Type=oneshot
 ExecStart=/usr/bin/transactional-update
 EOF
 
-    cat <<EOF > "$SYSTEMD_TIMER"
+    cat <<EOF > ${SYSTEMD_TIMER}
 [Unit]
-Description=Actualizaciones Automáticas Diarias
+Description=Actualizaciones Diarias Automáticas
 
 [Timer]
 OnCalendar=daily
@@ -211,45 +197,75 @@ WantedBy=timers.target
 EOF
 
     systemctl daemon-reload
-    systemctl enable --now transactional-update.timer | tee -a "$LOG_FILE"
-    log "${GREEN}✅ Timer de actualizaciones configurado${NC}"
+    systemctl enable --now transactional-update.timer
 }
 
-# Configuración de SystemDBoot
+# Configuración de Systemd-Boot
 setup_systemdboot() {
-    log "${BLUE}👢 Configurando entradas de arranque...${NC}"
+    log "INFO" "Configurando Systemd-Boot..."
 
-    # Obtener información del sistema
-    local current_kernel=$(ls /usr/lib/modules | grep -v extramodules | sort -V | tail -n1)
-    local root_partuuid=$(blkid -s PARTUUID -o value $(findmnt / -o SOURCE -n))
+    # Crear hook de actualización
+    cat <<'EOF' > ${HOOK_SCRIPT}
+#!/bin/bash
+set -euo pipefail
 
-    # Crear entrada de arranque para snapshots
-    cat <<EOF > "$BOOT_LOADER_ENTRIES/arch-snapshot.conf"
-title Arch Linux (Snapshot BTRFS)
+root_partuuid=$(blkid -s PARTUUID -o value $(findmnt / -o SOURCE -n))
+current_kernel=$(ls /usr/lib/modules | grep -v extramodules | sort -V | tail -n1)
+
+# Eliminar entradas antiguas
+find "${BOOT_LOADER_ENTRIES}" -name "arch-snapshot-*.conf" -delete
+
+# Generar nuevas entradas
+snapper -c root list | awk '/pre|post/ {print $1}' | while read snapshot_id; do
+    snapshot_desc=$(snapper -c root info $snapshot_id | grep "Description" | cut -d':' -f2 | sed 's/^[ \t]*//;s/[ \t]*$//')
+    cat <<CONF > "${BOOT_LOADER_ENTRIES}/arch-snapshot-${snapshot_id}.conf"
+title Arch Linux (Snapshot #${snapshot_id}) - ${snapshot_desc}
 linux /vmlinuz-${current_kernel}
 initrd /initramfs-${current_kernel}.img
-options root=PARTUUID=${root_partuuid} rootflags=subvol=@.snapshots rw
+options root=PARTUUID=${root_partuuid} rootflags=subvol=@.snapshots/${snapshot_id}/snapshot rw
+CONF
+done
+
+# Actualizar firmware UEFI
+bootctl update
 EOF
 
-    # Actualizar GRUB
-    grub-mkconfig -o /boot/grub/grub.cfg | tee -a "$LOG_FILE"
-    log "${GREEN}✅ Entradas de arranque actualizadas${NC}"
+    chmod +x ${HOOK_SCRIPT}
+
+    # Configurar hook en Snapper
+    echo "POST_CREATE_SNAPSHOT=\"${HOOK_SCRIPT}\"" >> /etc/snapper/configs/root
+
+    # Generar entradas iniciales
+    ${HOOK_SCRIPT}
+
+    # Entrada principal
+    local root_partuuid=$(blkid -s PARTUUID -o value $(findmnt / -o SOURCE -n))
+    local current_kernel=$(ls /usr/lib/modules | grep -v extramodules | sort -V | tail -n1)
+
+    cat <<EOF > "${BOOT_LOADER_ENTRIES}/arch.conf"
+title Arch Linux (Current)
+linux /vmlinuz-${current_kernel}
+initrd /initramfs-${current_kernel}.img
+options root=PARTUUID=${root_partuuid} rootflags=subvol=@ rw
+EOF
+
+    log "SUCCESS" "Entradas de Systemd-Boot actualizadas"
 }
 
-# Sistema de limpieza automática
-setup_snapshot_cleanup() {
-    log "${BLUE}🧹 Configurando política de retención...${NC}"
+# Limpieza automática de snapshots
+setup_cleanup() {
+    log "INFO" "Configurando limpieza automática..."
 
-    cat <<EOF > "$SNAPSHOT_CLEANUP_SERVICE"
+    cat <<EOF > /etc/systemd/system/snapper-cleanup.service
 [Unit]
-Description=Limpieza Automática de Snapshots
+Description=Limpieza de Snapshots Antiguos
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/sh -c 'snapper cleanup number && snapper cleanup timeline'
 EOF
 
-    cat <<EOF > "$SNAPSHOT_CLEANUP_TIMER"
+    cat <<EOF > /etc/systemd/system/snapper-cleanup.timer
 [Unit]
 Description=Limpieza Semanal de Snapshots
 
@@ -262,8 +278,7 @@ WantedBy=timers.target
 EOF
 
     systemctl daemon-reload
-    systemctl enable --now snapper-cleanup.timer | tee -a "$LOG_FILE"
-    log "${GREEN}✅ Programa de limpieza activado${NC}"
+    systemctl enable --now snapper-cleanup.timer
 }
 
 # Función principal
@@ -273,14 +288,15 @@ main() {
     configure_snapper
     setup_transactional_updates
     setup_systemdboot
-    setup_snapshot_cleanup
+    setup_cleanup
 
-    log "${GREEN}🎉 Configuración completada exitosamente!${NC}"
-    log "${YELLOW}⚠️  Recomendaciones finales:"
-    log "1. Verifique las entradas de arranque: ${BOOT_LOADER_ENTRIES}"
-    log "2. Revise los timers activos: systemctl list-timers"
-    log "3. Monitorice los logs: tail -f ${LOG_FILE}${NC}"
+    log "SUCCESS" "Configuración completada exitosamente!"
+    log "INFO" "Recomendaciones finales:"
+    log "INFO" "1. Verifique las entradas de arranque: ${BOOT_LOADER_ENTRIES}"
+    log "INFO" "2. Revise los timers: systemctl list-timers"
+    log "INFO" "3. Monitorice los logs: tail -f ${LOG_FILE}"
+    log "WARNING" "Se recomienda reiniciar el sistema para aplicar todos los cambios"
 }
 
 main "$@"
-#test14
+#test15
