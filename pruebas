@@ -53,8 +53,9 @@ configure_snapper() {
 
     # Configuración de Snapper
     if [[ ! -f /etc/snapper/configs/root ]]; then
-        cp /etc/snapper/config-templates/default /etc/snapper/configs/root
-        sed -i -e "s|^SNAPSHOT_ROOT=.*|SNAPSHOT_ROOT=\"/.snapshots\"|" \
+    snapper -c root create-config / || error "No se pudo crear la configuración de snapper"
+
+    sed -i -e "s|^SNAPSHOT_ROOT=.*|SNAPSHOT_ROOT=\"/.snapshots\"|" \
                -e "s|^ALLOW_USERS=.*|ALLOW_USERS=\"$REAL_USER\"|" \
                -e 's|^TIMELINE_CREATE=.*|TIMELINE_CREATE="yes"|' \
                -e 's|^TIMELINE_CLEANUP=.*|TIMELINE_CLEANUP="yes"|' \
