@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
 
-# ==============================================
-#  Script para transformar Arch Linux en un
-#  sistema inmutable con actualizaciones
-#  transaccionales utilizando systemd-boot
-#  Adaptado para instalaciones con archinstall
-#  Autor: Tu Nombre
-#  Fecha: $(date '+%d/%m/%Y')
-# ==============================================
-
 # Limpiamos la pantalla al inicio
 clear
 
@@ -367,3 +358,4 @@ main() {
 
 # Ejecutar función principal
 main
+#test7
