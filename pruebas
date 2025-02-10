@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#test8
+
 # Limpiamos la pantalla al inicio
 clear
 
@@ -125,16 +127,16 @@ comprobar_conexion() {
 configurar_snapper() {
     info "Configurando Snapper..."
 
-    # Verificar si el directorio /.snapshots ya existe
-    if [ ! -d /.snapshots ]; then
-        info "Creando directorio /.snapshots..."
-        mkdir -p /.snapshots
-        chmod 750 /.snapshots
-        chown :root /.snapshots
-        exito "Directorio /.snapshots creado."
+    # Verificar si /.snapshots es un subvolumen
+    if btrfs subvolume show /.snapshots &> /dev/null; then
+        exito "El subvolumen /.snapshots ya existe."
     else
-        advertencia "El directorio /.snapshots ya existe."
+        error "El directorio /.snapshots existe pero no es un subvolumen. Por favor, conviértelo en subvolumen antes de continuar."
     fi
+
+    # Establecer permisos adecuados
+    chmod 750 /.snapshots
+    chown :root /.snapshots
 
     # Crear configuración para root si no existe
     if [ ! -f /etc/snapper/configs/root ]; then
@@ -145,13 +147,13 @@ configurar_snapper() {
     fi
 
     # Configurar Snapper
-    sed -i "s/^ALLOW_USERS=\".*\"/ALLOW_USERS=\"$USERNAME\"/" /etc/snapper/configs/root
-    sed -i 's/^TIMELINE_CREATE="no"/TIMELINE_CREATE="yes"/' /etc/snapper/configs/root
-    sed -i 's/^TIMELINE_CLEANUP="no"/TIMELINE_CLEANUP="yes"/' /etc/snapper/configs/root
-    sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="10"/' /etc/snapper/configs/root
-    sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="10"/' /etc/snapper/configs/root
-    sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="10"/' /etc/snapper/configs/root
-    sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="10"/' /etc/snapper/configs/root
+    sed -i "s|^ALLOW_USERS=\".*\"|ALLOW_USERS=\"$USERNAME\"|" /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_CREATE="no"|TIMELINE_CREATE="yes"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_CLEANUP="no"|TIMELINE_CLEANUP="yes"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_LIMIT_HOURLY="10"|TIMELINE_LIMIT_HOURLY="10"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_LIMIT_DAILY="10"|TIMELINE_LIMIT_DAILY="10"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_LIMIT_MONTHLY="10"|TIMELINE_LIMIT_MONTHLY="10"|' /etc/snapper/configs/root
+    sed -i 's|^TIMELINE_LIMIT_YEARLY="10"|TIMELINE_LIMIT_YEARLY="10"|' /etc/snapper/configs/root
 
     # Habilitar y arrancar servicios y timers
     systemctl enable --now snapper-timeline.timer snapper-cleanup.timer || error "No se pudieron habilitar los timers de Snapper."
@@ -358,4 +360,4 @@ main() {
 
 # Ejecutar función principal
 main
-#test7
+#test8
