@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -e pipefail
+
+#set -euo pipefail
 
 # Configuración de colores para mensajes
 RED='\033[0;31m'
@@ -175,4 +177,4 @@ main() {
 }
 
 main "$@"
-#test11
+#test12
