@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Instalador de scripts de mxhectorvega
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxinstalador)
-# Fecha de actualización: 09/02/2025
-# Versión: 1.4
+# Ejecución: bash <(curl -L tinyurl.com/mxpruebas)
+# Fecha de actualización: 10/02/2025
+# Versión: 1.9
 # Strict mode
+
 set -euo pipefail
 # Colors
 GREEN='\033[0;32m'
@@ -54,7 +55,7 @@ show_menu() {
     echo -e "${CYAN}5)${NC} Instalacion de controladores para Linux automatizado"
     echo -e "${CYAN}6)${NC} Controladores para impresora Epson L3210 Ecotank"
     echo -e "${CYAN}7)${NC} Instalacion de QEMU + Virt Manager + Optimizaciones"
-    echo -e "${CYAN}8)${NC} Implementar transactional-update + snapshots + systemdboot"
+    echo -e "${CYAN}8)${NC} Implementar transactional-updte + snapshots + systemdboot"
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 # Función para registrar paquetes instalados
@@ -63,38 +64,21 @@ register_package() {
 }
 # Función para ejecutar el script seleccionado
 execute_script() {
-    local selection=$1
-    if [[ $selection -eq 8 ]]; then
-        # Caso especial para la opción 8
-        echo -e "\n${YELLOW}Ejecutando script especial para la opción 8...${NC}"
-        cd || exit 1
-        if ! curl -L https://raw.githubusercontent.com/mxhectorvega/installarch/main/inmutable > inmutable; then
-            echo -e "${RED}Error al descargar el script para la opción 8.${NC}"
-            return 1
-        fi
-        chmod +x inmutable
-        if ! sudo bash inmutable 2>&1 | tee -a "$LOG_FILE"; then
-            echo -e "${RED}Error al ejecutar el script para la opción 8.${NC}"
-            return 1
-        fi
-        return 0
-    else
-        # Comportamiento estándar para las demás opciones
-        local url="$2"
-        local temp_script="$TEMP_DIR/script.sh"
-        echo -e "\n${YELLOW}Descargando script...${NC}"
-        if ! curl -s "$url" > "$temp_script"; then
-            echo -e "${RED}Error al descargar el script${NC}"
-            return 1
-        fi
-        chmod +x "$temp_script"
-        echo -e "${GREEN}Script descargado correctamente${NC}"
-        echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
-        if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
-            return 1
-        fi
-        return 0
+    local url="$1"
+    local temp_script="$TEMP_DIR/script.sh"
+    echo -e "\n${YELLOW}Descargando script...${NC}"
+    if ! curl -s "$url" > "$temp_script"; then
+        echo -e "${RED}Error al descargar el script${NC}"
+        return 1
     fi
+    chmod +x "$temp_script"
+    echo -e "${GREEN}Script descargado correctamente${NC}"
+    echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
+    # Ejecutar script y capturar su salida en el log
+    if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
+        return 1
+    fi
+    return 0
 }
 # Función de pantalla final
 show_final_screen() {
@@ -115,7 +99,7 @@ show_final_screen() {
     if [ "$status" -ne 0 ]; then
         echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
         read -n 1
-        cat "$LOG_FILE"
+        less "$LOG_FILE"
     fi
     echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
     read -n 1
@@ -146,8 +130,30 @@ main() {
                 echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
                 exit 0
                 ;;
-            [1-8])
-                if execute_script "$selection" "${SCRIPT_URLS[$selection]}"; then
+            5)
+                echo -e "\n${YELLOW}Ejecutando script especial para la opción 5...${NC}"
+                cd
+                curl -L https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers > drivers
+                sudo bash drivers 2>&1 | tee -a "$LOG_FILE"
+                if [ $? -eq 0 ]; then
+                    show_final_screen 0
+                else
+                    show_final_screen 1
+                fi
+                ;;
+            8)
+                echo -e "\n${YELLOW}Ejecutando script especial para la opción 8...${NC}"
+                cd
+                curl -L https://raw.githubusercontent.com/mxhectorvega/installarch/main/inmutable > inmutable
+                sudo bash inmutable 2>&1 | tee -a "$LOG_FILE"
+                if [ $? -eq 0 ]; then
+                    show_final_screen 0
+                else
+                    show_final_screen 1
+                fi
+                ;;
+            [1-467])
+                if execute_script "${SCRIPT_URLS[$selection]}"; then
                     show_final_screen 0
                 else
                     show_final_screen 1
@@ -163,4 +169,4 @@ main() {
 }
 # Ejecutar el script
 main "$@"
-#update1
+#test2
