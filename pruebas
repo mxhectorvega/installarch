@@ -33,6 +33,22 @@ check_root() {
     fi
 }
 
+# Verificar sistema btrfs y subvolúmenes
+check_btrfs_setup() {
+    if ! mount | grep "/ type btrfs" > /dev/null; then
+        log_message "ERROR" "El sistema no está instalado en un sistema de archivos btrfs"
+        exit 1
+    fi
+
+    local required_subvols=("@" "@.snapshots" "@home" "@log" "@pkg")
+    for subvol in "${required_subvols[@]}"; do
+        if ! btrfs subvolume list / | grep -q "${subvol}"; then
+            log_message "ERROR" "Subvolumen ${subvol} no encontrado"
+            exit 1
+        fi
+    done
+}
+
 # Verificar e instalar dependencias
 check_dependencies() {
     local deps=("snapper" "btrfs-progs" "pacman" "systemd")
@@ -55,29 +71,66 @@ check_dependencies() {
 
 # Configurar Snapper
 setup_snapper() {
-    if [[ ! -d "/.snapshots" ]]; then
-        log_message "ERROR" "El subvolumen /.snapshots no existe"
-        exit 1
+    # Verificar si ya existe una configuración de snapper
+    if snapper list-configs | grep -q "root"; then
+        log_message "INFO" "La configuración de Snapper ya existe"
+        return 0
     fi
 
-    if ! snapper list-configs | grep -q "root"; then
-        log_message "INFO" "Configurando Snapper para el sistema root"
-        if ! snapper create-config /; then
-            log_message "ERROR" "Error al crear la configuración de Snapper"
-            exit 1
-        fi
+    log_message "INFO" "Configurando Snapper para el sistema root"
+
+    # Verificar si el punto de montaje /.snapshots existe y está montado
+    if mountpoint -q "/.snapshots"; then
+        umount "/.snapshots"
     fi
+
+    # Verificar si existe el subvolumen @.snapshots
+    if btrfs subvolume list / | grep -q "@.snapshots"; then
+        # Montar el subvolumen @.snapshots en /.snapshots
+        mount -o subvol=@.snapshots "$(findmnt -n -o SOURCE /)" "/.snapshots"
+    else
+        log_message "ERROR" "Subvolumen @.snapshots no encontrado"
+        return 1
+    fi
+
+    # Crear la configuración de snapper
+    if ! snapper create-config /; then
+        log_message "ERROR" "Error al crear la configuración de Snapper"
+        return 1
+    fi
+
+    # Ajustar los permisos
+    chmod 750 "/.snapshots"
+    chown :wheel "/.snapshots"
+
+    log_message "SUCCESS" "Configuración de Snapper completada"
+    return 0
 }
 
 # Crear entrada de boot para snapshot
 create_boot_entry() {
     local snapshot_num=$1
     local snapshot_date=$(date '+%Y%m%d-%H%M%S')
+    local root_device=$(findmnt -n -o SOURCE /)
+    local root_uuid=$(blkid -s UUID -o value "$root_device")
 
-    # Crear entrada de boot
-    cp /boot/loader/entries/arch.conf "/boot/loader/entries/arch-${snapshot_num}.conf"
+    # Verificar si existe el archivo de entrada original
+    if [[ ! -f "/boot/loader/entries/arch.conf" ]]; then
+        log_message "ERROR" "No se encuentra el archivo de entrada de boot original"
+        return 1
+    }
+
+    # Crear nueva entrada de boot
+    cp "/boot/loader/entries/arch.conf" "/boot/loader/entries/arch-${snapshot_num}.conf"
+
+    # Modificar la nueva entrada
     sed -i "s/title.*/title Arch Linux (Snapshot ${snapshot_num} - ${snapshot_date})/" "/boot/loader/entries/arch-${snapshot_num}.conf"
-    sed -i "s/root=.*/root=PARTUUID=$(blkid -s PARTUUID -o value $(findmnt -n -o SOURCE /)) rootflags=subvol=@snapshots\/${snapshot_num}\/snapshot/" "/boot/loader/entries/arch-${snapshot_num}.conf"
+    sed -i "s|options.*|options root=UUID=${root_uuid} rootflags=subvol=@.snapshots/${snapshot_num}/snapshot rw quiet|" "/boot/loader/entries/arch-${snapshot_num}.conf"
+
+    # Actualizar loader.conf para incluir la nueva entrada
+    if ! grep -q "arch-${snapshot_num}" /boot/loader/loader.conf; then
+        echo "arch-${snapshot_num}" >> /boot/loader/loader.conf
+    fi
 }
 
 # Realizar actualización transaccional
@@ -120,7 +173,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/transactional-update.sh
+ExecStart=/usr/local/sbin/transactional-update.sh update
 RemainAfterExit=yes
 
 [Install]
@@ -148,8 +201,12 @@ EOF
 # Función principal
 main() {
     check_root
+    check_btrfs_setup
     check_dependencies
-    setup_snapper
+    if ! setup_snapper; then
+        log_message "ERROR" "Error en la configuración de Snapper"
+        exit 1
+    fi
 
     # Si se ejecuta manualmente
     if [[ "$1" == "update" ]]; then
@@ -163,4 +220,4 @@ main() {
 
 # Ejecutar script
 main "$@"
-#test4
+#test6
