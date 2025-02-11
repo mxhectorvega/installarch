@@ -91,7 +91,7 @@ verificar_estructura() {
     done
 
     umount /mnt/root
-    rm -rf /mnt/root
+    rm -rf --no-preserve-root /mnt/root
     log "ÉXITO" "Estructura Btrfs validada correctamente"
 }
 
@@ -294,4 +294,4 @@ main() {
 # EJECUCIÓN
 # --------------------------------------
 main "$@"
-#up6
+#up7
