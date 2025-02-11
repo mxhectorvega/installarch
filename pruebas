@@ -46,10 +46,10 @@ check_dependencies() {
 
     if [[ ${#missing_deps[@]} -gt 0 ]]; then
         log_message "INFO" "Instalando dependencias faltantes: ${missing_deps[*]}"
-        pacman -Sy --noconfirm "${missing_deps[@]}" || {
+        if ! pacman -Sy --noconfirm "${missing_deps[@]}"; then
             log_message "ERROR" "Error al instalar dependencias"
             exit 1
-        }
+        fi
     fi
 }
 
@@ -58,14 +58,14 @@ setup_snapper() {
     if [[ ! -d "/.snapshots" ]]; then
         log_message "ERROR" "El subvolumen /.snapshots no existe"
         exit 1
-    }
+    fi
 
     if ! snapper list-configs | grep -q "root"; then
         log_message "INFO" "Configurando Snapper para el sistema root"
-        snapper create-config / || {
+        if ! snapper create-config /; then
             log_message "ERROR" "Error al crear la configuración de Snapper"
             exit 1
-        }
+        fi
     fi
 }
 
@@ -105,7 +105,9 @@ do_transactional_update() {
 # Limpiar snapshots antiguos
 cleanup_snapshots() {
     log_message "INFO" "Limpiando snapshots antiguos"
-    snapper cleanup number || log_message "WARNING" "Error al limpiar snapshots"
+    if ! snapper cleanup number; then
+        log_message "WARNING" "Error al limpiar snapshots"
+    fi
 }
 
 # Crear servicios y timers systemd
@@ -161,4 +163,4 @@ main() {
 
 # Ejecutar script
 main "$@"
-#test2
+#test4
