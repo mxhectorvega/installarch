@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-
 # Instalador de scripts de mxhectorvega
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxinstalador)
-# Fecha de actualización: 09/02/2025
-# Versión: 1.4
-
+# Ejecución: bash <(curl -L tinyurl.com/mxinstalador)
+# Fecha de actualización: 10/02/2025
+# Versión: 1.9
 # Strict mode
-set -euo pipefail
 
+set -euo pipefail
 # Colors
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -17,15 +15,12 @@ CYAN='\033[0;36m'
 RED='\033[0;31m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
-
 # Variables
 LOG_FILE="$HOME/arch_install.log"
 INSTALLED_PACKAGES=()
 TEMP_DIR="/tmp/arch_installer_$$"
-
 # Crear directorio temporal
 mkdir -p "$TEMP_DIR"
-
 # Función de limpieza
 cleanup() {
     local status=$?
@@ -39,9 +34,7 @@ cleanup() {
     fi
     rm -rf "$TEMP_DIR"
 }
-
 trap cleanup EXIT
-
 # Función de bienvenida
 show_welcome() {
     clear
@@ -52,11 +45,9 @@ show_welcome() {
     echo -e "\nArchivo de registros: ${BLUE}$LOG_FILE${NC}\n"
     sleep 1
 }
-
 # Función del menú
 show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
-
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y AUR Helper"
     echo -e "${CYAN}2)${NC} Paqueteria flatpak para el usuario doméstico/avanzado"
     echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x (solo escenciales)"
@@ -64,41 +55,34 @@ show_menu() {
     echo -e "${CYAN}5)${NC} Instalacion de controladores para Linux automatizado"
     echo -e "${CYAN}6)${NC} Controladores para impresora Epson L3210 Ecotank"
     echo -e "${CYAN}7)${NC} Instalacion de QEMU + Virt Manager + Optimizaciones"
+    echo -e "${CYAN}8)${NC} Implementar transactional-updte + snapshots + systemdboot"
     echo -e "${CYAN}0)${NC} Salir\n"
 }
-
 # Función para registrar paquetes instalados
 register_package() {
     INSTALLED_PACKAGES+=("$1")
 }
-
 # Función para ejecutar el script seleccionado
 execute_script() {
     local url="$1"
     local temp_script="$TEMP_DIR/script.sh"
-
     echo -e "\n${YELLOW}Descargando script...${NC}"
     if ! curl -s "$url" > "$temp_script"; then
         echo -e "${RED}Error al descargar el script${NC}"
         return 1
     fi
-
     chmod +x "$temp_script"
     echo -e "${GREEN}Script descargado correctamente${NC}"
     echo -e "\n${YELLOW}Ejecutando script...${NC}\n"
-
     # Ejecutar script y capturar su salida en el log
     if ! bash "$temp_script" 2>&1 | tee -a "$LOG_FILE"; then
         return 1
     fi
-
     return 0
 }
-
 # Función de pantalla final
 show_final_screen() {
     local status=$1
-
     clear
     if [ "$status" -eq 0 ]; then
         echo -e "${GREEN}╭──────────────────────────────────────────╮${NC}"
@@ -110,20 +94,16 @@ show_final_screen() {
         echo -e "${RED}│   Revise el archivo de registros         │${NC}"
         echo -e "${RED}╰──────────────────────────────────────────╯${NC}"
     fi
-
     echo -e "\n${PURPLE}♥️ Suscríbete!${NC}"
     echo -e "${PURPLE}🌐 https://www.youtube.com/mxhectorvega${NC}\n"
-
     if [ "$status" -ne 0 ]; then
         echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
         read -n 1
         less "$LOG_FILE"
     fi
-
     echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
     read -n 1
 }
-
 # URLs de los scripts (ocultas del menú)
 declare -A SCRIPT_URLS=(
     [1]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/repos"
@@ -133,27 +113,46 @@ declare -A SCRIPT_URLS=(
     [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers"
     [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
     [7]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/qemu"
+    [8]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/inmutable"
 )
-
 # Función principal
 main() {
     # Inicializar archivo de log
     : > "$LOG_FILE"
-
     while true; do
         # Mostrar bienvenida y menú
         show_welcome
         show_menu
-
         # Leer selección
-        read -rp $'\033[1;33mSeleccione una opción (0-7): \033[0m' selection
-
+        read -rp $'\033[1;33mSeleccione una opción (0-8): \033[0m' selection
         case $selection in
             0)
                 echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
                 exit 0
                 ;;
-            [1-7])
+            5)
+                echo -e "\n${YELLOW}Ejecutando script especial para la opción 5...${NC}"
+                cd
+                curl -L https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers > drivers
+                sudo bash drivers 2>&1 | tee -a "$LOG_FILE"
+                if [ $? -eq 0 ]; then
+                    show_final_screen 0
+                else
+                    show_final_screen 1
+                fi
+                ;;
+            8)
+                echo -e "\n${YELLOW}Ejecutando script especial para la opción 8...${NC}"
+                cd
+                curl -L https://raw.githubusercontent.com/mxhectorvega/installarch/main/inmutable > inmutable
+                sudo bash inmutable 2>&1 | tee -a "$LOG_FILE"
+                if [ $? -eq 0 ]; then
+                    show_final_screen 0
+                else
+                    show_final_screen 1
+                fi
+                ;;
+            [1-467])
                 if execute_script "${SCRIPT_URLS[$selection]}"; then
                     show_final_screen 0
                 else
@@ -161,14 +160,12 @@ main() {
                 fi
                 ;;
             *)
-                echo -e "\n${RED}Opción inválida. Por favor, seleccione un número del 0 al 7.${NC}"
+                echo -e "\n${RED}Opción inválida. Por favor, seleccione un número del 0 al 8.${NC}"
                 sleep 2
                 continue
                 ;;
         esac
     done
 }
-
 # Ejecutar el script
 main "$@"
-# test5
