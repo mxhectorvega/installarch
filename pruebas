@@ -118,6 +118,7 @@ create_boot_entry() {
     if [[ ! -f "/boot/loader/entries/arch.conf" ]]; then
         log_message "ERROR" "No se encuentra el archivo de entrada de boot original"
         return 1
+    fi
     }
 
     # Crear nueva entrada de boot
@@ -221,3 +222,4 @@ main() {
 # Ejecutar script
 main "$@"
 #test6
+#line121 +"fi"
