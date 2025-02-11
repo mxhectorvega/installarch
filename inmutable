@@ -63,7 +63,7 @@ trap 'manejar_error ${LINENO} "$BASH_COMMAND"' ERR
 verificar_estructura() {
     log "INFO" "🔍 Verificando estructura Btrfs..."
 
-    local subvolumenes=("@home" "@.snapshots" "@log" "@pkgs")
+    local subvolumenes=("@home" "@.snapshots" "@log" "@pkg")
     local dispositivo=$(findmnt / -o SOURCE -n | sed 's/\[.*\]//')
 
     mkdir -p /mnt/root || {
@@ -281,4 +281,4 @@ main() {
 }
 
 main "$@"
-#up2
+#up3
