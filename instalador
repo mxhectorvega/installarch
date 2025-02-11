@@ -64,6 +64,7 @@ show_menu() {
     echo -e "${CYAN}5)${NC} Instalacion de controladores para Linux automatizado"
     echo -e "${CYAN}6)${NC} Controladores para impresora Epson L3210 Ecotank"
     echo -e "${CYAN}7)${NC} Instalacion de QEMU + Virt Manager + Optimizaciones"
+    echo -e "${CYAN}8)${NC} Implementar transactional-updte + snapshots + systemdboot"
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 
@@ -133,6 +134,7 @@ declare -A SCRIPT_URLS=(
     [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers"
     [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
     [7]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/qemu"
+    [8]="curl -L raw.githubusercontent.com/mxhectorvega/installarch/main/inmutable > inmutable;sudo bash inmutable"
 )
 
 # Función principal
@@ -146,14 +148,14 @@ main() {
         show_menu
 
         # Leer selección
-        read -rp $'\033[1;33mSeleccione una opción (0-7): \033[0m' selection
+        read -rp $'\033[1;33mSeleccione una opción (0-8): \033[0m' selection
 
         case $selection in
             0)
                 echo -e "\n${YELLOW}Saliendo del instalador...${NC}"
                 exit 0
                 ;;
-            [1-7])
+            [1-8])
                 if execute_script "${SCRIPT_URLS[$selection]}"; then
                     show_final_screen 0
                 else
