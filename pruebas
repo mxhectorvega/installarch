@@ -115,7 +115,7 @@ show_final_screen() {
     if [ "$status" -ne 0 ]; then
         echo -e "${YELLOW}Presione cualquier tecla para ver el log de errores...${NC}"
         read -n 1
-        less "$LOG_FILE"
+        cat "$LOG_FILE"
     fi
     echo -e "\n${YELLOW}Presione cualquier tecla para volver al menú...${NC}"
     read -n 1
