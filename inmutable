@@ -97,9 +97,11 @@ instalar_dependencias() {
     log "INFO" "📦 Instalando dependencias..."
 
     local dependencias=(
-        snapper snap-pac grub-btrfs
-        btrfs-progs inotify-tools
-        python-dbus python-notify2
+        snapper snap-pac      # Herramientas de snapshots y soporte para pacman
+        btrfs-progs           # Utilidades Btrfs
+        inotify-tools         # Monitoreo de cambios en el sistema
+        python-dbus           # Integración con DBus
+        python-notify2        # Notificaciones del sistema
     )
 
     for pkg in "${dependencias[@]}"; do
