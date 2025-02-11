@@ -134,7 +134,7 @@ main() {
                 echo -e "\n${YELLOW}Ejecutando script especial para la opción 5...${NC}"
                 cd
                 curl -L https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers > drivers
-                sudo bash drivers 2>&1 | tee -a "$LOG_FILE"
+                bash drivers 2>&1 | tee -a "$LOG_FILE"
                 if [ $? -eq 0 ]; then
                     show_final_screen 0
                 else
