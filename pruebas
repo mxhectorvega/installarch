@@ -3,138 +3,132 @@
 # Colores para los mensajes
 ROJO='\033[0;31m'
 VERDE='\033[0;32m'
-AMARILLO='\033[1;33m'
+AMARILLO='\033[0;33m'
 AZUL='\033[0;34m'
-NC='\033[0m'
+NC='\033[0m' # Sin Color
 
-# Función para imprimir mensajes con colores
-log_mensaje() {
-    local tipo=$1
-    local mensaje=$2
-    case $tipo in
-        "INFO") echo -e "${AZUL}[INFO]${NC} $mensaje" ;;
-        "ERROR") echo -e "${ROJO}[ERROR]${NC} $mensaje" ;;
-        "EXITO") echo -e "${VERDE}[ÉXITO]${NC} $mensaje" ;;
-        "AVISO") echo -e "${AMARILLO}[AVISO]${NC} $mensaje" ;;
+# Archivo de registro
+LOG_FILE="/var/log/transactional-update.log"
+
+# Función para registrar mensajes
+log_message() {
+    local level=$1
+    local message=$2
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "${timestamp} [${level}] ${message}" >> "${LOG_FILE}"
+
+    case ${level} in
+        "ERROR")   echo -e "${ROJO}[ERROR] ${message}${NC}" ;;
+        "INFO")    echo -e "${AZUL}[INFO] ${message}${NC}" ;;
+        "SUCCESS") echo -e "${VERDE}[SUCCESS] ${message}${NC}" ;;
+        "WARNING") echo -e "${AMARILLO}[WARNING] ${message}${NC}" ;;
     esac
 }
 
-# Función para registrar errores
-registrar_error() {
-    local mensaje=$1
-    local archivo_log="/var/log/transactional-update.log"
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: $mensaje" >> "$archivo_log"
-    log_mensaje "ERROR" "$mensaje"
-}
-
-# Verificar si se está ejecutando como root
-verificar_root() {
-    if [ "$EUID" -ne 0 ]; then
-        log_mensaje "ERROR" "Este script debe ejecutarse como root"
+# Verificar si se ejecuta como root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        log_message "ERROR" "Este script debe ejecutarse como root"
         exit 1
     fi
 }
 
 # Verificar e instalar dependencias
-instalar_dependencias() {
-    local dependencias=("snapper" "btrfs-progs" "systemd-boot-manager" "rsync")
-    log_mensaje "INFO" "Verificando dependencias..."
+check_dependencies() {
+    local deps=("snapper" "btrfs-progs" "pacman" "systemd")
+    local missing_deps=()
 
-    for dep in "${dependencias[@]}"; do
-        if ! pacman -Qi "$dep" >/dev/null 2>&1; then
-            log_mensaje "INFO" "Instalando $dep..."
-            if ! pacman -S --noconfirm "$dep"; then
-                registrar_error "No se pudo instalar $dep"
-                return 1
-            fi
+    for dep in "${deps[@]}"; do
+        if ! pacman -Qi "${dep}" >/dev/null 2>&1; then
+            missing_deps+=("${dep}")
         fi
     done
-    return 0
+
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        log_message "INFO" "Instalando dependencias faltantes: ${missing_deps[*]}"
+        pacman -Sy --noconfirm "${missing_deps[@]}" || {
+            log_message "ERROR" "Error al instalar dependencias"
+            exit 1
+        }
+    fi
 }
 
 # Configurar Snapper
-configurar_snapper() {
-    log_mensaje "INFO" "Configurando Snapper..."
+setup_snapper() {
+    if [[ ! -d "/.snapshots" ]]; then
+        log_message "ERROR" "El subvolumen /.snapshots no existe"
+        exit 1
+    }
 
-    if [ ! -d "/.snapshots" ]; then
-        mkdir /.snapshots
+    if ! snapper list-configs | grep -q "root"; then
+        log_message "INFO" "Configurando Snapper para el sistema root"
+        snapper create-config / || {
+            log_message "ERROR" "Error al crear la configuración de Snapper"
+            exit 1
+        }
     fi
-
-    if ! snapper create-config /; then
-        registrar_error "Error al crear la configuración de Snapper"
-        return 1
-    fi
-
-    # Configurar retención de snapshots
-    sed -i 's/^NUMBER_LIMIT=.*/NUMBER_LIMIT="10"/' /etc/snapper/configs/root
-    sed -i 's/^NUMBER_LIMIT_IMPORTANT=.*/NUMBER_LIMIT_IMPORTANT="5"/' /etc/snapper/configs/root
-
-    return 0
 }
 
-# Función principal de actualización transaccional
-realizar_actualizacion() {
-    log_mensaje "INFO" "Iniciando actualización transaccional..."
+# Crear entrada de boot para snapshot
+create_boot_entry() {
+    local snapshot_num=$1
+    local snapshot_date=$(date '+%Y%m%d-%H%M%S')
+
+    # Crear entrada de boot
+    cp /boot/loader/entries/arch.conf "/boot/loader/entries/arch-${snapshot_num}.conf"
+    sed -i "s/title.*/title Arch Linux (Snapshot ${snapshot_num} - ${snapshot_date})/" "/boot/loader/entries/arch-${snapshot_num}.conf"
+    sed -i "s/root=.*/root=PARTUUID=$(blkid -s PARTUUID -o value $(findmnt -n -o SOURCE /)) rootflags=subvol=@snapshots\/${snapshot_num}\/snapshot/" "/boot/loader/entries/arch-${snapshot_num}.conf"
+}
+
+# Realizar actualización transaccional
+do_transactional_update() {
+    log_message "INFO" "Iniciando actualización transaccional"
 
     # Crear snapshot pre-actualización
-    local pre_snapshot=$(snapper create --type pre --print-number --description "Pre-actualización")
+    local snapshot_num=$(snapper create --type pre --print-number --description "transactional-update-pre" --cleanup-algorithm number)
 
     # Actualizar el sistema
-    if ! pacman -Syu --noconfirm; then
-        registrar_error "Error durante la actualización del sistema"
-        return 1
+    if pacman -Syu --noconfirm; then
+        # Crear snapshot post-actualización
+        snapper create --type post --pre-number "$snapshot_num" --description "transactional-update-post"
+        create_boot_entry "$snapshot_num"
+        log_message "SUCCESS" "Actualización transaccional completada exitosamente"
+    else
+        log_message "ERROR" "Error durante la actualización"
+        # Revertir al snapshot anterior
+        snapper undochange "$snapshot_num..0"
+        log_message "INFO" "Sistema revertido al estado anterior"
+        exit 1
     fi
-
-    # Crear snapshot post-actualización
-    local post_snapshot=$(snapper create --type post --print-number --description "Post-actualización" --pre-number "$pre_snapshot")
-
-    # Actualizar entradas de systemd-boot
-    actualizar_systemd_boot "$post_snapshot"
-
-    return 0
-}
-
-# Actualizar entradas de systemd-boot
-actualizar_systemd_boot() {
-    local snapshot_num=$1
-    log_mensaje "INFO" "Actualizando entradas de systemd-boot..."
-
-    # Crear entrada de boot para el snapshot
-    cat > "/boot/loader/entries/arch-snapshot-${snapshot_num}.conf" << EOF
-title Arch Linux (Snapshot ${snapshot_num})
-linux /vmlinuz-linux
-initrd /initramfs-linux.img
-options root=LABEL=root subvol=@snapshots/${snapshot_num}/snapshot rw
-EOF
 }
 
 # Limpiar snapshots antiguos
-limpiar_snapshots() {
-    log_mensaje "INFO" "Limpiando snapshots antiguos..."
-    snapper cleanup number
+cleanup_snapshots() {
+    log_message "INFO" "Limpiando snapshots antiguos"
+    snapper cleanup number || log_message "WARNING" "Error al limpiar snapshots"
 }
 
 # Crear servicios y timers systemd
-crear_servicios_systemd() {
-    # Servicio de actualización transaccional
-    cat > "/etc/systemd/system/transactional-update.service" << EOF
+setup_systemd() {
+    # Crear servicio de actualización transaccional
+    cat > /etc/systemd/system/transactional-update.service << EOF
 [Unit]
-Description=Actualización Transaccional de Arch Linux
+Description=Transactional Update Service
 After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/transactional-update.sh
+ExecStart=/usr/local/sbin/transactional-update.sh
 RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-    # Timer para actualizaciones automáticas
-    cat > "/etc/systemd/system/transactional-update.timer" << EOF
+    # Crear timer para actualizaciones automáticas
+    cat > /etc/systemd/system/transactional-update.timer << EOF
 [Unit]
-Description=Timer para Actualización Transaccional
+Description=Transactional Update Timer
 
 [Timer]
 OnCalendar=daily
@@ -151,30 +145,20 @@ EOF
 
 # Función principal
 main() {
-    verificar_root
+    check_root
+    check_dependencies
+    setup_snapper
 
-    if ! instalar_dependencias; then
-        exit 1
+    # Si se ejecuta manualmente
+    if [[ "$1" == "update" ]]; then
+        do_transactional_update
+        cleanup_snapshots
+    else
+        setup_systemd
+        log_message "SUCCESS" "Sistema configurado para actualizaciones transaccionales"
     fi
-
-    if ! configurar_snapper; then
-        exit 1
-    fi
-
-    crear_servicios_systemd
-
-    if ! realizar_actualizacion; then
-        exit 1
-    fi
-
-    limpiar_snapshots
-
-    log_mensaje "EXITO" "Configuración completada exitosamente"
 }
 
-# Si se ejecuta directamente el script
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
-fi
-
-#up1
+# Ejecutar script
+main "$@"
+#test2
