@@ -36,11 +36,9 @@ herramientas_terminal=(
     "git"
     "curl"
     "wget"
-    "nvtop"
     "htop"
     "vim"
     "less"
-    "man"
     "nmap"
     "speedtest-cli"
 )
