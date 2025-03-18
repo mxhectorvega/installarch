@@ -47,7 +47,7 @@ paquetes_gnome=(
     "org.gnome.Evolution"
     "org.gnome.Calculator"
     "org.gnome.Connections"
-    "org.gnome.Evince"
+    "org.gnome.Papers"
     "org.gnome.Loupe"
     "org.gnome.TextEditor"
     "org.gnome.gitlab.YaLTeR.VideoTrimmer"
