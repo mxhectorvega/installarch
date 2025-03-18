@@ -61,10 +61,6 @@ paquetes_gnome=(
 
 sudo pacman -S "${paquetes_gnome[@]}" --noconfirm --needed
 
-# Instalar el tema GTK3 de libadwaita
-sudo pacman -S adw-gtk-theme --noconfirm --needed
-flatpak install --user -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
-
 # Crear directorios de usuario en español
 xdg-user-dirs-update
 
@@ -95,6 +91,18 @@ sudo systemctl enable --now bluetooth.service
 
 # Instalar Java (por si acaso se requiere)
 sudo pacman -S jre8-openjdk --noconfirm --needed
+
+# Instalar Adw GTK en ~/.local/share/themes
+mkdir -p ~/.local/share/themes && curl -sL $(curl -s https://api.github.com/repos/lassekongo83/adw-gtk3/releases/latest | grep "browser_download_url" | grep -Eo "https://[^\"]+.tar.(xz|zx|gz)") -o /tmp/adw-gtk3.tar && tar -xf /tmp/adw-gtk3.tar -C ~/.local/share/themes && rm /tmp/adw-gtk3.tar
+
+# Instalar Adw GTK en flatpak
+flatpak install --user -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark
+
+# Definir temas previamente descargado e instalados para flatpak apps
+sudo flatpak override --filesystem=xdg-data/themes
+
+# Definir el tema dark de Adwk GTK global
+gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
 # Activar el servicio de pantalla de inicio de sesión (GDM)
 for i in {1..8}; do
