@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Instalador de scripts de mxhectorvega
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L tinyurl.com/mxinstalador)
+# Ejecución: bash <(curl -L tinyurl.com/mxinstalador) o is.gd/mxinstalador
 # Fecha de actualización: 10/02/2025
 # Versión: 1.9
 # Strict mode

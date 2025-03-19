@@ -1,4 +1,7 @@
 #!/bin/bash
+# tinyurl.com/mxpruebas
+# is.gd/mxpruebas
+
 
 # Colores para los mensajes
 ROJO='\033[0;31m'

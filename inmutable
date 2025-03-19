@@ -5,7 +5,7 @@
 # transaccionales utilizando systemd-boot
 # Adaptado para instalaciones con archinstall
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L tinyurl.com/mxinmutable)
+# Ejecución: bash <(curl -L tinyurl.com/mxinmutable) o is.gd/mxinmutable
 # Fecha de actualización: 10/02/2025
 # Versión: 1.1
 

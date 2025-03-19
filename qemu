@@ -2,7 +2,7 @@
 
 # Instalación de QEMU + Virt-Manager + Optimizaciones
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxqemu) o tiny.com/mxvirtmanager
+# Ejecución: bash <(is.gd/mxvirtmanager) o tiny.com/mxvirtmanager
 # Fecha de actualización: 09/02/2025
 # Versión: 3.0
 
@@ -170,9 +170,9 @@ main() {
   <name>default</name>
   <forward mode='nat'/>
   <bridge name='virbr0' stp='on' delay='0'/>
-  <ip address='192.168.122.1' netmask='255.255.255.0'>
+  <ip address='192.168.0.0' netmask='255.255.255.0'>
     <dhcp>
-      <range start='192.168.122.2' end='192.168.122.254'/>
+      <range start='192.168.0.1' end='192.168.0.24'/>
     </dhcp>
   </ip>
 </network>
@@ -185,9 +185,9 @@ EOF
   <uuid>$(uuidgen)</uuid>
   <forward mode='nat'/>
   <bridge name='virbr0' stp='on' delay='0'/>
-  <ip address='192.168.122.1' netmask='255.255.255.0'>
+  <ip address='192.168.0.0' netmask='255.255.255.0'>
     <dhcp>
-      <range start='192.168.122.2' end='192.168.122.254'/>
+      <range start='192.168.0.1' end='192.168.0.24'/>
     </dhcp>
   </ip>
 </network>

@@ -2,7 +2,7 @@
 
 # Instalación de Paru y configuración del repositorio Chaotic AUR en Arch Linux.
 # Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(curl -L is.gd/mxrepos)
+# Ejecución: bash <(curl -L is.gd/mxrepo) o tinyurl.com/mxrepo
 # Fecha de actualización: 07/02/2025
 # Versión: 5.1
 
