@@ -22,7 +22,7 @@ echo "Verificando posibles conflictos con iptables..."
 if ! pacman -Qi iptables &>/dev/null; then
     echo "iptables no está instalado. ¿Deseas instalarlo manualmente? (yes/no)"
     read respuesta
-    if [[ "$respuesta" == "yes" || "$respuesta" == "si" ]]; then
+    if [[ "$respuesta" == "y" || "$respuesta" == "y" ]]; then
         pacman -S iptables
     else
         echo "Instalación de iptables cancelada. No se continuará con la configuración."
