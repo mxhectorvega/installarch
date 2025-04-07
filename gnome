@@ -12,6 +12,7 @@
 sudo pacman -Sy --noconfirm
 
 # Instalar paquetes esenciales para el sistema operativo
+# "seahorse"
 paquetes_esenciales=(
     "openssh"
     "acpi"
@@ -38,7 +39,6 @@ paquetes_esenciales=(
     "intel-ucode"
     "mesa"
     "flatpak"
-    "seahorse"
     "android-tools"
     "scrcpy"
 )
@@ -81,7 +81,7 @@ sudo pacman -S "${paquetes_gnome[@]}" --noconfirm --needed
 xdg-user-dirs-update
 
 # Crear enlace simbólico para el paquete ssh-askpass
-sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
+#sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
 
 # Configurar ZRAM
 sudo tee -a /etc/systemd/zram-generator.conf <<EOF
