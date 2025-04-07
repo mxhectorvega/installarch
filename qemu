@@ -4,7 +4,7 @@
 # Repositorio: https://github.com/mxhectorvega/installarch
 # Ejecución: bash <(is.gd/mxvirtmanager) o tiny.com/mxvirtmanager
 # Fecha de actualización: 06/04/2025
-# Versión: 4.0
+# Versión: 4.1
 
 # Verificar que el script se ejecuta como root
 if [ "$(id -u)" -ne 0 ]; then
@@ -15,7 +15,22 @@ fi
 echo "Actualizando repositorios e instalando paquetes necesarios..."
 
 # Instalación de paquetes principales
-pacman -Syu --needed --noconfirm qemu libvirt virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat ebtables iptables edk2-ovmf usbredir spice-vdagent xf86-video-qxl mesa libdrm
+echo "Instalando paquetes base..."
+pacman -Syu --needed --noconfirm qemu-base libvirt virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat ebtables iptables edk2-ovmf usbredir spice-vdagent xf86-video-qxl mesa libdrm
+
+echo "Verificando posibles conflictos con iptables..."
+if ! pacman -Qi iptables &>/dev/null; then
+    echo "iptables no está instalado. ¿Deseas instalarlo manualmente? (yes/no)"
+    read respuesta
+    if [[ "$respuesta" == "yes" || "$respuesta" == "si" ]]; then
+        pacman -S iptables
+    else
+        echo "Instalación de iptables cancelada. No se continuará con la configuración."
+        exit 1
+    fi
+else
+    echo "iptables ya está instalado. Continuando con el script..."
+fi
 
 # Habilitar módulos del kernel según el procesador
 if grep -E -q "AMD" /proc/cpuinfo; then
@@ -62,6 +77,18 @@ cat <<EOF > /etc/libvirt/qemu/networks/default.xml
   </ip>
 </network>
 EOF
+
+# Verificar si la red virtual "default" está activa
+if virsh net-info default &>/dev/null; then
+    echo "La red virtual 'default' está configurada. Procediendo con modificaciones..."
+else
+    echo "Activando red virtual 'default'..."
+    virsh net-define /etc/libvirt/qemu/networks/default.xml || true
+    virsh net-start default || true
+    virsh net-autostart default || true
+fi
+
+# Destruir y redefinir la red para aplicar cambios personalizados
 virsh net-destroy default || true
 virsh net-undefine default || true
 virsh net-define /etc/libvirt/qemu/networks/default.xml
@@ -80,7 +107,7 @@ fi
 # Configuración de Flatpak como usuario regular
 echo "Configurando Flatpak como usuario regular..."
 sudo -u "$current_user" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-sudo -u "$current_user" flatpak install -y flathub org.virt-manager.virt-manager
+sudo -u "$current_user" flatpak --user install -y flathub org.virt_manager.virt-manager
 
 # Habilitar manejo de USB
 echo "Habilitando soporte USB para máquinas virtuales..."
@@ -97,4 +124,4 @@ fi
 
 # Mensaje de finalización
 echo "El script ha terminado. Por favor, reinicia la sesión para aplicar los cambios al usuario actual."
-echo "Ejecuta Virt-Manager con: flatpak run org.virt-manager.virt-manager"
+echo "Ejecuta Virt-Manager con: flatpak run org.virt_manager.virt-manager"
