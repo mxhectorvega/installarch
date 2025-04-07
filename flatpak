@@ -92,6 +92,7 @@ paquetes_kde=(
     "org.signal.Signal"
     "org.supertuxproject.SuperTux"
     "org.telegram.desktop"
+    "org.virt_manager.virt-manage"
 )
 
 # Paquete adicional

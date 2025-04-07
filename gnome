@@ -38,7 +38,9 @@ paquetes_esenciales=(
     "intel-ucode"
     "mesa"
     "flatpak"
-    "seahorse"   
+    "seahorse"
+    "android-tools"
+    "scrcpy"
 )
 
 sudo pacman -S "${paquetes_esenciales[@]}" --noconfirm --needed
