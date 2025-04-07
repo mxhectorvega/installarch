@@ -23,7 +23,8 @@ unix_sock_rw_perms = "0770"
 EOF
 systemctl restart libvirtd.service
 
-echo "Configurando red NAT personalizada..."
+echo "Configurando red NAT en el rango 192.168.3.0..."
+mkdir -p /etc/libvirt/qemu/networks
 cat <<EOF > /etc/libvirt/qemu/networks/default.xml
 <network>
   <name>default</name>
@@ -39,30 +40,27 @@ cat <<EOF > /etc/libvirt/qemu/networks/default.xml
 EOF
 
 echo "Aplicando configuración de red virtual 'default'..."
-virsh net-destroy default || true
-virsh net-undefine default || true
-if virsh net-define /etc/libvirt/qemu/networks/default.xml; then
-    echo "Red definida correctamente."
+# Verificar redes existentes
+sudo virsh net-list --all
+
+# Definir red virtual desde el archivo de configuración
+if sudo virsh net-define /etc/libvirt/qemu/networks/default.xml; then
+    echo "Red 'default' definida correctamente."
 else
-    echo "Error al definir la red virtual. Verifica el archivo default.xml."
+    echo "Error al definir la red 'default'. Verifica el archivo default.xml."
     exit 1
 fi
 
-if virsh net-start default; then
-    echo "Red iniciada correctamente."
+# Hacer que la red inicie automáticamente
+sudo virsh net-autostart default
+
+# Activar la red
+if sudo virsh net-start default; then
+    echo "Red 'default' activada correctamente."
 else
-    echo "Error al iniciar la red. Revisa los registros de libvirt."
+    echo "Error al activar la red. Revisa manualmente."
     exit 1
 fi
 
-virsh net-autostart default
-
-echo "Verificando configuración final..."
-if virsh net-info default &>/dev/null; then
-    echo "La red 'default' está configurada y activa."
-else
-    echo "Error: La red 'default' no está activa. Revisa manualmente."
-    exit 1
-fi
 
 echo "Script finalizado. Reinicia la sesión para aplicar los cambios."
