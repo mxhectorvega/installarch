@@ -58,6 +58,7 @@ paquetes_gnome=(
 "org.soundconverter.SoundConverter"
 "org.telegram.desktop"
 "page.tesk.Refine"
+"org.virt_manager.virt-manager"
 )
 
 paquetes_kde=(
