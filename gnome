@@ -14,13 +14,11 @@ sudo pacman -Sy --noconfirm
 # Instalar paquetes esenciales para el sistema operativo
 paquetes_esenciales=(
     "openssh"
-    "seahorse"
     "acpi"
     "plocate"
     "usbutils"
     "ntfs-3g"
     "dosfstools"
-    "flatpak"
     "pacman-contrib"
     "fuse"
     "xdg-user-dirs"
@@ -39,6 +37,8 @@ paquetes_esenciales=(
     "amd-ucode"
     "intel-ucode"
     "mesa"
+    "flatpak"
+    "seahorse"   
 )
 
 sudo pacman -S "${paquetes_esenciales[@]}" --noconfirm --needed
