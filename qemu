@@ -3,220 +3,98 @@
 # Instalación de QEMU + Virt-Manager + Optimizaciones
 # Repositorio: https://github.com/mxhectorvega/installarch
 # Ejecución: bash <(is.gd/mxvirtmanager) o tiny.com/mxvirtmanager
-# Fecha de actualización: 09/02/2025
-# Versión: 3.0
+# Fecha de actualización: 06/04/2025
+# Versión: 4.0
 
-# Configuración de colores
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Configuración inicial
-DEPENDENCIES=()
-INSTALLED_PKGS=()
-TEMP_FILE=$(mktemp)
-trap 'rm -f $TEMP_FILE' EXIT
-
-# Funciones de utilidad
-error() {
-    printf "${RED}[ERROR]${NC} %s\n" "$1" >&2
+# Verificar que el script se ejecuta como root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Por favor, ejecuta este script como root."
     exit 1
-}
+fi
 
-info() {
-    printf "${GREEN}[INFO]${NC} %s\n" "$1"
-}
+echo "Actualizando repositorios e instalando paquetes necesarios..."
 
-warning() {
-    printf "${YELLOW}[WARNING]${NC} %s\n" "$1"
-}
+# Instalación de paquetes principales
+pacman -Syu --needed --noconfirm qemu libvirt virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat ebtables iptables edk2-ovmf usbredir spice-vdagent xf86-video-qxl mesa libdrm
 
-clean_screen() {
-    clear
-}
-
-check_dependencies() {
-    local pkg missing=()
-    for pkg in "$@"; do
-        if ! pacman -Qi "$pkg" &>/dev/null; then
-            missing+=("$pkg")
-        fi
-    done
-    echo "${missing[@]}"
-}
-
-install_packages() {
-    local -a packages=("$@")
-    if [ ${#packages[@]} -eq 0 ]; then
-        return 0
-    fi
-
-    if ! sudo pacman -S --noconfirm --needed "${packages[@]}"; then
-        error "Fallo al instalar paquetes: ${packages[*]}"
-    fi
-
-    INSTALLED_PKGS+=("${packages[@]}")
-}
-
-rollback() {
-    if [ ${#INSTALLED_PKGS[@]} -gt 0 ]; then
-        warning "Realizando rollback de paquetes instalados..."
-        sudo pacman -Rsn --noconfirm "${INSTALLED_PKGS[@]}" || warning "Error parcial en rollback"
-    fi
+# Habilitar módulos del kernel según el procesador
+if grep -E -q "AMD" /proc/cpuinfo; then
+    echo "Configurando para procesador AMD..."
+    modprobe kvm-amd
+    echo "options kvm-amd nested=1" > /etc/modprobe.d/kvm-amd.conf
+elif grep -E -q "Intel" /proc/cpuinfo; then
+    echo "Configurando para procesador Intel..."
+    modprobe kvm-intel
+    echo "options kvm-intel nested=1" > /etc/modprobe.d/kvm-intel.conf
+else
+    echo "Procesador no compatible con KVM."
     exit 1
-}
+fi
 
-configure_ssh() {
-    info "Configurando SSH..."
-    if ! pacman -Qi openssh &>/dev/null; then
-        install_packages openssh
-    fi
+# Configurar y habilitar libvirt
+echo "Habilitando y arrancando servicios de libvirt..."
+systemctl enable --now libvirtd.service
 
-    sudo systemctl enable --now sshd.service || error "Error al iniciar SSH"
-}
+# Agregar al usuario actual al grupo libvirt
+current_user=$(logname)
+usermod -aG libvirt "$current_user"
 
-ask_password() {
-    clean_screen
-    sudo -v || error "Error al autenticar con sudo"
-    while true; do
-        sudo -n true
-        sleep 60
-        kill -0 "$$" || exit
-    done 2>/dev/null &
-}
-
-# Configurar manejador de errores
-trap rollback ERR
-
-# Inicio del script
-main() {
-    ask_password
-    clean_screen
-
-    # Paso 1: Selección de componentes QEMU
-    PS3="Selecciona el tipo de instalación QEMU: "
-    options=("QEMU Full (todas arquitecturas + GUI + CLI)"
-             "QEMU Base (solo CLI)"
-             "QEMU Desktop (solo 64 bits)")
-
-    select opt in "${options[@]}"; do
-        case $REPLY in
-            1) QEMU_PKGS=(qemu-full); break ;;
-            2) QEMU_PKGS=(qemu-base); break ;;
-            3) QEMU_PKGS=(qemu-desktop); break ;;
-            *) warning "Opción inválida";;
-        esac
-    done
-
-    # Paso 2: Selección de interfaz gráfica
-    PS3="Selecciona la interfaz gráfica: "
-    options=("Virt-Manager" "GNOME Boxes" "Ninguna")
-
-    select opt in "${options[@]}"; do
-        case $REPLY in
-            1) GUI_PKGS=(libvirt virt-manager); break ;;
-            2) GUI_PKGS=(libvirt gnome-boxes); break ;;
-            3) break ;;
-            *) warning "Opción inválida";;
-        esac
-    done
-
-    # Paso 3: Paquetes adicionales
-    ADDITIONAL_PKGS=(iptables dnsmasq dmidecode bridge-utils openbsd-netcat
-                    virglrenderer xf86-video-vmware xf86-input-vmmouse)
-
-    # Verificar dependencias
-    DEPENDENCIES+=(qemu-base libvirt iptables dnsmasq)
-    missing=$(check_dependencies "${DEPENDENCIES[@]}")
-
-    if [ -n "$missing" ]; then
-        info "Instalando dependencias faltantes: $missing"
-        install_packages $missing
-    fi
-
-    # Configuración previa de libvirt
-    info "Configurando libvirt..."
-    sudo sed -i 's/#unix_sock_group = "libvirt"/unix_sock_group = "libvirt"/' /etc/libvirt/libvirtd.conf
-    sudo sed -i 's/#unix_sock_rw_perms = "0770"/unix_sock_rw_perms = "0770"/' /etc/libvirt/libvirtd.conf
-
-    # Agregar usuario al grupo y refrescar
-    sudo usermod -aG libvirt,kvm "$(whoami)" || error "Error al agregar usuario al grupo"
-    if ! groups | grep -q libvirt; then
-        exec sg libvirt newgrp $(id -gn)  # Refrescar grupos en sesión actual
-    fi
-
-    # Instalación principal
-    install_packages "${QEMU_PKGS[@]}" "${GUI_PKGS[@]}" "${ADDITIONAL_PKGS[@]}"
-
-    # Reiniciar servicios para aplicar configuración
-    info "Iniciando servicios..."
-    sudo systemctl restart libvirtd.service
-    sudo systemctl enable libvirtd.service
-
-    # Configurar red NAT
-    info "Configurando red NAT..."
-    export LIBVIRT_DEFAULT_URI=qemu:///system  # Establecer URI por defecto
-
-    # Verificar si la red existe
-    if ! sudo virsh net-list --all | grep -q default; then
-        # Intentar definir desde archivo o crear manualmente
-        if [ -f /etc/libvirt/qemu/networks/default.xml ]; then
-            sudo virsh net-define /etc/libvirt/qemu/networks/default.xml || {
-                warning "Falló definición desde archivo, creando manualmente..."
-                sudo virsh net-define <<EOF
-<network>
-  <name>default</name>
-  <forward mode='nat'/>
-  <bridge name='virbr0' stp='on' delay='0'/>
-  <ip address='192.168.0.0' netmask='255.255.255.0'>
-    <dhcp>
-      <range start='192.168.0.1' end='192.168.0.24'/>
-    </dhcp>
-  </ip>
-</network>
+# Configuración para permitir uso sin contraseñas
+echo "Configurando acceso sin contraseñas para libvirt..."
+cat <<EOF >> /etc/libvirt/libvirtd.conf
+unix_sock_group = "libvirt"
+unix_sock_rw_perms = "0770"
 EOF
-            }
-        else
-            sudo virsh net-define <<EOF
+systemctl restart libvirtd.service
+
+# Configurar red NAT personalizada
+echo "Configurando red NAT en el rango 192.168.3.0..."
+cat <<EOF > /etc/libvirt/qemu/networks/default.xml
 <network>
   <name>default</name>
   <uuid>$(uuidgen)</uuid>
   <forward mode='nat'/>
   <bridge name='virbr0' stp='on' delay='0'/>
-  <ip address='192.168.0.0' netmask='255.255.255.0'>
+  <ip address='192.168.3.1' netmask='255.255.255.0'>
     <dhcp>
-      <range start='192.168.0.1' end='192.168.0.24'/>
+      <range start='192.168.3.100' end='192.168.3.200'/>
     </dhcp>
   </ip>
 </network>
 EOF
-        fi
-    fi
+virsh net-destroy default || true
+virsh net-undefine default || true
+virsh net-define /etc/libvirt/qemu/networks/default.xml
+virsh net-start default
+virsh net-autostart default
 
-    sudo virsh net-autostart default
-    sudo virsh net-start default || warning "La red podría estar ya iniciada"
+# Habilitar soporte para UEFI
+echo "Habilitando soporte para UEFI..."
+if [ -d "/usr/share/edk2-ovmf" ]; then
+    echo "Soporte UEFI configurado correctamente."
+else
+    echo "Error: edk2-ovmf no está instalado correctamente."
+    exit 1
+fi
 
-    # Configurar SSH-Askpass
-    info "Configurando SSH-Askpass..."
-    if [ -x /usr/lib/seahorse/ssh-askpass ]; then
-        sudo ln -sf /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
-    elif [ -x /usr/bin/ksshaskpass ]; then
-        sudo ln -sf /usr/bin/ksshaskpass /usr/lib/ssh/ssh-askpass
-    fi
+# Configuración de Flatpak como usuario regular
+echo "Configurando Flatpak como usuario regular..."
+sudo -u "$current_user" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+sudo -u "$current_user" flatpak install -y flathub org.virt-manager.virt-manager
 
-    # Configurar SSH
-    configure_ssh
+# Habilitar manejo de USB
+echo "Habilitando soporte USB para máquinas virtuales..."
+systemctl restart libvirtd.service
 
-    info "Instalación completada con éxito!"
-    echo -e "${YELLOW}Recomendaciones importantes:${NC}"
-    echo "1. Cierra sesión y vuelve a ingresar para refrescar los grupos de usuario"
-    echo "2. Verifica la red virtual con: virsh net-list --all"
-    echo "3. Para usar Virt-Manager como usuario normal:"
-    echo "   - Asegúrate de tener polkit configurado correctamente"
-    echo "   - Prueba con: virt-manager --connect qemu:///system"
-}
+# Verificar configuración final
+echo "Verificando configuración de libvirt y red..."
+if virsh list --all; then
+    echo "Configuración de QEMU/KVM y Virt-Manager completada con éxito."
+else
+    echo "Ocurrió un error durante la configuración."
+    exit 1
+fi
 
-main "$@"
-#test 6
+# Mensaje de finalización
+echo "El script ha terminado. Por favor, reinicia la sesión para aplicar los cambios al usuario actual."
+echo "Ejecuta Virt-Manager con: flatpak run org.virt-manager.virt-manager"
