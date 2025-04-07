@@ -16,21 +16,7 @@ echo "Actualizando repositorios e instalando paquetes necesarios..."
 
 # Instalación de paquetes principales
 echo "Instalando paquetes base..."
-pacman -Syu --needed --noconfirm qemu-base libvirt virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat ebtables iptables edk2-ovmf usbredir spice-vdagent xf86-video-qxl mesa libdrm
-
-echo "Verificando posibles conflictos con iptables..."
-if ! pacman -Qi iptables &>/dev/null; then
-    echo "iptables no está instalado. ¿Deseas instalarlo manualmente? (yes/no)"
-    read respuesta
-    if [[ "$respuesta" == "y" || "$respuesta" == "y" ]]; then
-        pacman -S iptables
-    else
-        echo "Instalación de iptables cancelada. No se continuará con la configuración."
-        exit 1
-    fi
-else
-    echo "iptables ya está instalado. Continuando con el script..."
-fi
+pacman -Syu --needed qemu-base libvirt virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat ebtables iptables edk2-ovmf usbredir spice-vdagent xf86-video-qxl mesa libdrm
 
 # Habilitar módulos del kernel según el procesador
 if grep -E -q "AMD" /proc/cpuinfo; then
