@@ -50,6 +50,7 @@ systemctl restart libvirtd.service
 
 # Configurar red NAT personalizada
 echo "Configurando red NAT en el rango 192.168.3.0..."
+mkdir -p /etc/libvirt/qemu/networks
 cat <<EOF > /etc/libvirt/qemu/networks/default.xml
 <network>
   <name>default</name>
@@ -63,6 +64,7 @@ cat <<EOF > /etc/libvirt/qemu/networks/default.xml
   </ip>
 </network>
 EOF
+
 
 # Verificar si la red virtual "default" está activa
 if virsh net-info default &>/dev/null; then
@@ -89,11 +91,6 @@ else
     echo "Error: edk2-ovmf no está instalado correctamente."
     exit 1
 fi
-
-# Configuración de Flatpak como usuario regular
-echo "Configurando Flatpak como usuario regular..."
-sudo -u "$current_user" flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-sudo -u "$current_user" flatpak --user install -y flathub org.virt_manager.virt-manager
 
 # Habilitar manejo de USB
 echo "Habilitando soporte USB para máquinas virtuales..."
