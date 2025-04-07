@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-# Instalación de QEMU + Virt-Manager + Optimizaciones
-# Repositorio: https://github.com/mxhectorvega/installarch
-# Ejecución: bash <(is.gd/mxvirtmanager) o tiny.com/mxvirtmanager
-# Fecha de actualización: 06/04/2025
-# Versión: 4.1
-
 # Verificar que el script se ejecuta como root
 if [ "$(id -u)" -ne 0 ]; then
     echo "Por favor, ejecuta este script como root."
@@ -13,44 +7,23 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 echo "Actualizando repositorios e instalando paquetes necesarios..."
-
-# Instalación de paquetes principales
-echo "Instalando paquetes base..."
 pacman -Syu --needed qemu-base libvirt virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat ebtables iptables edk2-ovmf usbredir spice-vdagent xf86-video-qxl mesa libdrm
 
-# Habilitar módulos del kernel según el procesador
-if grep -E -q "AMD" /proc/cpuinfo; then
-    echo "Configurando para procesador AMD..."
-    modprobe kvm-amd
-    echo "options kvm-amd nested=1" > /etc/modprobe.d/kvm-amd.conf
-elif grep -E -q "Intel" /proc/cpuinfo; then
-    echo "Configurando para procesador Intel..."
-    modprobe kvm-intel
-    echo "options kvm-intel nested=1" > /etc/modprobe.d/kvm-intel.conf
-else
-    echo "Procesador no compatible con KVM."
+echo "Configurando y habilitando servicios de libvirt..."
+systemctl enable --now libvirtd.service || {
+    echo "Error al habilitar libvirt. Verifica el servicio manualmente."
     exit 1
-fi
+}
 
-# Configurar y habilitar libvirt
-echo "Habilitando y arrancando servicios de libvirt..."
-systemctl enable --now libvirtd.service
-
-# Agregar al usuario actual al grupo libvirt
-current_user=$(logname)
-usermod -aG libvirt "$current_user"
-
-# Configuración para permitir uso sin contraseñas
 echo "Configurando acceso sin contraseñas para libvirt..."
-cat <<EOF >> /etc/libvirt/libvirtd.conf
+mkdir -p /etc/libvirt/qemu/networks
+cat <<EOF > /etc/libvirt/libvirtd.conf
 unix_sock_group = "libvirt"
 unix_sock_rw_perms = "0770"
 EOF
 systemctl restart libvirtd.service
 
-# Configurar red NAT personalizada
-echo "Configurando red NAT en el rango 192.168.3.0..."
-mkdir -p /etc/libvirt/qemu/networks
+echo "Configurando red NAT personalizada..."
 cat <<EOF > /etc/libvirt/qemu/networks/default.xml
 <network>
   <name>default</name>
@@ -65,46 +38,31 @@ cat <<EOF > /etc/libvirt/qemu/networks/default.xml
 </network>
 EOF
 
-
-# Verificar si la red virtual "default" está activa
-if virsh net-info default &>/dev/null; then
-    echo "La red virtual 'default' está configurada. Procediendo con modificaciones..."
-else
-    echo "Activando red virtual 'default'..."
-    virsh net-define /etc/libvirt/qemu/networks/default.xml || true
-    virsh net-start default || true
-    virsh net-autostart default || true
-fi
-
-# Destruir y redefinir la red para aplicar cambios personalizados
+echo "Aplicando configuración de red virtual 'default'..."
 virsh net-destroy default || true
 virsh net-undefine default || true
-virsh net-define /etc/libvirt/qemu/networks/default.xml
-virsh net-start default
+if virsh net-define /etc/libvirt/qemu/networks/default.xml; then
+    echo "Red definida correctamente."
+else
+    echo "Error al definir la red virtual. Verifica el archivo default.xml."
+    exit 1
+fi
+
+if virsh net-start default; then
+    echo "Red iniciada correctamente."
+else
+    echo "Error al iniciar la red. Revisa los registros de libvirt."
+    exit 1
+fi
+
 virsh net-autostart default
 
-# Habilitar soporte para UEFI
-echo "Habilitando soporte para UEFI..."
-if [ -d "/usr/share/edk2-ovmf" ]; then
-    echo "Soporte UEFI configurado correctamente."
+echo "Verificando configuración final..."
+if virsh net-info default &>/dev/null; then
+    echo "La red 'default' está configurada y activa."
 else
-    echo "Error: edk2-ovmf no está instalado correctamente."
+    echo "Error: La red 'default' no está activa. Revisa manualmente."
     exit 1
 fi
 
-# Habilitar manejo de USB
-echo "Habilitando soporte USB para máquinas virtuales..."
-systemctl restart libvirtd.service
-
-# Verificar configuración final
-echo "Verificando configuración de libvirt y red..."
-if virsh list --all; then
-    echo "Configuración de QEMU/KVM y Virt-Manager completada con éxito."
-else
-    echo "Ocurrió un error durante la configuración."
-    exit 1
-fi
-
-# Mensaje de finalización
-echo "El script ha terminado. Por favor, reinicia la sesión para aplicar los cambios al usuario actual."
-echo "Ejecuta Virt-Manager con: flatpak run org.virt_manager.virt-manager"
+echo "Script finalizado. Reinicia la sesión para aplicar los cambios."
