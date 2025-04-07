@@ -62,5 +62,6 @@ else
     exit 1
 fi
 
+sudo systemctl restart libvirtd
 
 echo "Script finalizado. Reinicia la sesión para aplicar los cambios."
