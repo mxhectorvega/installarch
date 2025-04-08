@@ -110,10 +110,10 @@ declare -A SCRIPT_URLS=(
     [2]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/flatpak"
     [3]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/gnome"
     [4]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/kde"
-    [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/drivers"
+    [5]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/macbook"
     [6]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/impresora"
     [7]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/qemu"
-    [8]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/inmutable"
+    [8]="https://raw.githubusercontent.com/mxhectorvega/installarch/main/qemu"
 )
 # Función principal
 main() {
