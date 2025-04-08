@@ -33,7 +33,7 @@ cat <<EOF > /etc/libvirt/qemu/networks/default.xml
   <bridge name='virbr0' stp='on' delay='0'/>
   <ip address='192.168.3.1' netmask='255.255.255.0'>
     <dhcp>
-      <range start='192.168.3.100' end='192.168.3.200'/>
+      <range start='192.168.3.1' end='192.168.3.10'/>
     </dhcp>
   </ip>
 </network>
@@ -62,8 +62,19 @@ else
     exit 1
 fi
 
-sudo usermod -aG libvirt,kvm,qemu $USER
+# Obtener el usuario sin privilegios desde SUDO_USER
+NON_PRIVILEGED_USER="${SUDO_USER:-$USER}"
 
+# Agregar al usuario sin privilegios a los grupos necesarios
+sudo usermod -aG libvirt,kvm,qemu "$NON_PRIVILEGED_USER"
+
+# Configurar el archivo de configuración de QEMU
+cat <<EOF > /etc/libvirt/qemu.conf
+user = "$NON_PRIVILEGED_USER"
+group = "$NON_PRIVILEGED_USER"
+EOF
+
+# Reiniciar libvirtd
 sudo systemctl restart libvirtd
 
 echo "Script finalizado. Reinicia la sesión para aplicar los cambios."
