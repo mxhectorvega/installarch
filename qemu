@@ -62,6 +62,8 @@ else
     exit 1
 fi
 
+sudo usermod -aG libvirt,kvm,qemu $USER
+
 sudo systemctl restart libvirtd
 
 echo "Script finalizado. Reinicia la sesión para aplicar los cambios."
