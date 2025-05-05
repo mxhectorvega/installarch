@@ -73,6 +73,7 @@ paquetes_gnome=(
     "polkit-gnome"
     "xdg-desktop-portal"
     "xdg-desktop-portal-gnome"
+    "power-profiles-daemon"
 )
 
 sudo pacman -S "${paquetes_gnome[@]}" --noconfirm --needed
@@ -127,4 +128,7 @@ for i in {1..8}; do
     sleep 0.1
 done
 
+gsettings set org.gnome.desktop.interface enable-animations false
+
+sudo systemctl enable --now power-profiles-daemon
 sudo systemctl enable --now gdm

@@ -15,7 +15,7 @@ fi
 # Agregar el repositorio flathub
 if ! flatpak remote-list | grep -q flathub; then
     echo "Agregando el repositorio flathub..."
-    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
 fi
 
@@ -93,6 +93,7 @@ paquetes_kde=(
     "org.signal.Signal"
     "org.supertuxproject.SuperTux"
     "org.telegram.desktop"
+    "org.virt_manager.virt-manager"
 )
 
 # Paquete adicional

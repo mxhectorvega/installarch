@@ -50,12 +50,12 @@ show_menu() {
     echo -e "${YELLOW}Lista de Scripts Disponibles:${NC}\n"
     echo -e "${CYAN}1)${NC} Optimizaciones para Pacman, Repo Chaotic y AUR Helper"
     echo -e "${CYAN}2)${NC} Paqueteria flatpak para el usuario doméstico/avanzado"
-    echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 47.x (solo escenciales)"
+    echo -e "${CYAN}3)${NC} Entorno de escritorio Gnome 48.x (solo escenciales)"
     echo -e "${CYAN}4)${NC} Complementos de KDE PLasma (post archinstall/archiso)"
-    echo -e "${CYAN}5)${NC} Instalacion de controladores para Linux automatizado"
+    echo -e "${CYAN}5)${NC} Instalacion de controladores para MacBook Pro 2011"
     echo -e "${CYAN}6)${NC} Controladores para impresora Epson L3210 Ecotank"
-    echo -e "${CYAN}7)${NC} Instalacion de QEMU + Virt Manager + Optimizaciones"
-    echo -e "${CYAN}8)${NC} Implementar transactional-updte + snapshots + systemdboot"
+    echo -e "${CYAN}7)${NC} Instalacion de QEMU + Optimizaciones (no sudo)"
+    echo -e "${CYAN}8)${NC} Instalacion de QEMU + Optimizaciones"
     echo -e "${CYAN}0)${NC} Salir\n"
 }
 # Función para registrar paquetes instalados
