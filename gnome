@@ -74,6 +74,7 @@ paquetes_gnome=(
     "xdg-desktop-portal"
     "xdg-desktop-portal-gnome"
     "power-profiles-daemon"
+    "xorg-xwayland"
 )
 
 sudo pacman -S "${paquetes_gnome[@]}" --noconfirm --needed
