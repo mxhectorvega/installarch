@@ -41,6 +41,8 @@ paquetes_esenciales=(
     "flatpak"
     "android-tools"
     "scrcpy"
+    "gvfs-smb"
+    "gvfs-nfs"
 )
 
 sudo pacman -S "${paquetes_esenciales[@]}" --noconfirm --needed
@@ -86,10 +88,10 @@ xdg-user-dirs-update
 #sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
 
 # Configurar ZRAM
-sudo tee -a /etc/systemd/zram-generator.conf <<EOF
-zram-size = ram
-compression-algorithm = zstd
-EOF
+#sudo tee -a /etc/systemd/zram-generator.conf <<EOF
+#zram-size = ram
+#compression-algorithm = zstd
+#EOF
 
 # Crear directorios de fuentes antes de clonar los repositorios
 mkdir -p "$HOME/.local/share/fonts/tipografias"
