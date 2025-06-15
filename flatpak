@@ -60,6 +60,7 @@ paquetes_gnome=(
 "org.telegram.desktop"
 "page.tesk.Refine"
 "org.virt_manager.virt-manager"
+"net.codelogistics.webapps"
 )
 
 paquetes_kde=(
@@ -73,7 +74,7 @@ paquetes_kde=(
     "com.obsproject.Studio"
     "com.rustdesk.RustDesk"
     "com.valvesoftware.Steam"
-    "com.brave.Browser"
+    "org.mozilla.firefox"
     "io.github.peazip.PeaZip"
     "io.itch.itch"
     "io.mrarm.mcpelauncher"
