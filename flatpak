@@ -22,7 +22,6 @@ fi
 # Definir las listas de paquetes
 paquetes_gnome=(
 "app.drey.Dialect"
-"com.brave.Browser"
 "com.github.KRTirtho.Spotube"
 "com.github.gabutakut.gabutdm"
 "com.github.iwalton3.jellyfin-media-player"
@@ -58,6 +57,7 @@ paquetes_gnome=(
 "org.pipewire.Helvum"
 "org.soundconverter.SoundConverter"
 "org.telegram.desktop"
+"org.mozilla.firefox"
 "page.tesk.Refine"
 "org.virt_manager.virt-manager"
 "net.codelogistics.webapps"
