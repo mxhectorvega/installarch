@@ -30,6 +30,7 @@ paquetes_esenciales=(
     "lvm2"
     "xfsprogs"
     "dosfstools"
+    "exfatprogs"
     "lm_sensors"
     "hddtemp"
     "apcupsd"
