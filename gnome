@@ -19,7 +19,6 @@ paquetes_esenciales=(
     "plocate"
     "usbutils"
     "ntfs-3g"
-    "dosfstools"
     "pacman-contrib"
     "fuse"
     "xdg-user-dirs"
@@ -55,11 +54,8 @@ herramientas_terminal=(
     "wget"
     "htop"
     "radeontop"
-    "powertop"
     "vim"
     "less"
-    "nmap"
-    "speedtest-cli"
 )
 
 sudo pacman -S "${herramientas_terminal[@]}" --noconfirm --needed
