@@ -43,12 +43,9 @@ paquetes_esenciales=(
     "scrcpy"
     "gvfs-smb"
     "gvfs-nfs"
-)
-
-sudo pacman -S "${paquetes_esenciales[@]}" --noconfirm --needed
-
-# Instalar herramientas de terminal
-herramientas_terminal=(
+    "unrar"
+    "unzip"
+    "tlp"
     "fastfetch"
     "git"
     "curl"
@@ -59,7 +56,8 @@ herramientas_terminal=(
     "less"
 )
 
-sudo pacman -S "${herramientas_terminal[@]}" --noconfirm --needed
+sudo pacman -S "${paquetes_esenciales[@]}" --noconfirm --needed
+
 
 # Instalar paquetes mínimos para que Gnome funcione
 paquetes_gnome=(
@@ -74,7 +72,6 @@ paquetes_gnome=(
     "polkit-gnome"
     "xdg-desktop-portal"
     "xdg-desktop-portal-gnome"
-    "power-profiles-daemon"
     "xorg-xwayland"
 )
 
@@ -134,3 +131,5 @@ gsettings set org.gnome.desktop.interface enable-animations false
 
 sudo systemctl enable --now power-profiles-daemon
 sudo systemctl enable --now gdm
+sudo systemctl enable --now tlp
+
