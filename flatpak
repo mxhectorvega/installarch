@@ -13,10 +13,8 @@ if ! command -v flatpak &> /dev/null; then
 fi
 
 # Agregar el repositorio flathub
-if ! flatpak remote-list | grep -q flathub; then
-    echo "Agregando el repositorio flathub..."
-    flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo   
-fi
+flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo   
+
 
 # Definir las listas de paquetes
 paquetes_gnome=(
