@@ -45,7 +45,7 @@ paquetes_gnome=(
 "org.gnome.Papers"
 "org.gnome.Showtime"
 "org.gnome.TextEditor"
-"org.gnome.gitlab.YaLTeR.VideoTrimmer"
+"io.gitlab.adhami3310.Footage"
 "org.gnome.Connections"
 "org.inkscape.Inkscape"
 "org.jdownloader.JDownloader"
