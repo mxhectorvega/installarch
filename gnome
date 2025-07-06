@@ -12,7 +12,6 @@
 sudo pacman -Sy --noconfirm
 
 # Instalar paquetes esenciales para el sistema operativo
-# "seahorse"
 paquetes_esenciales=(
     "openssh"
     "acpi"
@@ -73,6 +72,7 @@ paquetes_gnome=(
     "xdg-desktop-portal"
     "xdg-desktop-portal-gnome"
     "xorg-xwayland"
+    "seahorse"
 )
 
 sudo pacman -S "${paquetes_gnome[@]}" --noconfirm --needed
@@ -81,13 +81,7 @@ sudo pacman -S "${paquetes_gnome[@]}" --noconfirm --needed
 xdg-user-dirs-update
 
 # Crear enlace simbólico para el paquete ssh-askpass
-#sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
-
-# Configurar ZRAM
-#sudo tee -a /etc/systemd/zram-generator.conf <<EOF
-#zram-size = ram
-#compression-algorithm = zstd
-#EOF
+sudo ln -s /usr/lib/seahorse/ssh-askpass /usr/lib/ssh/ssh-askpass
 
 # Crear directorios de fuentes antes de clonar los repositorios
 mkdir -p "$HOME/.local/share/fonts/tipografias"
@@ -108,8 +102,8 @@ sudo systemctl enable --now bluetooth.service
 # Instalar Java (por si acaso se requiere)
 sudo pacman -S jre8-openjdk --noconfirm --needed
 
-# Instalar Adw GTK en ~/.local/share/themes
-mkdir -p ~/.local/share/themes && curl -sL $(curl -s https://api.github.com/repos/lassekongo83/adw-gtk3/releases/latest | grep "browser_download_url" | grep -Eo "https://[^\"]+.tar.(xz|zx|gz)") -o /tmp/adw-gtk3.tar && tar -xf /tmp/adw-gtk3.tar -C ~/.local/share/themes && rm /tmp/adw-gtk3.tar
+# Instalar Adw GTK 3 nativo
+sudo pacman -S adw-gtk-theme
 
 # Instalar Adw GTK en flatpak
 flatpak install --user -y org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark

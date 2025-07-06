@@ -56,7 +56,6 @@ paquetes_gnome=(
 "org.mozilla.firefox"
 "org.vinegarhq.Sober"
 "page.tesk.Refine"
-"org.virt_manager.virt-manager"
 "net.codelogistics.webapps"
 )
 
@@ -88,7 +87,6 @@ paquetes_kde=(
 "org.kde.krita"
 "org.libreoffice.LibreOffice"
 "org.telegram.desktop"
-"org.virt_manager.virt-manager"
 "org.vinegarhq.Sober"
 "net.davidotek.pupgui2"
 )
